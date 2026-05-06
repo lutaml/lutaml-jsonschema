@@ -61,6 +61,9 @@ export interface SpaSchema {
   required: string[]
   examples?: string[]
   sourceJson?: string
+  $schema?: string
+  $id?: string
+  additionalProperties?: boolean
 }
 
 export interface SpaSearchEntry {

@@ -53,6 +53,9 @@ module Lutaml
             required: all_required,
             examples: schema.examples,
             source_json: @schema_set.source_json(name) || "",
+            dollar_schema: schema.dollar_schema,
+            dollar_id: schema.dollar_id,
+            additional_properties: schema.additional_properties,
           )
         end
 

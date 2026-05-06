@@ -102,6 +102,46 @@
                     <td class="constraint-key">Items</td>
                     <td>{{ (item as any).property.itemsType }}</td>
                   </tr>
+                  <tr v-if="(item as any).property.exclusiveMinimum != null">
+                    <td class="constraint-key">Exclusive Min</td>
+                    <td>{{ (item as any).property.exclusiveMinimum }}</td>
+                  </tr>
+                  <tr v-if="(item as any).property.exclusiveMaximum != null">
+                    <td class="constraint-key">Exclusive Max</td>
+                    <td>{{ (item as any).property.exclusiveMaximum }}</td>
+                  </tr>
+                  <tr v-if="(item as any).property.minItems != null">
+                    <td class="constraint-key">Min Items</td>
+                    <td>{{ (item as any).property.minItems }}</td>
+                  </tr>
+                  <tr v-if="(item as any).property.maxItems != null">
+                    <td class="constraint-key">Max Items</td>
+                    <td>{{ (item as any).property.maxItems }}</td>
+                  </tr>
+                  <tr v-if="(item as any).property.uniqueItems">
+                    <td class="constraint-key">Unique Items</td>
+                    <td>Yes</td>
+                  </tr>
+                  <tr v-if="(item as any).property.multipleOf != null">
+                    <td class="constraint-key">Multiple Of</td>
+                    <td>{{ (item as any).property.multipleOf }}</td>
+                  </tr>
+                  <tr v-if="(item as any).property.const != null">
+                    <td class="constraint-key">Const</td>
+                    <td class="font-mono">{{ (item as any).property.const }}</td>
+                  </tr>
+                  <tr v-if="(item as any).property.contentMediaType">
+                    <td class="constraint-key">Content Type</td>
+                    <td>{{ (item as any).property.contentMediaType }}</td>
+                  </tr>
+                  <tr v-if="(item as any).property.contentEncoding">
+                    <td class="constraint-key">Content Encoding</td>
+                    <td>{{ (item as any).property.contentEncoding }}</td>
+                  </tr>
+                  <tr v-if="(item as any).property.additionalProperties === false">
+                    <td class="constraint-key">Additional Props</td>
+                    <td>Denied</td>
+                  </tr>
                 </tbody>
               </table>
             </div>
@@ -204,7 +244,11 @@ const hasConstraints = computed(() => {
   const p = item.value.property
   return p.minimum != null || p.maximum != null ||
     p.minLength != null || p.maxLength != null ||
-    p.pattern || p.enum?.length || p.itemsType
+    p.pattern || p.enum?.length || p.itemsType ||
+    p.exclusiveMinimum != null || p.exclusiveMaximum != null ||
+    p.minItems != null || p.maxItems != null || p.uniqueItems ||
+    p.multipleOf != null || p.const != null ||
+    p.contentMediaType || p.contentEncoding
 })
 
 type TabId = 'overview' | 'properties'
