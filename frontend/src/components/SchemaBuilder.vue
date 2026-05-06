@@ -1,7 +1,7 @@
 <template>
   <div class="builder-layout">
     <div class="builder-fields">
-      <div v-for="field in fields" :key="field.prop.name" class="field-row">
+      <div v-for="(field, idx) in sortedFields" :key="field.prop.name" class="field-row" :class="{ 'field-row-alt': idx % 2 === 1 }">
         <div class="field-main">
           <input
             type="checkbox"
@@ -146,7 +146,7 @@
         </div>
       </div>
 
-      <div v-if="!fields.length" class="empty-hint">
+      <div v-if="!sortedFields.length" class="empty-hint">
         <p class="text-muted">No properties defined.</p>
       </div>
     </div>
@@ -202,6 +202,14 @@ const emit = defineEmits<{
 const copied = ref(false)
 
 const fields = ref<BuilderField[]>(props.properties.map(p => createField(p, props.required, props.schema, props.allSchemas)))
+
+const sortedFields = computed(() => {
+  return [...fields.value].sort((a, b) => {
+    if (a.isRequired && !b.isRequired) return -1
+    if (!a.isRequired && b.isRequired) return 1
+    return 0
+  })
+})
 
 function toggleField(field: BuilderField, checked: boolean) {
   field.included = checked
@@ -273,6 +281,14 @@ async function copyJson() {
 }
 
 .field-row:hover {
+  background: var(--bg-hover);
+}
+
+.field-row-alt {
+  background: var(--bg-secondary);
+}
+
+.field-row-alt:hover {
   background: var(--bg-hover);
 }
 

@@ -62,6 +62,7 @@
               >
                 <span class="badge badge-definition-sm">D</span>
                 <span class="tree-item-name">{{ def.title || def.name }}</span>
+                <span class="tree-item-count">{{ def.properties.length }}</span>
               </div>
             </div>
           </div>
@@ -340,6 +341,15 @@ function selectDefinition(schemaName: string, defName: string) {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.tree-item-count {
+  font-size: 10px;
+  color: var(--text-muted);
+  background: var(--bg-primary);
+  padding: 0px 4px;
+  border-radius: 2px;
+  flex-shrink: 0;
 }
 
 .badge-definition-sm {

@@ -15,6 +15,9 @@ module Lutaml
         attribute :required, :string, collection: true
         attribute :examples, :string, collection: true
         attribute :source_json, :string, default: -> { "" }
+        attribute :dollar_schema, :string
+        attribute :dollar_id, :string
+        attribute :additional_properties, :boolean
 
         json do
           map "name", to: :name
@@ -26,6 +29,9 @@ module Lutaml
           map "required", to: :required
           map "examples", to: :examples
           map "sourceJson", to: :source_json
+          map "$schema", to: :dollar_schema
+          map "$id", to: :dollar_id
+          map "additionalProperties", to: :additional_properties
         end
       end
     end

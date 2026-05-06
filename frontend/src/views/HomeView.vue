@@ -6,13 +6,19 @@
         <div class="schema-header-info">
           <div class="schema-title-row">
             <h1>{{ schemaStore.selectedSchema.title || schemaStore.selectedSchema.name }}</h1>
-            <button
-              v-if="schemaStore.selectedSchema.sourceJson"
-              class="btn btn-outline btn-sm"
-              @click="downloadSchema(schemaStore.selectedSchema)"
-            >
-              Download JSON
-            </button>
+            <div class="schema-actions">
+              <div class="view-toggle">
+                <button class="toggle-btn" :class="{ active: viewMode === 'builder' }" @click="viewMode = 'builder'">Builder</button>
+                <button class="toggle-btn" :class="{ active: viewMode === 'source' }" @click="viewMode = 'source'">Source</button>
+              </div>
+              <button
+                v-if="schemaStore.selectedSchema.sourceJson"
+                class="btn btn-outline btn-sm"
+                @click="downloadSchema(schemaStore.selectedSchema)"
+              >
+                Download JSON
+              </button>
+            </div>
           </div>
           <span v-if="schemaStore.selectedSchema.title && schemaStore.selectedSchema.title !== schemaStore.selectedSchema.name" class="schema-name-hint font-mono text-muted">{{ schemaStore.selectedSchema.name }}</span>
           <p v-if="schemaStore.selectedSchema.description" class="schema-desc text-secondary">{{ schemaStore.selectedSchema.description }}</p>
@@ -21,6 +27,11 @@
             <span class="text-muted">{{ schemaStore.selectedSchema.properties.length }} properties</span>
             <span v-if="schemaStore.selectedSchema.required.length" class="text-muted">&middot; {{ schemaStore.selectedSchema.required.length }} required</span>
             <span v-if="schemaStore.selectedSchema.definitions.length" class="text-muted">&middot; {{ schemaStore.selectedSchema.definitions.length }} definitions</span>
+            <span v-if="schemaStore.selectedSchema.additionalProperties === false" class="badge badge-locked">no additional properties</span>
+          </div>
+          <div v-if="schemaStore.selectedSchema.$schema || schemaStore.selectedSchema.$id" class="schema-id-row">
+            <span v-if="schemaStore.selectedSchema.$schema" class="meta-id-chip font-mono text-muted" title="JSON Schema version">{{ schemaStore.selectedSchema.$schema }}</span>
+            <span v-if="schemaStore.selectedSchema.$id" class="meta-id-chip font-mono text-muted" title="Schema $id">{{ schemaStore.selectedSchema.$id }}</span>
           </div>
           <div v-if="schemaStore.selectedSchema.required.length" class="schema-required">
             <span class="required-label text-muted">Required:</span>
@@ -35,6 +46,8 @@
         </div>
       </div>
 
+      <!-- Builder View -->
+      <template v-if="viewMode === 'builder'">
       <!-- Properties -->
       <div class="schema-section">
         <SchemaBuilder
@@ -47,7 +60,13 @@
 
       <!-- Definitions -->
       <div v-if="schemaStore.selectedSchema.definitions.length" class="schema-section">
-        <h2 class="section-heading">Definitions</h2>
+        <div class="section-heading-row">
+          <h2 class="section-heading">Definitions</h2>
+          <div class="section-actions">
+            <button class="btn btn-ghost btn-sm" @click="expandAllDefs">Expand All</button>
+            <button class="btn btn-ghost btn-sm" @click="collapseAllDefs">Collapse All</button>
+          </div>
+        </div>
         <div class="def-list">
           <div
             v-for="def in schemaStore.selectedSchema.definitions"
@@ -84,6 +103,17 @@
               />
             </div>
           </div>
+        </div>
+      </div>
+      </template>
+
+      <!-- Source JSON View -->
+      <div v-if="viewMode === 'source'" class="schema-section">
+        <div v-if="schemaStore.selectedSchema.sourceJson" class="source-viewer">
+          <pre class="source-pre"><code v-html="highlightedSource"></code></pre>
+        </div>
+        <div v-else class="source-empty">
+          <p class="text-muted">Source JSON Schema not available for this schema.</p>
         </div>
       </div>
     </div>
@@ -132,9 +162,10 @@
               <span class="badge badge-type-sm">{{ schema.type || 'any' }}</span>
             </div>
             <div class="schema-card-stats">
-              <span>{{ schema.properties.length }} properties</span>
-              <span>{{ schema.definitions.length }} definitions</span>
+              <span>{{ schema.properties.length }} props</span>
+              <span>{{ schema.definitions.length }} defs</span>
               <span v-if="schema.required.length">{{ schema.required.length }} required</span>
+              <span v-if="schema.examples?.length">{{ schema.examples.length }} examples</span>
             </div>
           </div>
         </div>
@@ -152,6 +183,38 @@ import type { SpaSchema } from '../types'
 
 const schemaStore = useSchemaStore()
 const expandedDefs = reactive(new Set<string>())
+const viewMode = ref<'builder' | 'source'>('builder')
+
+function expandAllDefs() {
+  for (const def of schemaStore.selectedSchema?.definitions ?? []) {
+    expandedDefs.add(def.name)
+  }
+}
+
+function collapseAllDefs() {
+  expandedDefs.clear()
+}
+
+const highlightedSource = computed(() => {
+  const src = schemaStore.selectedSchema?.sourceJson
+  if (!src) return ''
+  return syntaxHighlight(src)
+})
+
+function syntaxHighlight(json: string): string {
+  return json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/("(\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+-]?\d+)?)/g, (match) => {
+      let cls = 'json-number'
+      if (/^"/.test(match)) {
+        cls = /:$/.test(match) ? 'json-key' : 'json-string'
+      } else if (/true|false/.test(match)) {
+        cls = 'json-boolean'
+      } else if (/null/.test(match)) {
+        cls = 'json-null'
+      }
+      return `<span class="${cls}">${match}</span>`
+    })
+}
 
 function selectSchema(name: string) {
   schemaStore.selectSchema(name)
@@ -228,6 +291,44 @@ watch(() => schemaStore.selectedDefinitionName, (name) => {
   margin: 0;
 }
 
+.schema-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+.view-toggle {
+  display: flex;
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.toggle-btn {
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  color: var(--text-muted);
+  background: transparent;
+  transition: all var(--transition-fast);
+  border: none;
+}
+
+.toggle-btn:not(:last-child) {
+  border-right: 1px solid var(--border-medium);
+}
+
+.toggle-btn.active {
+  background: var(--color-primary-alpha);
+  color: var(--color-primary);
+}
+
+.toggle-btn:hover:not(.active) {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
 .schema-name-hint {
   font-size: var(--text-xs);
   display: block;
@@ -245,6 +346,34 @@ watch(() => schemaStore.selectedDefinitionName, (name) => {
   align-items: center;
   gap: var(--space-2);
   margin-top: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.schema-id-row {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.meta-id-chip {
+  font-size: 10px;
+  background: var(--bg-secondary);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  max-width: 400px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.badge-locked {
+  font-size: 10px;
+  color: var(--color-orange);
+  background: var(--color-orange-alpha);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-weight: 500;
 }
 
 .schema-required {
@@ -329,6 +458,51 @@ watch(() => schemaStore.selectedDefinitionName, (name) => {
   font-weight: 600;
   margin-bottom: var(--space-4);
   color: var(--text-primary);
+}
+
+.section-heading-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-4);
+}
+
+.section-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+/* Source viewer */
+.source-viewer {
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.source-pre {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  overflow-x: auto;
+  max-height: 70vh;
+  overflow-y: auto;
+  margin: 0;
+}
+
+.source-pre :deep(.json-key) { color: var(--color-primary-dark); }
+.source-pre :deep(.json-string) { color: var(--color-green); }
+.source-pre :deep(.json-number) { color: var(--color-orange); }
+.source-pre :deep(.json-boolean) { color: var(--color-accent); }
+.source-pre :deep(.json-null) { color: var(--text-muted); }
+
+:root[data-theme="dark"] .source-pre :deep(.json-key) { color: var(--color-primary-light); }
+:root[data-theme="dark"] .source-pre :deep(.json-string) { color: var(--color-teal); }
+
+.source-empty {
+  padding: var(--space-8);
+  text-align: center;
 }
 
 /* Definitions */
