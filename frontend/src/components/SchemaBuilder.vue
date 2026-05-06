@@ -113,20 +113,10 @@
         <div v-if="field.prop.description" class="field-desc text-secondary">{{ field.prop.description }}</div>
 
         <div v-if="hasConstraints(field.prop) || field.prop.ref" class="field-constraints">
-          <span v-if="field.prop.ref" class="constraint-chip">ref → {{ field.resolvedDef?.title || field.resolvedDef?.name || field.prop.ref }}</span>
+          <span v-if="field.prop.ref" class="constraint-chip chip-ref">ref → {{ field.resolvedDef?.title || field.resolvedDef?.name || field.prop.ref }}</span>
           <span v-if="field.prop.enum?.length && isObjectProperty(field.prop)" class="constraint-chip">enum: {{ field.prop.enum.join(' | ') }}</span>
-          <span v-if="field.prop.pattern" class="constraint-chip font-mono">/{{ field.prop.pattern }}/</span>
-          <span v-if="field.prop.minimum != null" class="constraint-chip">min: {{ field.prop.minimum }}</span>
-          <span v-if="field.prop.maximum != null" class="constraint-chip">max: {{ field.prop.maximum }}</span>
-          <span v-if="field.prop.minLength != null" class="constraint-chip">minLength: {{ field.prop.minLength }}</span>
-          <span v-if="field.prop.maxLength != null" class="constraint-chip">maxLength: {{ field.prop.maxLength }}</span>
-          <span v-if="field.prop.default != null" class="constraint-chip">default: {{ field.prop.default }}</span>
-          <span v-if="field.prop.const != null" class="constraint-chip">const: {{ field.prop.const }}</span>
-          <span v-if="field.prop.minItems != null" class="constraint-chip">minItems: {{ field.prop.minItems }}</span>
-          <span v-if="field.prop.maxItems != null" class="constraint-chip">maxItems: {{ field.prop.maxItems }}</span>
-          <span v-if="field.prop.uniqueItems" class="constraint-chip">unique</span>
-          <span v-if="field.prop.multipleOf != null" class="constraint-chip">multipleOf: {{ field.prop.multipleOf }}</span>
-          <span v-if="field.prop.examples?.length" class="constraint-chip">e.g. {{ field.prop.examples.join(', ') }}</span>
+          <span v-for="(chip, idx) in humanizeConstraints(field.prop)" :key="idx" class="constraint-chip" :class="chip.class">{{ chip.label }}</span>
+          <span v-if="field.prop.additionalProperties === false" class="constraint-chip chip-locked">no additional properties</span>
         </div>
 
         <!-- Nested object builder -->
@@ -169,7 +159,7 @@
             {{ copied ? 'Copied!' : 'Copy' }}
           </button>
         </div>
-        <pre class="json-block"><code>{{ outputJson }}</code></pre>
+        <pre class="json-block"><code v-html="highlightedJson"></code></pre>
       </div>
     </div>
   </div>
@@ -186,6 +176,7 @@ import {
   arrayDefaultValue,
   isObjectProperty,
   hasConstraints,
+  humanizeConstraints,
 } from '../composables/useSchemaTypes'
 import {
   createField,
@@ -235,6 +226,23 @@ const outputObj = computed(() => {
 })
 
 watch(outputObj, (v) => { emit('update:json', v) }, { immediate: true, deep: true })
+
+const highlightedJson = computed(() => syntaxHighlight(outputJson.value))
+
+function syntaxHighlight(json: string): string {
+  return json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/("(\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+-]?\d+)?)/g, (match) => {
+      let cls = 'json-number'
+      if (/^"/.test(match)) {
+        cls = /:$/.test(match) ? 'json-key' : 'json-string'
+      } else if (/true|false/.test(match)) {
+        cls = 'json-boolean'
+      } else if (/null/.test(match)) {
+        cls = 'json-null'
+      }
+      return `<span class="${cls}">${match}</span>`
+    })
+}
 
 async function copyJson() {
   try {
@@ -463,6 +471,16 @@ async function copyJson() {
   border-radius: var(--radius-sm);
 }
 
+.constraint-chip.chip-pattern {
+  font-family: var(--font-mono);
+}
+
+.constraint-chip.chip-locked {
+  color: var(--color-orange);
+  background: var(--color-orange-alpha);
+  font-weight: 500;
+}
+
 .nested-section {
   margin-left: 22px;
   margin-top: var(--space-2);
@@ -534,6 +552,15 @@ async function copyJson() {
   font-family: var(--font-mono);
   color: var(--text-primary);
 }
+
+.json-block :deep(.json-key) { color: var(--color-primary-dark); }
+.json-block :deep(.json-string) { color: var(--color-green); }
+.json-block :deep(.json-number) { color: var(--color-orange); }
+.json-block :deep(.json-boolean) { color: var(--color-accent); }
+.json-block :deep(.json-null) { color: var(--text-muted); }
+
+:root[data-theme="dark"] .json-block :deep(.json-key) { color: var(--color-primary-light); }
+:root[data-theme="dark"] .json-block :deep(.json-string) { color: var(--color-teal); }
 
 .empty-hint {
   padding: var(--space-8);

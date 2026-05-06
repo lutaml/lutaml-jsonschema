@@ -34,6 +34,11 @@ export interface SpaProperty {
   uniqueItems?: boolean
   multipleOf?: number
   const?: string
+  exclusiveMinimum?: number
+  exclusiveMaximum?: number
+  additionalProperties?: boolean
+  contentMediaType?: string
+  contentEncoding?: string
 }
 
 export interface SpaDefinition {

@@ -28,6 +28,11 @@ module Lutaml
         attribute :unique_items, :boolean
         attribute :multiple_of, :float
         attribute :const_value, :string
+        attribute :exclusive_minimum, :float
+        attribute :exclusive_maximum, :float
+        attribute :additional_properties, :boolean
+        attribute :content_type, :string
+        attribute :content_encoding, :string
 
         json do
           map "name", to: :name
@@ -54,6 +59,11 @@ module Lutaml
           map "uniqueItems", to: :unique_items
           map "multipleOf", to: :multiple_of
           map "const", to: :const_value
+          map "exclusiveMinimum", to: :exclusive_minimum
+          map "exclusiveMaximum", to: :exclusive_maximum
+          map "additionalProperties", to: :additional_properties
+          map "contentMediaType", to: :content_type
+          map "contentEncoding", to: :content_encoding
         end
       end
     end

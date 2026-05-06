@@ -132,7 +132,11 @@ export function hasConstraints(prop: SpaProperty): boolean {
     prop.maxItems != null ||
     prop.uniqueItems ||
     prop.multipleOf != null ||
-    prop.const != null
+    prop.const != null ||
+    prop.exclusiveMinimum != null ||
+    prop.exclusiveMaximum != null ||
+    prop.contentMediaType ||
+    prop.contentEncoding
   )
 }
 
@@ -154,4 +158,47 @@ export function parsePropertyValue(rawValue: string, prop: SpaProperty): unknown
   }
   if (t === 'object' && !prop.ref) return {}
   return rawValue
+}
+
+export interface ConstraintChip {
+  label: string
+  class?: string
+}
+
+export function humanizeConstraints(prop: SpaProperty): ConstraintChip[] {
+  const chips: ConstraintChip[] = []
+  const t = primaryType(prop.type)
+
+  if (prop.const != null) chips.push({ label: `const: ${prop.const}`, class: 'chip-const' })
+
+  if (t === 'string' || !t || t === 'any') {
+    if (prop.minLength != null && prop.maxLength != null)
+      chips.push({ label: `${prop.minLength}..${prop.maxLength} characters` })
+    else if (prop.minLength != null) chips.push({ label: `>= ${prop.minLength} characters` })
+    else if (prop.maxLength != null) chips.push({ label: `<= ${prop.maxLength} characters` })
+  }
+
+  if (t === 'integer' || t === 'number') {
+    if (prop.minimum != null) chips.push({ label: `>= ${prop.minimum}` })
+    if (prop.exclusiveMinimum != null) chips.push({ label: `> ${prop.exclusiveMinimum}` })
+    if (prop.maximum != null) chips.push({ label: `<= ${prop.maximum}` })
+    if (prop.exclusiveMaximum != null) chips.push({ label: `< ${prop.exclusiveMaximum}` })
+    if (prop.multipleOf != null) chips.push({ label: `multiple of ${prop.multipleOf}` })
+  }
+
+  if (t === 'array') {
+    if (prop.minItems != null && prop.maxItems != null)
+      chips.push({ label: `${prop.minItems}..${prop.maxItems} items` })
+    else if (prop.minItems != null) chips.push({ label: `>= ${prop.minItems} items` })
+    else if (prop.maxItems != null) chips.push({ label: `<= ${prop.maxItems} items` })
+    if (prop.uniqueItems) chips.push({ label: 'unique', class: 'chip-unique' })
+  }
+
+  if (prop.pattern) chips.push({ label: `${prop.pattern}`, class: 'chip-pattern' })
+  if (prop.default != null) chips.push({ label: `default: ${prop.default}`, class: 'chip-default' })
+  if (prop.examples?.length) chips.push({ label: `e.g. ${prop.examples.join(', ')}`, class: 'chip-example' })
+  if (prop.contentMediaType) chips.push({ label: `content-type: ${prop.contentMediaType}` })
+  if (prop.contentEncoding) chips.push({ label: `encoding: ${prop.contentEncoding}` })
+
+  return chips
 }

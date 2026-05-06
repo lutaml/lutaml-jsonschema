@@ -11,6 +11,7 @@ import {
   isObjectProperty,
   hasConstraints,
   parsePropertyValue,
+  humanizeConstraints,
 } from '../composables/useSchemaTypes'
 import type { SpaProperty } from '../types'
 
@@ -204,6 +205,79 @@ describe('hasConstraints', () => {
 
   it('returns true for const', () => {
     expect(hasConstraints(prop({ const: 'fixed' }))).toBe(true)
+  })
+
+  it('returns true for exclusiveMinimum', () => {
+    expect(hasConstraints(prop({ exclusiveMinimum: 0 }))).toBe(true)
+  })
+
+  it('returns true for exclusiveMaximum', () => {
+    expect(hasConstraints(prop({ exclusiveMaximum: 100 }))).toBe(true)
+  })
+
+  it('returns true for contentMediaType', () => {
+    expect(hasConstraints(prop({ contentMediaType: 'text/html' }))).toBe(true)
+  })
+
+  it('returns true for contentEncoding', () => {
+    expect(hasConstraints(prop({ contentEncoding: 'base64' }))).toBe(true)
+  })
+})
+
+describe('humanizeConstraints', () => {
+  it('returns string range constraint', () => {
+    const chips = humanizeConstraints(prop({ type: 'string', minLength: 1, maxLength: 100 }))
+    expect(chips).toEqual([{ label: '1..100 characters' }])
+  })
+
+  it('returns numeric >= and <= constraints', () => {
+    const chips = humanizeConstraints(prop({ type: 'integer', minimum: 0, maximum: 100 }))
+    expect(chips.map(c => c.label)).toEqual(['>= 0', '<= 100'])
+  })
+
+  it('returns exclusive bounds with > and <', () => {
+    const chips = humanizeConstraints(prop({ type: 'number', exclusiveMinimum: 0, exclusiveMaximum: 100 }))
+    expect(chips.map(c => c.label)).toEqual(['> 0', '< 100'])
+  })
+
+  it('returns array range constraint', () => {
+    const chips = humanizeConstraints(prop({ type: 'array', minItems: 1, maxItems: 10 }))
+    expect(chips).toEqual([{ label: '1..10 items' }])
+  })
+
+  it('returns unique for uniqueItems', () => {
+    const chips = humanizeConstraints(prop({ type: 'array', uniqueItems: true }))
+    expect(chips.map(c => c.label)).toEqual(['unique'])
+  })
+
+  it('returns const chip', () => {
+    const chips = humanizeConstraints(prop({ const: 'v1' }))
+    expect(chips.map(c => c.label)).toEqual(['const: v1'])
+  })
+
+  it('returns pattern chip', () => {
+    const chips = humanizeConstraints(prop({ pattern: '^[a-z]+$' }))
+    expect(chips.map(c => c.label)).toEqual(['^[a-z]+$'])
+  })
+
+  it('returns default chip', () => {
+    const chips = humanizeConstraints(prop({ default: 'hello' }))
+    expect(chips.map(c => c.label)).toEqual(['default: hello'])
+  })
+
+  it('returns multipleOf chip', () => {
+    const chips = humanizeConstraints(prop({ type: 'integer', multipleOf: 5 }))
+    expect(chips.map(c => c.label)).toEqual(['multiple of 5'])
+  })
+
+  it('returns empty array for no constraints', () => {
+    const chips = humanizeConstraints(prop({ type: 'string' }))
+    expect(chips).toEqual([])
+  })
+
+  it('returns contentMediaType and contentEncoding', () => {
+    const chips = humanizeConstraints(prop({ contentMediaType: 'text/html', contentEncoding: 'base64' }))
+    expect(chips.map(c => c.label)).toEqual(['content-type: text/html', 'encoding: base64'])
   })
 })
 
