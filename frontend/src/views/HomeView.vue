@@ -3,8 +3,18 @@
     <!-- Schema Detail Mode -->
     <div v-if="schemaStore.selectedSchema" class="selected-schema">
       <div class="schema-header">
-        <div>
-          <h1>{{ schemaStore.selectedSchema.title || schemaStore.selectedSchema.name }}</h1>
+        <div class="schema-header-info">
+          <div class="schema-title-row">
+            <h1>{{ schemaStore.selectedSchema.title || schemaStore.selectedSchema.name }}</h1>
+            <button
+              v-if="schemaStore.selectedSchema.sourceJson"
+              class="btn btn-outline btn-sm"
+              @click="downloadSchema(schemaStore.selectedSchema)"
+            >
+              Download JSON
+            </button>
+          </div>
+          <span v-if="schemaStore.selectedSchema.title && schemaStore.selectedSchema.title !== schemaStore.selectedSchema.name" class="schema-name-hint font-mono text-muted">{{ schemaStore.selectedSchema.name }}</span>
           <p v-if="schemaStore.selectedSchema.description" class="schema-desc text-secondary">{{ schemaStore.selectedSchema.description }}</p>
           <div class="schema-meta-row">
             <span class="badge badge-type">{{ schemaStore.selectedSchema.type || 'any' }}</span>
@@ -12,60 +22,67 @@
             <span v-if="schemaStore.selectedSchema.required.length" class="text-muted">&middot; {{ schemaStore.selectedSchema.required.length }} required</span>
             <span v-if="schemaStore.selectedSchema.definitions.length" class="text-muted">&middot; {{ schemaStore.selectedSchema.definitions.length }} definitions</span>
           </div>
-        </div>
-      </div>
-
-      <div class="schema-tabs">
-        <button
-          v-for="tab in tabs"
-          :key="tab.id"
-          class="tab-btn"
-          :class="{ active: activeTab === tab.id }"
-          @click="activeTab = tab.id"
-        >
-          {{ tab.label }}
-          <span class="tab-count">{{ tab.count }}</span>
-        </button>
-      </div>
-
-      <div class="tab-content">
-        <!-- Builder Tab -->
-        <div v-if="activeTab === 'builder'" class="tab-pane">
-          <SchemaBuilder
-            :properties="schemaStore.selectedSchema.properties"
-            :required="schemaStore.selectedSchema.required"
-            :schema="schemaStore.selectedSchema"
-          />
-        </div>
-
-        <!-- Definitions Tab -->
-        <div v-if="activeTab === 'definitions'" class="tab-pane">
-          <div v-if="schemaStore.selectedSchema.definitions.length" class="def-list">
-            <div
-              v-for="def in schemaStore.selectedSchema.definitions"
-              :key="def.name"
-              class="def-card card"
-            >
-              <div class="def-card-header" @click="toggleDef(def.name)">
-                <span class="def-chevron" :class="{ expanded: expandedDefs.has(def.name) }">&#9654;</span>
-                <span class="def-card-title">{{ def.title || def.name }}</span>
-                <span class="def-card-name font-mono text-muted">{{ def.name }}</span>
-                <span v-if="def.type" class="def-type-badge">{{ def.type }}</span>
-                <span class="text-muted">{{ def.properties.length }} props</span>
-                <span v-if="def.required?.length" class="text-muted">&middot; {{ def.required.length }} required</span>
-              </div>
-              <p v-if="def.description" class="def-card-desc text-secondary">{{ def.description }}</p>
-              <div v-if="expandedDefs.has(def.name)" class="def-card-body">
-                <SchemaBuilder
-                  :properties="def.properties"
-                  :required="def.required"
-                  :schema="schemaStore.selectedSchema"
-                />
-              </div>
+          <div v-if="schemaStore.selectedSchema.required.length" class="schema-required">
+            <span class="required-label text-muted">Required:</span>
+            <div class="required-tags">
+              <span v-for="r in schemaStore.selectedSchema.required" :key="r" class="required-tag">{{ r }}</span>
             </div>
           </div>
-          <div v-else class="empty-state">
-            <p class="text-muted">No definitions.</p>
+          <details v-if="schemaStore.selectedSchema.examples?.length" class="schema-examples-details">
+            <summary class="examples-summary text-muted">Examples ({{ schemaStore.selectedSchema.examples.length }})</summary>
+            <pre class="examples-pre"><code>{{ formatJson(schemaStore.selectedSchema.examples) }}</code></pre>
+          </details>
+        </div>
+      </div>
+
+      <!-- Properties -->
+      <div class="schema-section">
+        <SchemaBuilder
+          :properties="schemaStore.selectedSchema.properties"
+          :required="schemaStore.selectedSchema.required"
+          :schema="schemaStore.selectedSchema"
+          :all-schemas="schemaStore.schemas"
+        />
+      </div>
+
+      <!-- Definitions -->
+      <div v-if="schemaStore.selectedSchema.definitions.length" class="schema-section">
+        <h2 class="section-heading">Definitions</h2>
+        <div class="def-list">
+          <div
+            v-for="def in schemaStore.selectedSchema.definitions"
+            :key="def.name"
+            :id="`def-${def.name}`"
+            class="def-card card"
+            :class="{ 'def-card-highlighted': def.name === schemaStore.selectedDefinitionName }"
+          >
+            <div class="def-card-header" @click="toggleDef(def.name)">
+              <span class="def-chevron" :class="{ expanded: expandedDefs.has(def.name) }">&#9654;</span>
+              <span class="def-card-title">{{ def.title || def.name }}</span>
+              <span v-if="def.title && def.title !== def.name" class="def-card-name font-mono text-muted">{{ def.name }}</span>
+              <span v-if="def.type" class="def-type-badge">{{ def.type }}</span>
+              <span class="text-muted">{{ def.properties.length }} props</span>
+              <span v-if="def.required?.length" class="text-muted">&middot; {{ def.required.length }} req</span>
+              <span v-if="def.examples?.length" class="text-muted">&middot; {{ def.examples.length }} ex</span>
+            </div>
+            <div class="def-card-info">
+              <p v-if="def.description" class="def-card-desc text-secondary">{{ def.description }}</p>
+              <div v-if="def.required?.length" class="def-card-required">
+                <span v-for="r in def.required" :key="r" class="required-tag-sm">{{ r }}</span>
+              </div>
+              <details v-if="def.examples?.length" class="def-card-examples">
+                <summary class="text-muted">Examples</summary>
+                <pre class="def-examples-pre"><code>{{ formatJson(def.examples) }}</code></pre>
+              </details>
+            </div>
+            <div v-if="expandedDefs.has(def.name)" class="def-card-body">
+              <SchemaBuilder
+                :properties="def.properties"
+                :required="def.required"
+                :schema="schemaStore.selectedSchema"
+                :all-schemas="schemaStore.schemas"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -74,15 +91,24 @@
     <!-- Landing Page -->
     <div v-else class="landing-page">
       <div class="landing-header">
-        <h1>{{ schemaStore.metadata?.title || 'JSON Schema Documentation' }}</h1>
-        <p v-if="schemaStore.metadata?.description" class="landing-description">{{ schemaStore.metadata.description }}</p>
-        <div class="landing-subtitle">
-          <span>{{ schemaStore.schemaCounts.schemas }} schemas</span>
-          <span class="separator">&middot;</span>
-          <span>{{ schemaStore.schemaCounts.properties }} properties</span>
-          <span class="separator">&middot;</span>
-          <span>{{ schemaStore.schemaCounts.definitions }} definitions</span>
+        <div>
+          <h1>{{ schemaStore.metadata?.title || 'JSON Schema Documentation' }}</h1>
+          <p v-if="schemaStore.metadata?.description" class="landing-description">{{ schemaStore.metadata.description }}</p>
+          <div class="landing-subtitle">
+            <span>{{ schemaStore.schemaCounts.schemas }} schemas</span>
+            <span class="separator">&middot;</span>
+            <span>{{ schemaStore.schemaCounts.properties }} properties</span>
+            <span class="separator">&middot;</span>
+            <span>{{ schemaStore.schemaCounts.definitions }} definitions</span>
+          </div>
         </div>
+        <button
+          v-if="hasSourceJson"
+          class="btn btn-outline btn-sm"
+          @click="downloadAllSchemas"
+        >
+          Download All Schemas (.zip)
+        </button>
       </div>
 
       <div class="schema-grid">
@@ -100,6 +126,7 @@
           </div>
           <div class="schema-card-content">
             <h3>{{ schema.title || schema.name }}</h3>
+            <span v-if="schema.title && schema.title !== schema.name" class="schema-card-name font-mono text-muted">{{ schema.name }}</span>
             <p v-if="schema.description" class="schema-card-desc text-secondary">{{ schema.description }}</p>
             <div class="schema-card-meta">
               <span class="badge badge-type-sm">{{ schema.type || 'any' }}</span>
@@ -117,28 +144,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, reactive } from 'vue'
+import { ref, reactive, computed, watch, nextTick } from 'vue'
 import { useSchemaStore } from '../stores/schemaStore'
 import SchemaBuilder from '../components/SchemaBuilder.vue'
-
-type TabId = 'builder' | 'definitions'
+import { downloadFile } from '../composables/useDownload'
+import type { SpaSchema } from '../types'
 
 const schemaStore = useSchemaStore()
-const activeTab = ref<TabId>('builder')
 const expandedDefs = reactive(new Set<string>())
-
-const tabs = computed(() => {
-  const s = schemaStore.selectedSchema
-  if (!s) return []
-  return [
-    { id: 'builder' as TabId, label: 'Builder', count: s.properties.length },
-    { id: 'definitions' as TabId, label: 'Definitions', count: s.definitions.length },
-  ]
-})
 
 function selectSchema(name: string) {
   schemaStore.selectSchema(name)
-  activeTab.value = 'builder'
 }
 
 function toggleDef(name: string) {
@@ -148,6 +164,41 @@ function toggleDef(name: string) {
     expandedDefs.add(name)
   }
 }
+
+function downloadSchema(schema: SpaSchema) {
+  if (!schema.sourceJson) return
+  downloadFile(`${schema.name}.json`, schema.sourceJson)
+}
+
+const hasSourceJson = computed(() =>
+  schemaStore.schemas.some(s => s.sourceJson),
+)
+
+function formatJson(value: unknown): string {
+  return JSON.stringify(value, null, 2)
+}
+
+function downloadAllSchemas() {
+  const bundle: Record<string, unknown> = {}
+  for (const s of schemaStore.schemas) {
+    if (s.sourceJson) {
+      bundle[`${s.name}.json`] = JSON.parse(s.sourceJson)
+    }
+  }
+  const name = schemaStore.metadata?.title || 'schemas'
+  downloadFile(`${name.replace(/\s+/g, '-')}-bundle.json`, JSON.stringify(bundle, null, 2))
+}
+
+watch(() => schemaStore.selectedDefinitionName, (name) => {
+  if (!name) return
+  expandedDefs.add(name)
+  nextTick(() => {
+    const el = document.getElementById(`def-${name}`)
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  })
+})
 </script>
 
 <style scoped>
@@ -157,15 +208,29 @@ function toggleDef(name: string) {
 }
 
 .schema-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
   margin-bottom: var(--space-6);
-  gap: var(--space-4);
 }
 
-.schema-header h1 {
+.schema-header-info {
+  width: 100%;
+}
+
+.schema-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-1);
+}
+
+.schema-title-row h1 {
   font-size: var(--text-2xl);
+  margin: 0;
+}
+
+.schema-name-hint {
+  font-size: var(--text-xs);
+  display: block;
   margin-bottom: var(--space-1);
 }
 
@@ -182,41 +247,88 @@ function toggleDef(name: string) {
   margin-top: var(--space-2);
 }
 
-.schema-tabs {
+.schema-required {
   display: flex;
-  gap: var(--space-1);
-  margin-bottom: var(--space-4);
-  border-bottom: 1px solid var(--border-light);
-  padding-bottom: var(--space-2);
-}
-
-.tab-btn {
-  display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--space-2);
-  padding: var(--space-2) var(--space-3);
-  font-size: var(--text-sm);
-  font-weight: 500;
-  color: var(--text-muted);
-  border-radius: var(--radius-md);
-  transition: all var(--transition-fast);
+  margin-top: var(--space-3);
+  flex-wrap: wrap;
 }
 
-.tab-btn:hover {
-  color: var(--text-primary);
-  background: var(--bg-hover);
-}
-
-.tab-btn.active {
-  color: var(--color-primary);
-  background: var(--color-primary-alpha);
-}
-
-.tab-count {
+.required-label {
   font-size: var(--text-xs);
-  background: var(--bg-secondary);
-  padding: 1px 6px;
+  font-weight: 500;
+  white-space: nowrap;
+  padding-top: 2px;
+}
+
+.required-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.required-tag {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  background: var(--badge-required-bg);
+  color: var(--badge-required);
+  padding: 2px 6px;
   border-radius: var(--radius-sm);
+  font-weight: 500;
+}
+
+.required-tag-sm {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  background: var(--bg-secondary);
+  color: var(--text-muted);
+  padding: 1px 4px;
+  border-radius: 2px;
+}
+
+.schema-examples-details {
+  margin-top: var(--space-3);
+}
+
+.examples-summary {
+  font-size: var(--text-xs);
+  font-weight: 500;
+  cursor: pointer;
+  padding: var(--space-1) 0;
+}
+
+.examples-summary:hover {
+  color: var(--text-primary);
+}
+
+.examples-pre {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  overflow-x: auto;
+  margin-top: var(--space-2);
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.examples-pre code {
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+}
+
+.schema-section {
+  margin-bottom: var(--space-6);
+}
+
+.section-heading {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  margin-bottom: var(--space-4);
+  color: var(--text-primary);
 }
 
 /* Definitions */
@@ -274,14 +386,56 @@ function toggleDef(name: string) {
 
 .def-card-desc {
   font-size: var(--text-sm);
-  padding: 0 var(--space-4) var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.def-card-info {
+  padding: 0 var(--space-4) var(--space-3);
   margin-top: calc(var(--space-1) * -1);
+}
+
+.def-card-required {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-bottom: var(--space-2);
+}
+
+.def-card-examples {
+  margin-top: var(--space-2);
+}
+
+.def-card-examples summary {
+  font-size: var(--text-xs);
+  cursor: pointer;
+}
+
+.def-examples-pre {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2);
+  font-size: var(--text-xs);
+  overflow-x: auto;
+  margin-top: var(--space-1);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.def-examples-pre code {
+  font-family: var(--font-mono);
+  color: var(--text-primary);
 }
 
 .def-card-body {
   border-top: 1px solid var(--border-light);
   padding: var(--space-4);
   background: var(--bg-primary);
+}
+
+.def-card-highlighted {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-alpha);
 }
 
 .badge-type {
@@ -304,6 +458,10 @@ function toggleDef(name: string) {
 
 .landing-header {
   margin-bottom: var(--space-8);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
 }
 
 .landing-header h1 {
@@ -363,10 +521,16 @@ function toggleDef(name: string) {
 .schema-card-content h3 {
   font-size: var(--text-base);
   font-weight: 600;
-  margin-bottom: var(--space-1);
+  margin-bottom: 2px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.schema-card-name {
+  font-size: var(--text-xs);
+  display: block;
+  margin-bottom: var(--space-1);
 }
 
 .schema-card-desc {

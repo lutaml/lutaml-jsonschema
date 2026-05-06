@@ -94,4 +94,49 @@ RSpec.describe Lutaml::Jsonschema::Spa::SpaProperty do
     expect(parsed["format"]).to eq("uuid")
     expect(parsed["required"]).to eq(true)
   end
+
+  it "serializes readOnly and writeOnly" do
+    prop = described_class.new(
+      name: "created_at",
+      type: "string",
+      read_only: true
+    )
+    parsed = JSON.parse(prop.to_json)
+    expect(parsed["readOnly"]).to eq(true)
+    expect(parsed["writeOnly"]).to be_nil
+  end
+
+  it "serializes array constraints" do
+    prop = described_class.new(
+      name: "tags",
+      type: "array",
+      min_items: 1,
+      max_items: 10,
+      unique_items: true
+    )
+    parsed = JSON.parse(prop.to_json)
+    expect(parsed["minItems"]).to eq(1)
+    expect(parsed["maxItems"]).to eq(10)
+    expect(parsed["uniqueItems"]).to eq(true)
+  end
+
+  it "serializes const value" do
+    prop = described_class.new(
+      name: "version",
+      type: "string",
+      const_value: "1.0"
+    )
+    parsed = JSON.parse(prop.to_json)
+    expect(parsed["const"]).to eq("1.0")
+  end
+
+  it "serializes multipleOf" do
+    prop = described_class.new(
+      name: "price",
+      type: "number",
+      multiple_of: 0.01
+    )
+    parsed = JSON.parse(prop.to_json)
+    expect(parsed["multipleOf"]).to eq(0.01)
+  end
 end

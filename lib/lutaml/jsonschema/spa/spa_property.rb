@@ -20,7 +20,14 @@ module Lutaml
         attribute :maximum, :float
         attribute :items_type, :string
         attribute :deprecated, :boolean
+        attribute :read_only, :boolean
+        attribute :write_only, :boolean
         attribute :examples, :string, collection: true
+        attribute :min_items, :integer
+        attribute :max_items, :integer
+        attribute :unique_items, :boolean
+        attribute :multiple_of, :float
+        attribute :const_value, :string
 
         json do
           map "name", to: :name
@@ -39,7 +46,14 @@ module Lutaml
           map "maximum", to: :maximum
           map "itemsType", to: :items_type
           map "deprecated", to: :deprecated
+          map "readOnly", to: :read_only
+          map "writeOnly", to: :write_only
           map "examples", to: :examples
+          map "minItems", to: :min_items
+          map "maxItems", to: :max_items
+          map "uniqueItems", to: :unique_items
+          map "multipleOf", to: :multiple_of
+          map "const", to: :const_value
         end
       end
     end

@@ -185,6 +185,26 @@ describe('hasConstraints', () => {
   it('returns false for no constraints', () => {
     expect(hasConstraints(prop({ type: 'string' }))).toBe(false)
   })
+
+  it('returns true for minItems', () => {
+    expect(hasConstraints(prop({ minItems: 1 }))).toBe(true)
+  })
+
+  it('returns true for maxItems', () => {
+    expect(hasConstraints(prop({ maxItems: 10 }))).toBe(true)
+  })
+
+  it('returns true for uniqueItems', () => {
+    expect(hasConstraints(prop({ uniqueItems: true }))).toBe(true)
+  })
+
+  it('returns true for multipleOf', () => {
+    expect(hasConstraints(prop({ multipleOf: 0.5 }))).toBe(true)
+  })
+
+  it('returns true for const', () => {
+    expect(hasConstraints(prop({ const: 'fixed' }))).toBe(true)
+  })
 })
 
 describe('parsePropertyValue', () => {

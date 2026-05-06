@@ -8,10 +8,6 @@ import {
 } from './useSchemaTypes'
 import type { SpaProperty, SpaSchema, SpaDefinition } from '../types'
 
-/**
- * Typed field state for the SchemaBuilder.
- * Each property in a schema becomes one BuilderField.
- */
 export interface BuilderField {
   prop: SpaProperty
   included: boolean
@@ -23,17 +19,14 @@ export interface BuilderField {
   arrayItems: string[]
 }
 
-/**
- * Factory: create a BuilderField from a property definition.
- * Resolves $ref, determines required status, initializes defaults.
- */
 export function createField(
   prop: SpaProperty,
   requiredNames: string[],
   schema: SpaSchema,
+  allSchemas?: SpaSchema[],
 ): BuilderField {
   const isReq = requiredNames.includes(prop.name) || prop.required === true
-  const def = resolveSchemaRef(prop.ref, schema)
+  const def = resolveSchemaRef(prop.ref, schema, allSchemas)
   const isArray = primaryType(prop.type) === 'array'
 
   return {
@@ -48,17 +41,11 @@ export function createField(
   }
 }
 
-/**
- * Build a default JSON object from a list of properties.
- * Uses initial values and type-based parsing.
- */
 export function buildDefaultJson(properties: SpaProperty[]): Record<string, unknown> {
   const obj: Record<string, unknown> = {}
   for (const prop of properties) {
     const t = primaryType(prop.type)
-    const isArray = t === 'array'
-
-    if (isArray) {
+    if (t === 'array') {
       const items = [arrayDefaultValue(prop.itemsType)]
       obj[prop.name] = items.map(item => parseArrayItem(item, prop.itemsType))
     } else {
@@ -68,25 +55,14 @@ export function buildDefaultJson(properties: SpaProperty[]): Record<string, unkn
   return obj
 }
 
-/**
- * Check whether expanding this field would create a circular reference.
- */
 export function isCircular(field: BuilderField, visited: ReadonlySet<string>): boolean {
   return !!field.resolvedDef && visited.has(field.resolvedDef.name)
 }
 
-/**
- * Parse a field's current state to its runtime JSON value.
- * Handles nested objects (via nestedJson), arrays (via arrayItems),
- * and primitive values (via parsePropertyValue).
- */
 export function parseFieldValue(field: BuilderField): unknown {
-  const prop = field.prop
-  const t = primaryType(prop.type)
-
+  const t = primaryType(field.prop.type)
   if (t === 'array') {
-    return field.arrayItems.map(item => parseArrayItem(item, prop.itemsType))
+    return field.arrayItems.map(item => parseArrayItem(item, field.prop.itemsType))
   }
-
-  return parsePropertyValue(field.rawValue, prop)
+  return parsePropertyValue(field.rawValue, field.prop)
 }

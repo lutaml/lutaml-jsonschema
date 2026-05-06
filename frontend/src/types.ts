@@ -26,7 +26,14 @@ export interface SpaProperty {
   maximum?: number
   itemsType?: string
   deprecated?: boolean
+  readOnly?: boolean
+  writeOnly?: boolean
   examples?: string[]
+  minItems?: number
+  maxItems?: number
+  uniqueItems?: boolean
+  multipleOf?: number
+  const?: string
 }
 
 export interface SpaDefinition {
@@ -48,6 +55,7 @@ export interface SpaSchema {
   definitions: SpaDefinition[]
   required: string[]
   examples?: string[]
+  sourceJson?: string
 }
 
 export interface SpaSearchEntry {

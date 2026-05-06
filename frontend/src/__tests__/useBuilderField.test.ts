@@ -43,6 +43,21 @@ describe('createField', () => {
     expect(field.resolvedDef).toBe(addressDef)
   })
 
+  it('resolves cross-file $ref via allSchemas', () => {
+    const unitRefDef = definition({ name: 'UnitReference', properties: [prop({ name: 'href', type: 'string' })] })
+    const basicTypes = spaSchema({ name: 'basicTypes', definitions: [unitRefDef] })
+    const quantity = spaSchema({ name: 'Quantity', definitions: [] })
+    const allSchemas = [basicTypes, quantity]
+
+    const field = createField(
+      prop({ name: 'uom', ref: 'basicTypes.json#/$defs/UnitReference' }),
+      [],
+      quantity,
+      allSchemas,
+    )
+    expect(field.resolvedDef).toBe(unitRefDef)
+  })
+
   it('initializes array items for array type', () => {
     const field = createField(
       prop({ name: 'tags', type: 'array', itemsType: 'string' }),

@@ -17,7 +17,7 @@ module Lutaml
           data = File.read(path)
           schema = Schema.from_json(data)
           name = File.basename(path, ".*")
-          set.add(name, schema, path)
+          set.add(name, schema, path, data)
         end
         set
       end
@@ -27,12 +27,18 @@ module Lutaml
         load_from_files(*paths, base_dir: dir)
       end
 
-      def add(name, schema, file_path = nil)
+      def add(name, schema, file_path = nil, source_json = nil)
         @schemas[name] = schema
         return unless file_path
 
         @file_paths ||= {}
         @file_paths[File.basename(file_path)] = file_path
+        @source_jsons ||= {}
+        @source_jsons[name] = source_json if source_json
+      end
+
+      def source_json(name)
+        @source_jsons&.dig(name)
       end
 
       def resolve_ref(ref_string, context_schema = nil)

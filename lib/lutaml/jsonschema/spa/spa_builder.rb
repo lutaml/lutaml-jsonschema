@@ -51,42 +51,67 @@ module Lutaml
             properties: properties,
             definitions: definitions,
             required: all_required,
-            examples: schema.examples
+            examples: schema.examples,
+            source_json: @schema_set.source_json(name) || ""
           )
         end
 
-        def collect_all_properties(schema)
-          entries = schema.property_entries.dup
+        def collect_all_properties(schema, context_schema = schema)
+          # Collect inherited properties first, then own properties override
+          inherited = []
           composition_schemas(schema).each do |s|
-            entries.concat(collect_all_properties(s))
+            resolved = resolve_composition_schema(s, context_schema)
+            inherited.concat(collect_all_properties(resolved, context_schema))
           end
-          entries
+          own = schema.property_entries.dup
+          # Merge: own properties override inherited ones with the same name
+          deduplicated_merge(inherited, own)
         end
 
-        def collect_all_definitions(schema)
-          entries = schema.definition_entries.dup
+        def collect_all_definitions(schema, context_schema = schema)
+          inherited = []
           composition_schemas(schema).each do |s|
-            entries.concat(collect_all_definitions(s))
+            resolved = resolve_composition_schema(s, context_schema)
+            inherited.concat(collect_all_definitions(resolved, context_schema))
           end
-          entries
+          own = schema.definition_entries.dup
+          deduplicated_merge(inherited, own)
         end
 
-        def collect_all_required(schema)
+        def collect_all_required(schema, context_schema = schema)
           required = schema.required.dup
           composition_schemas(schema).each do |s|
-            required.concat(collect_all_required(s))
+            resolved = resolve_composition_schema(s, context_schema)
+            required.concat(collect_all_required(resolved, context_schema))
           end
           required
+        end
+
+        def resolve_composition_schema(schema, context_schema)
+          return schema unless schema.dollar_ref
+
+          @schema_set.resolve_ref(schema.dollar_ref, context_schema) || schema
         end
 
         def composition_schemas(schema)
           schema.all_of + schema.any_of + schema.one_of
         end
 
+        def deduplicated_merge(inherited, own)
+          seen = {}
+          all = inherited + own
+          all.each_with_index do |entry, idx|
+            seen[entry.name] = idx
+          end
+          seen.values.sort.map { |i| all[i] }
+        end
+
         def build_definitions_from_entries(entries, root_schema)
           entries.map do |entry|
             s = entry.schema
-            properties = build_properties(s.property_entries, root_schema, s.required)
+            all_props = collect_all_properties(s)
+            all_required = collect_all_required(s)
+            properties = build_properties(all_props, root_schema, all_required)
 
             SpaDefinition.new(
               name: entry.name,
@@ -94,7 +119,7 @@ module Lutaml
               description: s.description,
               type: s.type,
               properties: properties,
-              required: s.required,
+              required: all_required,
               examples: s.examples
             )
           end
@@ -120,7 +145,14 @@ module Lutaml
               maximum: resolved.maximum,
               items_type: resolved.items&.type,
               deprecated: resolved.deprecated,
-              examples: resolved.examples
+              read_only: resolved.read_only,
+              write_only: resolved.write_only,
+              examples: resolved.examples,
+              min_items: resolved.min_items,
+              max_items: resolved.max_items,
+              unique_items: resolved.unique_items,
+              multiple_of: resolved.multiple_of,
+              const_value: resolved.const
             )
           end
         end
