@@ -30,7 +30,7 @@ module Lutaml
         end
 
         def build_schemas
-          @schema_set.schemas.map do |name, schema|
+          @schema_set.schemas.to_a.map do |name, schema|
             build_spa_schema(name, schema)
           end
         end
@@ -154,6 +154,11 @@ all_required = root_schema.required)
               unique_items: resolved.unique_items,
               multiple_of: resolved.multiple_of,
               const_value: resolved.const,
+              exclusive_minimum: resolved.exclusive_minimum,
+              exclusive_maximum: resolved.exclusive_maximum,
+              additional_properties: resolved.additional_properties,
+              content_type: resolved.content_type,
+              content_encoding: resolved.content_encoding,
             )
           end
         end

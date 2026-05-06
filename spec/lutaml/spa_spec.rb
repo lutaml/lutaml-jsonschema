@@ -139,4 +139,38 @@ RSpec.describe Lutaml::Jsonschema::Spa::SpaProperty do
     parsed = JSON.parse(prop.to_json)
     expect(parsed["multipleOf"]).to eq(0.01)
   end
+
+  it "serializes exclusiveMinimum and exclusiveMaximum" do
+    prop = described_class.new(
+      name: "score",
+      type: "number",
+      exclusive_minimum: 0.0,
+      exclusive_maximum: 100.0,
+    )
+    parsed = JSON.parse(prop.to_json)
+    expect(parsed["exclusiveMinimum"]).to eq(0.0)
+    expect(parsed["exclusiveMaximum"]).to eq(100.0)
+  end
+
+  it "serializes additionalProperties" do
+    prop = described_class.new(
+      name: "metadata",
+      type: "object",
+      additional_properties: false,
+    )
+    parsed = JSON.parse(prop.to_json)
+    expect(parsed["additionalProperties"]).to eq(false)
+  end
+
+  it "serializes contentMediaType and contentEncoding" do
+    prop = described_class.new(
+      name: "html_content",
+      type: "string",
+      content_type: "text/html",
+      content_encoding: "base64",
+    )
+    parsed = JSON.parse(prop.to_json)
+    expect(parsed["contentMediaType"]).to eq("text/html")
+    expect(parsed["contentEncoding"]).to eq("base64")
+  end
 end
