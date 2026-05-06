@@ -15,9 +15,21 @@
           <span v-if="field.isRequired" class="req-badge">required</span>
 
           <div class="field-control">
+            <!-- Resolved $ref: expand button (works for object, array, and union types) -->
+            <button
+              v-if="field.resolvedDef"
+              class="btn btn-ghost ctrl-expand"
+              :disabled="!field.included"
+              @click="field.expanded = !field.expanded"
+            >
+              <span class="chevron" :class="{ expanded: field.expanded }">&#9654;</span>
+              {{ field.resolvedDef.title || field.resolvedDef.name }}
+              <span class="text-muted">{{ field.resolvedDef.properties.length }} props</span>
+            </button>
+
             <!-- Enum -->
             <select
-              v-if="field.prop.enum?.length && !isObjectProperty(field.prop)"
+              v-else-if="field.prop.enum?.length"
               v-model="field.rawValue"
               class="ctrl-select"
               :disabled="!field.included"
@@ -51,18 +63,6 @@
               class="ctrl-number"
               @input="field.rawValue = ($event.target as HTMLInputElement).value"
             />
-
-            <!-- Object with $ref: expand button -->
-            <button
-              v-else-if="isObjectProperty(field.prop) && field.resolvedDef"
-              class="btn btn-ghost ctrl-expand"
-              :disabled="!field.included"
-              @click="field.expanded = !field.expanded"
-            >
-              <span class="chevron" :class="{ expanded: field.expanded }">&#9654;</span>
-              {{ field.resolvedDef.title || field.resolvedDef.name }}
-              <span class="text-muted">{{ field.resolvedDef.properties.length }} props</span>
-            </button>
 
             <!-- Object without $ref -->
             <span v-else-if="isObjectProperty(field.prop)" class="ctrl-static">{"..."}</span>
@@ -206,8 +206,7 @@ const outputJson = computed(() => {
   const obj: Record<string, unknown> = {}
   for (const field of fields.value) {
     if (!field.included) continue
-    const t = primaryType(field.prop.type)
-    if ((t === 'object' || (!field.prop.type && field.prop.ref)) && field.resolvedDef) {
+    if (field.resolvedDef) {
       obj[field.prop.name] = field.nestedJson
     } else {
       obj[field.prop.name] = parseFieldValue(field)
