@@ -36,7 +36,8 @@ RSpec.describe "Integration: Reference fixture schemas" do
 
     it "parses definitions with nested sub-definitions" do
       defs = schema.definition_entries
-      expect(defs.map(&:name)).to include("created_at", "id", "identity", "updated_at")
+      expect(defs.map(&:name)).to include("created_at", "id", "identity",
+                                          "updated_at")
 
       id_def = defs.find { |d| d.name == "id" }
       expect(id_def.schema.description).to eq("unique identifier of user")
@@ -63,7 +64,9 @@ RSpec.describe "Integration: Reference fixture schemas" do
       expect(create_link.schema.types).to eq(["object"])
 
       # Nested properties within link schema
-      user_prop = create_link.schema.property_entries.find { |p| p.name == "user" }
+      user_prop = create_link.schema.property_entries.find do |p|
+        p.name == "user"
+      end
       expect(user_prop).not_to be_nil
       expect(user_prop.schema.types).to eq(["object"])
       expect(user_prop.schema.required).to eq(["email"])
@@ -71,7 +74,8 @@ RSpec.describe "Integration: Reference fixture schemas" do
 
     it "parses properties with $ref" do
       props = schema.property_entries
-      expect(props.map(&:name)).to contain_exactly("created_at", "id", "updated_at")
+      expect(props.map(&:name)).to contain_exactly("created_at", "id",
+                                                   "updated_at")
 
       created_at = props.find { |p| p.name == "created_at" }
       expect(created_at.schema.dollar_ref).to eq("/schemata/user#/definitions/created_at")
@@ -120,7 +124,8 @@ RSpec.describe "Integration: Reference fixture schemas" do
     it "parses deeply nested definitions" do
       post_def = schema.definition_entries.find { |d| d.name == "post" }
       inner_defs = post_def.schema.definition_entries
-      expect(inner_defs.map(&:name)).to include("id", "identity", "created_at", "updated_at")
+      expect(inner_defs.map(&:name)).to include("id", "identity", "created_at",
+                                                "updated_at")
     end
 
     it "parses top-level links" do
@@ -170,8 +175,8 @@ RSpec.describe "Integration: Reference fixture schemas" do
     end
 
     it "parses array constraints" do
-      tags = schema.property_entries.find { |p| p.name == "tags" }
-                           &.schema&.items
+      schema.property_entries.find { |p| p.name == "tags" }
+        &.schema&.items
       # tags is inside metadata, but let's check the path
       # Actually metadata.tags needs nested traversal
       metadata = schema.property_entries.find { |p| p.name == "metadata" }
@@ -208,9 +213,13 @@ RSpec.describe "Integration: Reference fixture schemas" do
     it "parses oneOf" do
       shipping = schema.property_entries.find { |p| p.name == "shipping" }
       expect(shipping.schema.one_of.length).to eq(2)
-      expect(shipping.schema.one_of[0].property_entries.find { |p| p.name == "method" }
+      expect(shipping.schema.one_of[0].property_entries.find do |p|
+        p.name == "method"
+      end
                                      &.schema&.const).to eq("standard")
-      expect(shipping.schema.one_of[1].property_entries.find { |p| p.name == "method" }
+      expect(shipping.schema.one_of[1].property_entries.find do |p|
+        p.name == "method"
+      end
                                      &.schema&.const).to eq("express")
     end
 
@@ -255,7 +264,9 @@ RSpec.describe "Integration: Reference fixture schemas" do
     end
 
     it "parses contains" do
-      contained = schema.property_entries.find { |p| p.name == "contained_array" }
+      contained = schema.property_entries.find do |p|
+        p.name == "contained_array"
+      end
       expect(contained.schema.contains).to be_a(Lutaml::Jsonschema::Schema)
       expect(contained.schema.contains.types).to eq(["integer"])
     end
@@ -314,14 +325,22 @@ RSpec.describe "Integration: Reference fixture schemas" do
 
     it "parses anyOf in identity definitions" do
       # Heroku uses anyOf for identity (accept either id or name)
-      account_feature = schema.definition_entries.find { |d| d.name == "account-feature" }
-      identity = account_feature.schema.definition_entries.find { |d| d.name == "identity" }
+      account_feature = schema.definition_entries.find do |d|
+        d.name == "account-feature"
+      end
+      identity = account_feature.schema.definition_entries.find do |d|
+        d.name == "identity"
+      end
       expect(identity.schema.any_of.length).to eq(2)
     end
 
     it "parses readOnly fields" do
-      account_feature = schema.definition_entries.find { |d| d.name == "account-feature" }
-      created_at = account_feature.schema.definition_entries.find { |d| d.name == "created_at" }
+      account_feature = schema.definition_entries.find do |d|
+        d.name == "account-feature"
+      end
+      created_at = account_feature.schema.definition_entries.find do |d|
+        d.name == "created_at"
+      end
       expect(created_at.schema.read_only).to eq(true)
     end
 
@@ -338,24 +357,28 @@ RSpec.describe "Integration: Reference fixture schemas" do
     let(:schema_set) do
       Lutaml::Jsonschema::SchemaSet.load_from_files(
         File.join(fixtures_dir, "prmd_user.json"),
-        File.join(fixtures_dir, "interagent_simple.json")
+        File.join(fixtures_dir, "interagent_simple.json"),
       )
     end
 
     it "loads both schemas" do
-      expect(schema_set.schemas.keys).to contain_exactly("prmd_user", "interagent_simple")
+      expect(schema_set.schemas.keys).to contain_exactly("prmd_user",
+                                                         "interagent_simple")
     end
 
     it "collects all definitions across schemas" do
       defs = schema_set.all_definitions
       names = defs.map(&:name)
-      expect(names).to include("post", "user", "created_at", "id", "identity", "updated_at")
+      expect(names).to include("post", "user", "created_at", "id", "identity",
+                               "updated_at")
     end
 
     it "resolves local references" do
       interagent = schema_set.schemas["interagent_simple"]
       # properties.post has $ref: "#/definitions/post"
-      post_ref = interagent.property_entries.find { |p| p.name == "post" }.schema.dollar_ref
+      post_ref = interagent.property_entries.find do |p|
+        p.name == "post"
+      end.schema.dollar_ref
       result = schema_set.resolve_ref(post_ref, interagent)
       expect(result).not_to be_nil
       expect(result.title).to eq("Post")
@@ -368,10 +391,13 @@ RSpec.describe "Integration: Reference fixture schemas" do
     it "generates HTML with all entities" do
       Dir.mktmpdir do |dir|
         set = Lutaml::Jsonschema::SchemaSet.load_from_files(
-          File.join(fixtures_dir, "interagent_simple.json")
+          File.join(fixtures_dir, "interagent_simple.json"),
         )
-        metadata = Lutaml::Jsonschema::Spa::Metadata.new(title: "Interagent API", theme: "dark")
-        generator = Lutaml::Jsonschema::Spa::Generator.new(set, dir, metadata: metadata)
+        metadata = Lutaml::Jsonschema::Spa::Metadata.new(
+          title: "Interagent API", theme: "dark",
+        )
+        generator = Lutaml::Jsonschema::Spa::Generator.new(set, dir,
+                                                           metadata: metadata)
         generator.generate
 
         html = File.read(File.join(dir, "index.html"))

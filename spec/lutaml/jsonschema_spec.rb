@@ -40,7 +40,8 @@ RSpec.describe Lutaml::Jsonschema::Schema do
     it "parses properties as PropertyEntry collection" do
       expect(schema.property_entries.length).to eq(6)
       names = schema.property_entries.map(&:name)
-      expect(names).to contain_exactly("firstName", "lastName", "age", "email", "tags", "address")
+      expect(names).to contain_exactly("firstName", "lastName", "age", "email",
+                                       "tags", "address")
     end
 
     it "parses nested property schemas" do
@@ -92,7 +93,8 @@ RSpec.describe Lutaml::Jsonschema::Schema do
 
     it "parses nested definition required" do
       address_def = schema.definition_entries.find { |e| e.name == "address" }
-      expect(address_def.schema.required).to contain_exactly("street", "city", "state", "zip")
+      expect(address_def.schema.required).to contain_exactly("street", "city",
+                                                             "state", "zip")
     end
   end
 
@@ -103,7 +105,8 @@ RSpec.describe Lutaml::Jsonschema::Schema do
       # definitions → $defs normalization
       expected["$defs"] = expected.delete("definitions")
       # minimum is stored as float (0 → 0.0)
-      expected["properties"]["age"]["minimum"] = expected["properties"]["age"]["minimum"].to_f
+      expected["properties"]["age"]["minimum"] =
+        expected["properties"]["age"]["minimum"].to_f
 
       expect(schema.to_json).to be_json_equivalent_to(JSON.generate(expected))
     end
@@ -121,11 +124,13 @@ RSpec.describe Lutaml::Jsonschema::Schema do
   describe "composition keywords" do
     it "parses allOf" do
       json = JSON.generate({
-        "allOf" => [
-          { "type" => "object", "properties" => { "a" => { "type" => "string" } } },
-          { "type" => "object", "properties" => { "b" => { "type" => "integer" } } }
-        ]
-      })
+                             "allOf" => [
+                               { "type" => "object",
+                                 "properties" => { "a" => { "type" => "string" } } },
+                               { "type" => "object",
+                                 "properties" => { "b" => { "type" => "integer" } } },
+                             ],
+                           })
       schema = described_class.from_json(json)
       expect(schema.all_of.length).to eq(2)
       expect(schema.all_property_entries.length).to eq(2)
@@ -133,22 +138,22 @@ RSpec.describe Lutaml::Jsonschema::Schema do
 
     it "parses oneOf" do
       json = JSON.generate({
-        "oneOf" => [
-          { "type" => "string" },
-          { "type" => "integer" }
-        ]
-      })
+                             "oneOf" => [
+                               { "type" => "string" },
+                               { "type" => "integer" },
+                             ],
+                           })
       schema = described_class.from_json(json)
       expect(schema.one_of.length).to eq(2)
     end
 
     it "parses anyOf" do
       json = JSON.generate({
-        "anyOf" => [
-          { "type" => "string", "format" => "email" },
-          { "type" => "string", "format" => "uri" }
-        ]
-      })
+                             "anyOf" => [
+                               { "type" => "string", "format" => "email" },
+                               { "type" => "string", "format" => "uri" },
+                             ],
+                           })
       schema = described_class.from_json(json)
       expect(schema.any_of.length).to eq(2)
       expect(schema.any_of.first.format).to eq("email")
@@ -173,11 +178,11 @@ RSpec.describe Lutaml::Jsonschema::Schema do
 
     it "collects all_property_entries from allOf" do
       json = JSON.generate({
-        "allOf" => [
-          { "properties" => { "a" => { "type" => "string" } } },
-          { "properties" => { "b" => { "type" => "integer" } } }
-        ]
-      })
+                             "allOf" => [
+                               { "properties" => { "a" => { "type" => "string" } } },
+                               { "properties" => { "b" => { "type" => "integer" } } },
+                             ],
+                           })
       schema = described_class.from_json(json)
       entries = schema.all_property_entries
       expect(entries.map(&:name)).to contain_exactly("a", "b")
@@ -214,10 +219,11 @@ RSpec.describe Lutaml::Jsonschema::Schema do
 
     it "parses '$defs' as definition_entries" do
       json = JSON.generate({
-        "$defs" => {
-          "email" => { "type" => "string", "format" => "email" }
-        }
-      })
+                             "$defs" => {
+                               "email" => { "type" => "string",
+                                            "format" => "email" },
+                             },
+                           })
       schema = described_class.from_json(json)
       expect(schema.definition_entries.length).to eq(1)
       expect(schema.definition_entries.first.name).to eq("email")
@@ -226,25 +232,28 @@ RSpec.describe Lutaml::Jsonschema::Schema do
 
     it "round-trips $defs preserving $defs key" do
       expected = JSON.generate({
-        "$defs" => {
-          "email" => { "type" => "string", "format" => "email" }
-        }
-      })
+                                 "$defs" => {
+                                   "email" => { "type" => "string",
+                                                "format" => "email" },
+                                 },
+                               })
       schema = described_class.from_json(expected)
       expect(schema.to_json).to be_json_equivalent_to(expected)
     end
 
     it "normalizes definitions to $defs on output" do
       input = JSON.generate({
-        "definitions" => {
-          "email" => { "type" => "string", "format" => "email" }
-        }
-      })
+                              "definitions" => {
+                                "email" => { "type" => "string",
+                                             "format" => "email" },
+                              },
+                            })
       expected = JSON.generate({
-        "$defs" => {
-          "email" => { "type" => "string", "format" => "email" }
-        }
-      })
+                                 "$defs" => {
+                                   "email" => { "type" => "string",
+                                                "format" => "email" },
+                                 },
+                               })
       schema = described_class.from_json(input)
       expect(schema.to_json).to be_json_equivalent_to(expected)
     end
@@ -253,9 +262,9 @@ RSpec.describe Lutaml::Jsonschema::Schema do
   describe "additionalProperties as schema" do
     it "parses additionalProperties as schema object" do
       json = JSON.generate({
-        "type" => "object",
-        "additionalProperties" => { "type" => "string" }
-      })
+                             "type" => "object",
+                             "additionalProperties" => { "type" => "string" },
+                           })
       schema = described_class.from_json(json)
       expect(schema.additional_properties_schema).to be_a(described_class)
       expect(schema.additional_properties_schema.type).to eq("string")
@@ -264,9 +273,9 @@ RSpec.describe Lutaml::Jsonschema::Schema do
 
     it "round-trips additionalProperties schema" do
       json = JSON.generate({
-        "type" => "object",
-        "additionalProperties" => { "type" => "integer" }
-      })
+                             "type" => "object",
+                             "additionalProperties" => { "type" => "integer" },
+                           })
       schema = described_class.from_json(json)
       output = JSON.parse(schema.to_json)
       expect(output["additionalProperties"]["type"]).to eq("integer")
@@ -277,14 +286,16 @@ end
 RSpec.describe Lutaml::Jsonschema::Link do
   it "parses a hyper-schema link" do
     json = JSON.generate({
-      "href" => "/users",
-      "method" => "POST",
-      "rel" => "create",
-      "title" => "Create User",
-      "description" => "Create a new user",
-      "schema" => { "type" => "object", "properties" => { "name" => { "type" => "string" } } },
-      "targetSchema" => { "type" => "object", "properties" => { "id" => { "type" => "string" } } }
-    })
+                           "href" => "/users",
+                           "method" => "POST",
+                           "rel" => "create",
+                           "title" => "Create User",
+                           "description" => "Create a new user",
+                           "schema" => { "type" => "object",
+                                         "properties" => { "name" => { "type" => "string" } } },
+                           "targetSchema" => { "type" => "object",
+                                               "properties" => { "id" => { "type" => "string" } } },
+                         })
     link = described_class.from_json(json)
     expect(link.href).to eq("/users")
     expect(link.http_method).to eq("POST")
@@ -315,7 +326,8 @@ RSpec.describe Lutaml::Jsonschema::ReferenceResolver do
     end
 
     it "resolves nested paths" do
-      resolved = resolver.resolve("#/definitions/address/properties/zip", schema)
+      resolved = resolver.resolve("#/definitions/address/properties/zip",
+                                  schema)
       expect(resolved).not_to be_nil
       expect(resolved.pattern).to eq("[0-9]{5}")
     end
@@ -329,7 +341,7 @@ RSpec.describe Lutaml::Jsonschema::SchemaSet do
     it "loads multiple schema files" do
       set = described_class.load_from_files(
         File.join(fixtures_dir, "person.json"),
-        File.join(fixtures_dir, "user.json")
+        File.join(fixtures_dir, "user.json"),
       )
       expect(set.schemas.length).to eq(2)
       expect(set.schemas["person"].title).to eq("Person")
@@ -341,7 +353,7 @@ RSpec.describe Lutaml::Jsonschema::SchemaSet do
     it "collects definitions from all schemas" do
       set = described_class.load_from_files(
         File.join(fixtures_dir, "person.json"),
-        File.join(fixtures_dir, "user.json")
+        File.join(fixtures_dir, "user.json"),
       )
       defs = set.all_definitions
       expect(defs.length).to eq(1)
@@ -353,7 +365,7 @@ RSpec.describe Lutaml::Jsonschema::SchemaSet do
     it "collects properties from all schemas" do
       set = described_class.load_from_files(
         File.join(fixtures_dir, "person.json"),
-        File.join(fixtures_dir, "user.json")
+        File.join(fixtures_dir, "user.json"),
       )
       props = set.all_properties
       expect(props.length).to eq(9) # 6 from person + 3 from user
@@ -366,7 +378,7 @@ RSpec.describe Lutaml::Jsonschema::Combiner do
   let(:schema_set) do
     Lutaml::Jsonschema::SchemaSet.load_from_files(
       File.join(fixtures_dir, "person.json"),
-      File.join(fixtures_dir, "user.json")
+      File.join(fixtures_dir, "user.json"),
     )
   end
 
@@ -392,15 +404,16 @@ RSpec.describe Lutaml::Jsonschema::Combiner do
 
   it "round-trips combined schema to JSON" do
     combined = described_class.new.combine(schema_set)
-    address_def = JSON.parse(File.read(File.join(fixtures_dir, "person.json")))["definitions"]["address"]
+    address_def = JSON.parse(File.read(File.join(fixtures_dir,
+                                                 "person.json")))["definitions"]["address"]
     expected = JSON.generate({
-      "title" => "Person",
-      "properties" => {
-        "person" => { "$ref" => "#/definitions/person" },
-        "user" => { "$ref" => "#/definitions/user" }
-      },
-      "$defs" => { "address" => address_def }
-    })
+                               "title" => "Person",
+                               "properties" => {
+                                 "person" => { "$ref" => "#/definitions/person" },
+                                 "user" => { "$ref" => "#/definitions/user" },
+                               },
+                               "$defs" => { "address" => address_def },
+                             })
     expect(combined.to_json).to be_json_equivalent_to(expected)
   end
 end

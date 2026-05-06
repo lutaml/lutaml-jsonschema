@@ -18,7 +18,7 @@ module Lutaml
           SpaDocument.new(
             metadata: @metadata,
             schemas: schemas,
-            search_index: search_index
+            search_index: search_index,
           )
         end
 
@@ -52,7 +52,7 @@ module Lutaml
             definitions: definitions,
             required: all_required,
             examples: schema.examples,
-            source_json: @schema_set.source_json(name) || ""
+            source_json: @schema_set.source_json(name) || "",
           )
         end
 
@@ -120,12 +120,13 @@ module Lutaml
               type: s.type,
               properties: properties,
               required: all_required,
-              examples: s.examples
+              examples: s.examples,
             )
           end
         end
 
-        def build_properties(entries, root_schema, all_required = root_schema.required)
+        def build_properties(entries, root_schema,
+all_required = root_schema.required)
           entries.map do |entry|
             resolved = resolve_property(entry, root_schema)
             SpaProperty.new(
@@ -152,7 +153,7 @@ module Lutaml
               max_items: resolved.max_items,
               unique_items: resolved.unique_items,
               multiple_of: resolved.multiple_of,
-              const_value: resolved.const
+              const_value: resolved.const,
             )
           end
         end
@@ -160,18 +161,19 @@ module Lutaml
         def resolve_property(entry, root_schema)
           return entry.schema unless entry.schema.dollar_ref
 
-          @schema_set.resolve_ref(entry.schema.dollar_ref, root_schema) || entry.schema
+          @schema_set.resolve_ref(entry.schema.dollar_ref,
+                                  root_schema) || entry.schema
         end
 
         def build_search_index(schemas)
           schemas.flat_map do |spa_schema|
-            raw_schema = @schema_set.schemas[spa_schema.name]
+            @schema_set.schemas[spa_schema.name]
 
             entries = [SpaSearchEntry.new(
               name: spa_schema.name,
               title: spa_schema.title,
               type: "schema",
-              schema_name: spa_schema.name
+              schema_name: spa_schema.name,
             )]
 
             spa_schema.properties.each do |prop|
@@ -179,7 +181,7 @@ module Lutaml
                 name: prop.name,
                 title: prop.title,
                 type: "property",
-                schema_name: spa_schema.name
+                schema_name: spa_schema.name,
               )
             end
 
@@ -188,7 +190,7 @@ module Lutaml
                 name: defn.name,
                 title: defn.title,
                 type: "definition",
-                schema_name: spa_schema.name
+                schema_name: spa_schema.name,
               )
 
               defn.properties.each do |prop|
@@ -196,7 +198,7 @@ module Lutaml
                   name: prop.name,
                   title: prop.title,
                   type: "property",
-                  schema_name: spa_schema.name
+                  schema_name: spa_schema.name,
                 )
               end
             end

@@ -13,7 +13,7 @@ module Lutaml
 
           ref_entry = PropertyEntry.new(
             name: name,
-            schema: Schema.new(dollar_ref: "#/definitions/#{name}")
+            schema: Schema.new(dollar_ref: "#/definitions/#{name}"),
           )
           combined.property_entries.push(ref_entry)
 
@@ -42,8 +42,10 @@ module Lutaml
         schema.all_of.each { |s| rewrite_refs!(s) }
         schema.any_of.each { |s| rewrite_refs!(s) }
         schema.one_of.each { |s| rewrite_refs!(s) }
-        schema.links.each do |l| rewrite_refs!(l.schema)
- rewrite_refs!(l.target_schema) end
+        schema.links.each do |l|
+          rewrite_refs!(l.schema)
+          rewrite_refs!(l.target_schema)
+        end
       end
 
       def localize_ref(ref)

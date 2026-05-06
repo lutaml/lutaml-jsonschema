@@ -26,7 +26,8 @@ module Lutaml
           path = File.join(FRONTEND_DIST, filename)
           return File.read(path) if File.exist?(path)
 
-          raise Error, "Frontend asset not found: #{path}. Run `bundle exec rake build_frontend` first."
+          raise Error,
+                "Frontend asset not found: #{path}. Run `bundle exec rake build_frontend` first."
         end
 
         def build_html(json_data, js, css)

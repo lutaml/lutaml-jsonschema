@@ -8,7 +8,8 @@ require "lutaml/jsonschema/configuration"
 module Lutaml
   module Jsonschema
     class Cli < Thor
-      desc "spa SCHEMA_FILES...", "Generate SPA documentation from JSON Schema files"
+      desc "spa SCHEMA_FILES...",
+           "Generate SPA documentation from JSON Schema files"
       option :output, aliases: "-o", type: :string, default: "output",
                       desc: "Output directory"
       option :config, aliases: "-c", type: :string,
@@ -32,7 +33,8 @@ module Lutaml
         abort "Error: #{e.message}"
       end
 
-      desc "combine SCHEMA_FILES...", "Combine multiple JSON Schema files into one"
+      desc "combine SCHEMA_FILES...",
+           "Combine multiple JSON Schema files into one"
       option :output, aliases: "-o", type: :string, default: "-",
                       desc: "Output file path (use - for stdout)"
       def combine(*schema_files)

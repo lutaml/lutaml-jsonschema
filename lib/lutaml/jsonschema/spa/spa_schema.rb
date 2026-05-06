@@ -8,8 +8,10 @@ module Lutaml
         attribute :title, :string
         attribute :description, :string
         attribute :type, :string
-        attribute :properties, SpaProperty, collection: true, initialize_empty: true
-        attribute :definitions, SpaDefinition, collection: true, initialize_empty: true
+        attribute :properties, SpaProperty, collection: true,
+                                            initialize_empty: true
+        attribute :definitions, SpaDefinition, collection: true,
+                                               initialize_empty: true
         attribute :required, :string, collection: true
         attribute :examples, :string, collection: true
         attribute :source_json, :string, default: -> { "" }

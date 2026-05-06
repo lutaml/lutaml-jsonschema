@@ -71,7 +71,9 @@ module Lutaml
       end
 
       def valid?
-        validate! rescue false
+        validate!
+      rescue StandardError
+        false
       end
 
       def all_definitions
@@ -122,8 +124,8 @@ module Lutaml
         nil
       end
 
-      def resolve_remote_ref(ref)
-        return nil
+      def resolve_remote_ref(_ref)
+        nil
 
         # Remote refs are not resolved — would need HTTP fetching
       end
@@ -182,7 +184,9 @@ module Lutaml
         if ref && !seen_refs.include?("#{source_name}:#{path}:#{ref}")
           seen_refs.add("#{source_name}:#{path}:#{ref}")
           resolved = resolve_ref(ref, @schemas[source_name])
-          errors << "#{source_name}#{path}: unresolvable $ref '#{ref}'" if resolved.nil? && ref.start_with?("#/", "./")
+          errors << "#{source_name}#{path}: unresolvable $ref '#{ref}'" if resolved.nil? && ref.start_with?(
+            "#/", "./"
+          )
         end
 
         children = [
@@ -192,13 +196,20 @@ module Lutaml
         ]
         children.each do |key, entries|
           entries.each do |entry|
-            collect_refs(entry.schema, source_name, errors, seen_refs, "#{path}/#{key}/#{entry.name}")
+            collect_refs(entry.schema, source_name, errors, seen_refs,
+                         "#{path}/#{key}/#{entry.name}")
           end
         end
 
-        schema.all_of.each_with_index { |s, i| collect_refs(s, source_name, errors, seen_refs, "#{path}/allOf[#{i}]") }
-        schema.any_of.each_with_index { |s, i| collect_refs(s, source_name, errors, seen_refs, "#{path}/anyOf[#{i}]") }
-        schema.one_of.each_with_index { |s, i| collect_refs(s, source_name, errors, seen_refs, "#{path}/oneOf[#{i}]") }
+        schema.all_of.each_with_index do |s, i|
+          collect_refs(s, source_name, errors, seen_refs, "#{path}/allOf[#{i}]")
+        end
+        schema.any_of.each_with_index do |s, i|
+          collect_refs(s, source_name, errors, seen_refs, "#{path}/anyOf[#{i}]")
+        end
+        schema.one_of.each_with_index do |s, i|
+          collect_refs(s, source_name, errors, seen_refs, "#{path}/oneOf[#{i}]")
+        end
 
         single_children = {
           items: schema.items,
@@ -208,12 +219,21 @@ module Lutaml
           else_schema: schema.else_schema,
         }
         single_children.each do |attr, child|
-          collect_refs(child, source_name, errors, seen_refs, "#{path}/#{attr}") if child
+          if child
+            collect_refs(child, source_name, errors, seen_refs,
+                         "#{path}/#{attr}")
+          end
         end
 
         schema.links.each do |link|
-          collect_refs(link.schema, source_name, errors, seen_refs, "#{path}/link.schema") if link.schema
-          collect_refs(link.target_schema, source_name, errors, seen_refs, "#{path}/link.target_schema") if link.target_schema
+          if link.schema
+            collect_refs(link.schema, source_name, errors, seen_refs,
+                         "#{path}/link.schema")
+          end
+          if link.target_schema
+            collect_refs(link.target_schema, source_name, errors, seen_refs,
+                         "#{path}/link.target_schema")
+          end
         end
       end
 

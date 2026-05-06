@@ -8,7 +8,7 @@ RSpec.describe Lutaml::Jsonschema::SchemaSet do
   describe "#resolve_ref with interagent fixture" do
     let(:set) do
       described_class.load_from_files(
-        File.join(fixtures_dir, "interagent_simple.json")
+        File.join(fixtures_dir, "interagent_simple.json"),
       )
     end
     let(:schema) { set.schemas["interagent_simple"] }
@@ -25,7 +25,8 @@ RSpec.describe Lutaml::Jsonschema::SchemaSet do
     end
 
     it "follows chained $ref (identity → id)" do
-      resolved = set.resolve_ref("#/definitions/post/definitions/identity", schema)
+      resolved = set.resolve_ref("#/definitions/post/definitions/identity",
+                                 schema)
       # identity has $ref to #/definitions/post/definitions/id, resolved transitively
       expect(resolved.type).to eq("string")
     end
@@ -38,7 +39,7 @@ RSpec.describe Lutaml::Jsonschema::SchemaSet do
   describe "#resolve_ref with comprehensive fixture" do
     let(:set) do
       described_class.load_from_files(
-        File.join(fixtures_dir, "comprehensive.json")
+        File.join(fixtures_dir, "comprehensive.json"),
       )
     end
     let(:schema) { set.schemas["comprehensive"] }

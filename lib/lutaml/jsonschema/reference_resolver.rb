@@ -26,7 +26,9 @@ module Lutaml
           when Schema
             current = navigate_schema(current, part)
           when Array
-            entry = current.find { |e| e.is_a?(PropertyEntry) && e.name == part }
+            entry = current.find do |e|
+              e.is_a?(PropertyEntry) && e.name == part
+            end
             current = entry&.schema
           else
             return nil
@@ -34,7 +36,13 @@ module Lutaml
           return nil unless current
         end
 
-        current.is_a?(Schema) && current.dollar_ref ? resolve(current.dollar_ref, schema) : current
+        if current.is_a?(Schema) && current.dollar_ref
+          resolve(
+            current.dollar_ref, schema
+          )
+        else
+          current
+        end
       end
 
       def resolve_remote(ref)

@@ -24,8 +24,10 @@ module Lutaml
       attribute :format, :string
 
       # Object keywords
-      attribute :property_entries, PropertyEntry, collection: true, initialize_empty: true
-      attribute :pattern_property_entries, PropertyEntry, collection: true, initialize_empty: true
+      attribute :property_entries, PropertyEntry, collection: true,
+                                                  initialize_empty: true
+      attribute :pattern_property_entries, PropertyEntry, collection: true,
+                                                          initialize_empty: true
       attribute :required, :string, collection: true, initialize_empty: true
       attribute :additional_properties, :boolean
       attribute :additional_properties_schema, Schema
@@ -69,7 +71,8 @@ module Lutaml
       attribute :else_schema, Schema
 
       # Definitions ($defs / definitions)
-      attribute :definition_entries, PropertyEntry, collection: true, initialize_empty: true
+      attribute :definition_entries, PropertyEntry, collection: true,
+                                                    initialize_empty: true
 
       # Hyper-schema links
       attribute :links, Link, collection: true, initialize_empty: true
@@ -88,16 +91,16 @@ module Lutaml
         map "readOnly", to: :read_only
         map "writeOnly", to: :write_only
         map "type", to: :type,
-                   with: { from: :parse_type, to: :serialize_type }
+                    with: { from: :parse_type, to: :serialize_type }
         map "format", to: :format
         map "properties", to: :property_entries,
                           child_mappings: { name: :key, schema: :value }
         map "patternProperties", to: :pattern_property_entries,
-                                  child_mappings: { name: :key, schema: :value }
+                                 child_mappings: { name: :key, schema: :value }
         map "required", to: :required
         map "additionalProperties", to: :additional_properties,
-                                   with: { from: :parse_additional_properties,
-                                           to: :serialize_additional_properties }
+                                    with: { from: :parse_additional_properties,
+                                            to: :serialize_additional_properties }
         map "minProperties", to: :min_properties
         map "maxProperties", to: :max_properties
         map "items", to: :items
@@ -154,7 +157,8 @@ module Lutaml
 
       def serialize_additional_properties(instance, hash)
         if instance.additional_properties_schema
-          hash["additionalProperties"] = JSON.parse(instance.additional_properties_schema.to_json)
+          hash["additionalProperties"] =
+            JSON.parse(instance.additional_properties_schema.to_json)
         elsif !instance.additional_properties.nil?
           hash["additionalProperties"] = instance.additional_properties
         end
@@ -195,8 +199,8 @@ module Lutaml
           instance.definition_entries.push(
             PropertyEntry.new(
               name: name,
-              schema: Schema.from_json(schema_hash.to_json)
-            )
+              schema: Schema.from_json(schema_hash.to_json),
+            ),
           )
         end
       end

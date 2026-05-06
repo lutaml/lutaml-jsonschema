@@ -2,7 +2,8 @@
 
 require "lutaml/jsonschema"
 
-RSpec.describe Lutaml::Jsonschema::SchemaSet, "cross-file and anchor resolution" do
+RSpec.describe Lutaml::Jsonschema::SchemaSet,
+               "cross-file and anchor resolution" do
   let(:fixtures_dir) { File.join(__dir__, "..", "fixtures") }
 
   describe "loading from directory" do
@@ -10,7 +11,8 @@ RSpec.describe Lutaml::Jsonschema::SchemaSet, "cross-file and anchor resolution"
 
     it "loads all JSON files in the directory" do
       expect(set.schemas.length).to be >= 7
-      expect(set.schemas.keys).to include("person", "user", "post", "comprehensive")
+      expect(set.schemas.keys).to include("person", "user", "post",
+                                          "comprehensive")
     end
   end
 
@@ -18,7 +20,7 @@ RSpec.describe Lutaml::Jsonschema::SchemaSet, "cross-file and anchor resolution"
     let(:set) do
       described_class.load_from_files(
         File.join(fixtures_dir, "cross_ref_base.json"),
-        File.join(fixtures_dir, "cross_ref_person.json")
+        File.join(fixtures_dir, "cross_ref_person.json"),
       )
     end
 
@@ -35,7 +37,7 @@ RSpec.describe Lutaml::Jsonschema::SchemaSet, "cross-file and anchor resolution"
   describe "$anchor resolution" do
     let(:set) do
       described_class.load_from_files(
-        File.join(fixtures_dir, "cross_ref_base.json")
+        File.join(fixtures_dir, "cross_ref_base.json"),
       )
     end
 
@@ -50,10 +52,10 @@ RSpec.describe Lutaml::Jsonschema::SchemaSet, "cross-file and anchor resolution"
   describe "validation" do
     it "reports unresolvable local refs" do
       json = JSON.generate({
-        "properties" => {
-          "foo" => { "$ref" => "#/definitions/nonexistent" }
-        }
-      })
+                             "properties" => {
+                               "foo" => { "$ref" => "#/definitions/nonexistent" },
+                             },
+                           })
       set = described_class.new
       schema = Lutaml::Jsonschema::Schema.from_json(json)
       set.add("broken", schema)
@@ -66,17 +68,17 @@ RSpec.describe Lutaml::Jsonschema::SchemaSet, "cross-file and anchor resolution"
 
     it "returns no errors for valid schemas" do
       set = described_class.load_from_files(
-        File.join(fixtures_dir, "person.json")
+        File.join(fixtures_dir, "person.json"),
       )
       expect(set.validation_errors).to be_empty
     end
 
     it "validates! raises on unresolvable refs" do
       json = JSON.generate({
-        "properties" => {
-          "x" => { "$ref" => "#/definitions/missing" }
-        }
-      })
+                             "properties" => {
+                               "x" => { "$ref" => "#/definitions/missing" },
+                             },
+                           })
       set = described_class.new
       set.add("bad", Lutaml::Jsonschema::Schema.from_json(json))
 
@@ -85,10 +87,10 @@ RSpec.describe Lutaml::Jsonschema::SchemaSet, "cross-file and anchor resolution"
 
     it "valid? returns false on unresolvable refs" do
       json = JSON.generate({
-        "properties" => {
-          "x" => { "$ref" => "#/definitions/missing" }
-        }
-      })
+                             "properties" => {
+                               "x" => { "$ref" => "#/definitions/missing" },
+                             },
+                           })
       set = described_class.new
       set.add("bad", Lutaml::Jsonschema::Schema.from_json(json))
 

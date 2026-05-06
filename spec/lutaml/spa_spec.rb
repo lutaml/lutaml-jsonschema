@@ -6,7 +6,7 @@ RSpec.describe Lutaml::Jsonschema::Spa::SpaDocument do
   let(:fixtures_dir) { File.join(__dir__, "..", "fixtures") }
   let(:schema_set) do
     Lutaml::Jsonschema::SchemaSet.load_from_files(
-      File.join(fixtures_dir, "person.json")
+      File.join(fixtures_dir, "person.json"),
     )
   end
 
@@ -84,7 +84,7 @@ RSpec.describe Lutaml::Jsonschema::Spa::SpaProperty do
       name: "id",
       type: "string",
       format: "uuid",
-      required: true
+      required: true,
     )
     json = prop.to_json
     parsed = JSON.parse(json)
@@ -99,7 +99,7 @@ RSpec.describe Lutaml::Jsonschema::Spa::SpaProperty do
     prop = described_class.new(
       name: "created_at",
       type: "string",
-      read_only: true
+      read_only: true,
     )
     parsed = JSON.parse(prop.to_json)
     expect(parsed["readOnly"]).to eq(true)
@@ -112,7 +112,7 @@ RSpec.describe Lutaml::Jsonschema::Spa::SpaProperty do
       type: "array",
       min_items: 1,
       max_items: 10,
-      unique_items: true
+      unique_items: true,
     )
     parsed = JSON.parse(prop.to_json)
     expect(parsed["minItems"]).to eq(1)
@@ -124,7 +124,7 @@ RSpec.describe Lutaml::Jsonschema::Spa::SpaProperty do
     prop = described_class.new(
       name: "version",
       type: "string",
-      const_value: "1.0"
+      const_value: "1.0",
     )
     parsed = JSON.parse(prop.to_json)
     expect(parsed["const"]).to eq("1.0")
@@ -134,7 +134,7 @@ RSpec.describe Lutaml::Jsonschema::Spa::SpaProperty do
     prop = described_class.new(
       name: "price",
       type: "number",
-      multiple_of: 0.01
+      multiple_of: 0.01,
     )
     parsed = JSON.parse(prop.to_json)
     expect(parsed["multipleOf"]).to eq(0.01)
