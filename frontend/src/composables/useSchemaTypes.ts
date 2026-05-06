@@ -127,7 +127,12 @@ export function hasConstraints(prop: SpaProperty): boolean {
     prop.minLength != null ||
     prop.maxLength != null ||
     prop.default != null ||
-    prop.examples?.length
+    prop.examples?.length ||
+    prop.minItems != null ||
+    prop.maxItems != null ||
+    prop.uniqueItems ||
+    prop.multipleOf != null ||
+    prop.const != null
   )
 }
 

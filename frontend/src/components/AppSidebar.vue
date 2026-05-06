@@ -49,11 +49,10 @@
                 <path d="M4 3l3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
               <span class="schema-name">{{ schema.title || schema.name }}</span>
-              <span class="schema-badge-count">{{ schema.properties.length }}P {{ schema.definitions.length }}D</span>
+              <span class="schema-badge-count">{{ schema.definitions.length }}D</span>
             </div>
 
             <div v-if="uiStore.isSchemaExpanded(schema.name)" class="schema-children">
-              <!-- Definitions -->
               <div
                 v-for="def in schema.definitions"
                 :key="def.name"
@@ -63,17 +62,6 @@
               >
                 <span class="badge badge-definition-sm">D</span>
                 <span class="tree-item-name">{{ def.title || def.name }}</span>
-              </div>
-              <!-- Properties -->
-              <div
-                v-for="prop in schema.properties"
-                :key="prop.name"
-                class="tree-item property-item"
-                @click.stop="selectProperty(schema.name, prop.name)"
-              >
-                <span class="badge badge-property-sm">P</span>
-                <span class="tree-item-name">{{ prop.name }}</span>
-                <span v-if="prop.required" class="required-dot" title="Required"></span>
               </div>
             </div>
           </div>
@@ -100,10 +88,19 @@
 
       <!-- Footer -->
       <div class="sidebar-footer">
-        <span class="footer-text">
-          Generated with
-          <a href="https://github.com/lutaml/lutaml-jsonschema" target="_blank" rel="noopener">LutaML JSON Schema</a>
-        </span>
+        <a href="https://www.lutaml.org" target="_blank" rel="noopener" class="footer-brand" title="LutaML">
+          <img
+            :src="uiStore.isDark ? 'https://raw.githubusercontent.com/lutaml/branding/refs/heads/main/svg/lutaml-logo_logo-full-dark.svg' : 'https://raw.githubusercontent.com/lutaml/branding/refs/heads/main/svg/lutaml-logo_logo-full-light.svg'"
+            alt="LutaML"
+            class="lutaml-logo"
+          />
+        </a>
+        <div class="footer-text-group">
+          <span class="footer-text">
+            Generated with
+            <a href="https://github.com/lutaml/lutaml-jsonschema" target="_blank" rel="noopener">LutaML JSON Schema</a>
+          </span>
+        </div>
       </div>
     </div>
   </aside>
@@ -129,12 +126,7 @@ function toggleAndSelect(name: string) {
 function selectDefinition(schemaName: string, defName: string) {
   schemaStore.selectSchema(schemaName)
   schemaStore.selectDefinition(defName)
-  uiStore.openDetailPanel()
-}
-
-function selectProperty(schemaName: string, propName: string) {
-  schemaStore.selectSchema(schemaName)
-  uiStore.openDetailPanel()
+  uiStore.closeDetailPanel()
 }
 </script>
 
@@ -360,24 +352,6 @@ function selectProperty(schemaName: string, propName: string) {
   flex-shrink: 0;
 }
 
-.badge-property-sm {
-  background: var(--badge-property-bg);
-  color: var(--badge-property);
-  font-size: 9px;
-  padding: 1px 4px;
-  border-radius: 2px;
-  font-weight: 600;
-  flex-shrink: 0;
-}
-
-.required-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--badge-required);
-  flex-shrink: 0;
-}
-
 .stats-section {
   background: var(--bg-primary);
 }
@@ -409,6 +383,27 @@ function selectProperty(schemaName: string, propName: string) {
 .sidebar-footer {
   padding: var(--space-3) var(--space-4);
   border-top: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.footer-brand {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.lutaml-logo {
+  height: 18px;
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+.footer-text-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .footer-text {

@@ -13,7 +13,15 @@
         </svg>
       </button>
       <span v-if="schemaStore.metadata" class="header-breadcrumb">
-        <span class="breadcrumb-item">{{ schemaStore.metadata.title || 'JSON Schema Docs' }}</span>
+        <button class="breadcrumb-segment" @click="goHome">{{ schemaStore.metadata.title || 'JSON Schema Docs' }}</button>
+        <template v-if="schemaStore.selectedSchema">
+          <span class="breadcrumb-sep">/</span>
+          <button class="breadcrumb-segment" @click="goSchema">{{ schemaStore.selectedSchema.title || schemaStore.selectedSchema.name }}</button>
+        </template>
+        <template v-if="schemaStore.selectedDefinitionName && activeDef">
+          <span class="breadcrumb-sep">/</span>
+          <span class="breadcrumb-segment breadcrumb-current">{{ activeDef.title || activeDef.name }}</span>
+        </template>
       </span>
     </div>
 
@@ -44,14 +52,25 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useSchemaStore } from '../stores/schemaStore'
 import { useUiStore } from '../stores/uiStore'
 
 const schemaStore = useSchemaStore()
 const uiStore = useUiStore()
 
+const activeDef = computed(() => {
+  if (!schemaStore.selectedDefinitionName || !schemaStore.selectedSchema) return null
+  return schemaStore.selectedSchema.definitions.find(d => d.name === schemaStore.selectedDefinitionName)
+})
+
 function goHome() {
   schemaStore.selectSchema(null)
+  uiStore.closeDetailPanel()
+}
+
+function goSchema() {
+  schemaStore.clearSelection()
   uiStore.closeDetailPanel()
 }
 </script>
@@ -87,6 +106,37 @@ function goHome() {
 
 .breadcrumb-item {
   color: var(--text-secondary);
+}
+
+.breadcrumb-segment {
+  background: none;
+  border: none;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
+}
+
+.breadcrumb-segment:hover {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+.breadcrumb-current {
+  color: var(--text-primary);
+  font-weight: 600;
+  cursor: default;
+}
+
+.breadcrumb-current:hover {
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.breadcrumb-sep {
+  color: var(--text-muted);
+  margin: 0 var(--space-1);
 }
 
 .home-btn {

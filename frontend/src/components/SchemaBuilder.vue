@@ -10,9 +10,16 @@
             class="field-check"
             @change="toggleField(field, ($event.target as HTMLInputElement).checked)"
           />
-          <span class="field-name font-mono" :class="{ dimmed: !field.included }">{{ field.prop.name }}</span>
+          <span class="field-name" :class="{ dimmed: !field.included }">
+            <span v-if="field.prop.title && field.prop.title !== field.prop.name" class="field-human-title">{{ field.prop.title }}</span>
+            <span class="font-mono">{{ field.prop.name }}</span>
+          </span>
           <span class="field-type-badge">{{ displayType(field.prop) }}</span>
+          <span v-if="field.prop.format" class="field-format-badge">{{ field.prop.format }}</span>
           <span v-if="field.isRequired" class="req-badge">required</span>
+          <span v-if="field.prop.deprecated" class="deprecated-badge">deprecated</span>
+          <span v-if="field.prop.readOnly" class="readonly-badge">read-only</span>
+          <span v-if="field.prop.writeOnly" class="writeonly-badge">write-only</span>
 
           <div class="field-control">
             <!-- Resolved $ref: expand button (works for object, array, and union types) -->
@@ -105,7 +112,8 @@
 
         <div v-if="field.prop.description" class="field-desc text-secondary">{{ field.prop.description }}</div>
 
-        <div v-if="hasConstraints(field.prop)" class="field-constraints">
+        <div v-if="hasConstraints(field.prop) || field.prop.ref" class="field-constraints">
+          <span v-if="field.prop.ref" class="constraint-chip">ref → {{ field.resolvedDef?.title || field.resolvedDef?.name || field.prop.ref }}</span>
           <span v-if="field.prop.enum?.length && isObjectProperty(field.prop)" class="constraint-chip">enum: {{ field.prop.enum.join(' | ') }}</span>
           <span v-if="field.prop.pattern" class="constraint-chip font-mono">/{{ field.prop.pattern }}/</span>
           <span v-if="field.prop.minimum != null" class="constraint-chip">min: {{ field.prop.minimum }}</span>
@@ -113,6 +121,11 @@
           <span v-if="field.prop.minLength != null" class="constraint-chip">minLength: {{ field.prop.minLength }}</span>
           <span v-if="field.prop.maxLength != null" class="constraint-chip">maxLength: {{ field.prop.maxLength }}</span>
           <span v-if="field.prop.default != null" class="constraint-chip">default: {{ field.prop.default }}</span>
+          <span v-if="field.prop.const != null" class="constraint-chip">const: {{ field.prop.const }}</span>
+          <span v-if="field.prop.minItems != null" class="constraint-chip">minItems: {{ field.prop.minItems }}</span>
+          <span v-if="field.prop.maxItems != null" class="constraint-chip">maxItems: {{ field.prop.maxItems }}</span>
+          <span v-if="field.prop.uniqueItems" class="constraint-chip">unique</span>
+          <span v-if="field.prop.multipleOf != null" class="constraint-chip">multipleOf: {{ field.prop.multipleOf }}</span>
           <span v-if="field.prop.examples?.length" class="constraint-chip">e.g. {{ field.prop.examples.join(', ') }}</span>
         </div>
 
@@ -130,6 +143,7 @@
             :properties="field.resolvedDef.properties"
             :required="field.resolvedDef.required"
             :schema="schema"
+            :all-schemas="allSchemas"
             :visited="new Set([...visited, field.resolvedDef.name])"
             @update:json="(v: Record<string, unknown>) => { field.nestedJson = v }"
           />
@@ -184,6 +198,7 @@ const props = withDefaults(defineProps<{
   properties: SpaProperty[]
   required: string[]
   schema: SpaSchema
+  allSchemas?: SpaSchema[]
   visited?: Set<string>
 }>(), {
   visited: () => new Set<string>(),
@@ -195,7 +210,7 @@ const emit = defineEmits<{
 
 const copied = ref(false)
 
-const fields = ref<BuilderField[]>(props.properties.map(p => createField(p, props.required, props.schema)))
+const fields = ref<BuilderField[]>(props.properties.map(p => createField(p, props.required, props.schema, props.allSchemas)))
 
 function toggleField(field: BuilderField, checked: boolean) {
   field.included = checked
@@ -274,6 +289,18 @@ async function copyJson() {
   font-weight: 600;
   font-size: var(--text-sm);
   min-width: 100px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  line-height: 1.3;
+}
+
+.field-human-title {
+  font-size: var(--text-xs);
+  font-weight: 400;
+  font-style: italic;
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
 }
 
 .field-name.dimmed {
@@ -299,6 +326,46 @@ async function copyJson() {
   padding: 1px 5px;
   border-radius: 2px;
   flex-shrink: 0;
+}
+
+.field-format-badge {
+  font-size: 10px;
+  color: var(--text-muted);
+  background: var(--bg-secondary);
+  padding: 1px 5px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+}
+
+.deprecated-badge {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--badge-deprecated);
+  background: var(--badge-deprecated-bg);
+  padding: 1px 5px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.readonly-badge,
+.writeonly-badge {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  padding: 1px 5px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.readonly-badge {
+  color: var(--color-teal);
+  background: var(--color-teal-alpha);
+}
+
+.writeonly-badge {
+  color: var(--color-orange);
+  background: var(--color-orange-alpha);
 }
 
 .field-control {
@@ -523,8 +590,8 @@ async function copyJson() {
   font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
-  color: #b45309;
-  background: #fef3c7;
+  color: var(--color-orange);
+  background: var(--color-orange-alpha);
   padding: 1px 5px;
   border-radius: 2px;
 }

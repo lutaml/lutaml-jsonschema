@@ -8,7 +8,7 @@ RSpec.describe Lutaml::Jsonschema::Spa::Generator do
   let(:fixtures_dir) { File.join(__dir__, "..", "fixtures") }
   let(:schema_set) do
     Lutaml::Jsonschema::SchemaSet.load_from_files(
-      File.join(fixtures_dir, "interagent_simple.json")
+      File.join(fixtures_dir, "interagent_simple.json"),
     )
   end
 
@@ -35,7 +35,9 @@ RSpec.describe Lutaml::Jsonschema::Spa::Generator do
         schema = data["schemas"].first
 
         post_def = schema["definitions"].find { |d| d["name"] == "post" }
-        created_at = post_def["properties"].find { |p| p["name"] == "created_at" }
+        created_at = post_def["properties"].find do |p|
+          p["name"] == "created_at"
+        end
         expect(created_at["type"]).to eq("string")
         expect(created_at["format"]).to eq("date-time")
       end
@@ -46,7 +48,8 @@ RSpec.describe Lutaml::Jsonschema::Spa::Generator do
       allow(strategy).to receive(:write)
 
       metadata = Lutaml::Jsonschema::Spa::Metadata.new(title: "Custom")
-      generator = described_class.new(schema_set, "/tmp/test", metadata: metadata, strategy: strategy)
+      generator = described_class.new(schema_set, "/tmp/test",
+                                      metadata: metadata, strategy: strategy)
       generator.generate
 
       expect(strategy).to have_received(:write).with(String)

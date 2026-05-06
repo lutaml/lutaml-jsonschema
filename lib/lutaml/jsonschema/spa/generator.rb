@@ -4,7 +4,8 @@ module Lutaml
   module Jsonschema
     module Spa
       class Generator
-        def initialize(schema_set, output_path, metadata: Metadata.new, strategy: nil)
+        def initialize(schema_set, output_path, metadata: Metadata.new,
+strategy: nil)
           @schema_set = schema_set
           @output_path = output_path
           @metadata = metadata

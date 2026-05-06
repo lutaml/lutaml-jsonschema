@@ -39,7 +39,7 @@ module Lutaml
           version: version,
           description: description,
           base_url: base_url,
-          theme: theme
+          theme: theme,
         )
       end
     end

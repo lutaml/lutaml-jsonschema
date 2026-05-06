@@ -6,8 +6,8 @@ interface SearchResult {
   id: string
   type: 'schema' | 'property' | 'definition'
   name: string
+  rawName: string
   schemaName: string
-  doc?: string
 }
 
 export function useSearch() {
@@ -20,35 +20,13 @@ export function useSearch() {
   let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
   function buildSearchEntries(): SearchResult[] {
-    const entries: SearchResult[] = []
-    for (const schema of schemaStore.schemas) {
-      entries.push({
-        id: `schema:${schema.name}`,
-        type: 'schema',
-        name: schema.title || schema.name,
-        schemaName: schema.name,
-        doc: schema.description,
-      })
-      for (const prop of schema.properties) {
-        entries.push({
-          id: `property:${schema.name}:${prop.name}`,
-          type: 'property',
-          name: prop.name,
-          schemaName: schema.name,
-          doc: prop.description,
-        })
-      }
-      for (const def of schema.definitions) {
-        entries.push({
-          id: `definition:${schema.name}:${def.name}`,
-          type: 'definition',
-          name: def.title || def.name,
-          schemaName: schema.name,
-          doc: def.description,
-        })
-      }
-    }
-    return entries
+    return schemaStore.searchIndex.map(entry => ({
+      id: `${entry.type}:${entry.schemaName}:${entry.name}`,
+      type: entry.type as SearchResult['type'],
+      name: entry.title || entry.name,
+      rawName: entry.name,
+      schemaName: entry.schemaName,
+    }))
   }
 
   function search() {
@@ -63,7 +41,7 @@ export function useSearch() {
 
     results.value = entries.filter(e =>
       e.name.toLowerCase().includes(q) ||
-      (e.doc && e.doc.toLowerCase().includes(q))
+      e.schemaName.toLowerCase().includes(q)
     ).slice(0, 50)
 
     isSearching.value = false
@@ -81,9 +59,11 @@ export function useSearch() {
   function selectResult(result: SearchResult) {
     schemaStore.selectSchema(result.schemaName)
     if (result.type === 'definition') {
-      schemaStore.selectDefinition(result.name)
+      schemaStore.selectDefinition(result.rawName)
+    } else {
+      schemaStore.clearSelection()
     }
-    uiStore.openDetailPanel()
+    uiStore.closeDetailPanel()
     closeSearch()
   }
 

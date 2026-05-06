@@ -24,7 +24,8 @@ RSpec.describe Lutaml::Jsonschema::Cli do
 
     it "generates with custom title" do
       Dir.mktmpdir do |dir|
-        described_class.start(["spa", person_schema, "-o", dir, "--title", "My Docs"])
+        described_class.start(["spa", person_schema, "-o", dir, "--title",
+                               "My Docs"])
         html = File.read(File.join(dir, "index.html"))
         expect(html).to include("My Docs")
       end
@@ -32,7 +33,8 @@ RSpec.describe Lutaml::Jsonschema::Cli do
 
     it "generates from multiple schema files" do
       Dir.mktmpdir do |dir|
-        described_class.start(["spa", person_schema, user_schema, post_schema, "-o", dir])
+        described_class.start(["spa", person_schema, user_schema, post_schema,
+                               "-o", dir])
         html = File.read(File.join(dir, "index.html"))
         expect(html).to include("person")
         expect(html).to include("user")
@@ -41,7 +43,10 @@ RSpec.describe Lutaml::Jsonschema::Cli do
     end
 
     it "raises error with no schema files" do
-      expect { described_class.start(["spa"]) }.to raise_error(Lutaml::Jsonschema::Error, /No schema files/)
+      expect do
+        described_class.start(["spa"])
+      end.to raise_error(Lutaml::Jsonschema::Error,
+                         /No schema files/)
     end
   end
 
@@ -54,7 +59,8 @@ RSpec.describe Lutaml::Jsonschema::Cli do
     it "combines schemas to file" do
       Dir.mktmpdir do |dir|
         output = File.join(dir, "combined.json")
-        described_class.start(["combine", person_schema, user_schema, "-o", output])
+        described_class.start(["combine", person_schema, user_schema, "-o",
+                               output])
         expect(File.exist?(output)).to be true
         json = JSON.parse(File.read(output))
         expect(json).to have_key("$defs")
@@ -81,7 +87,7 @@ RSpec.describe Lutaml::Jsonschema::Cli do
   describe "version" do
     it "prints the version" do
       expect { described_class.start(["version"]) }
-        .to output(/lutaml-jsonschema #{Lutaml::Jsonschema::VERSION}/).to_stdout
+        .to output(/lutaml-jsonschema #{Lutaml::Jsonschema::VERSION}/o).to_stdout
     end
   end
 end
