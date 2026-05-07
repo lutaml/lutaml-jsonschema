@@ -173,4 +173,42 @@ RSpec.describe Lutaml::Jsonschema::Spa::SpaProperty do
     expect(parsed["contentMediaType"]).to eq("text/html")
     expect(parsed["contentEncoding"]).to eq("base64")
   end
+
+  it "serializes compositionSource" do
+    prop = described_class.new(
+      name: "email",
+      type: "string",
+      composition_source: "allOf",
+    )
+    parsed = JSON.parse(prop.to_json)
+    expect(parsed["compositionSource"]).to eq("allOf")
+  end
+end
+
+RSpec.describe Lutaml::Jsonschema::Spa::SpaSchema do
+  it "serializes minProperties and maxProperties" do
+    schema = described_class.new(
+      name: "person",
+      type: "object",
+      min_properties: 1,
+      max_properties: 10,
+    )
+    parsed = JSON.parse(schema.to_json)
+    expect(parsed["minProperties"]).to eq(1)
+    expect(parsed["maxProperties"]).to eq(10)
+  end
+
+  it "serializes composition flags" do
+    schema = described_class.new(
+      name: "mixed",
+      type: "object",
+      has_all_of: true,
+      has_any_of: false,
+      has_one_of: true,
+    )
+    parsed = JSON.parse(schema.to_json)
+    expect(parsed["hasAllOf"]).to eq(true)
+    expect(parsed["hasAnyOf"]).to eq(false)
+    expect(parsed["hasOneOf"]).to eq(true)
+  end
 end

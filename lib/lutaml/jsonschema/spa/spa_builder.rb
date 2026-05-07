@@ -40,7 +40,12 @@ module Lutaml
           all_defs = collect_all_definitions(schema)
           all_required = collect_all_required(schema)
 
-          properties = build_properties(all_props, schema, all_required)
+          # Build source map for composition tracking
+          props_with_source = collect_all_properties_with_source(schema)
+          source_map = props_with_source.to_h { |entry, src| [entry.name, src] }
+
+          properties = build_properties(all_props, schema, all_required,
+                                        source_map)
           definitions = build_definitions_from_entries(all_defs, schema)
 
           SpaSchema.new(
@@ -56,7 +61,28 @@ module Lutaml
             dollar_schema: schema.dollar_schema,
             dollar_id: schema.dollar_id,
             additional_properties: schema.additional_properties,
+            min_properties: schema.min_properties,
+            max_properties: schema.max_properties,
+            has_all_of: schema.all_of.any?,
+            has_any_of: schema.any_of.any?,
+            has_one_of: schema.one_of.any?,
           )
+        end
+
+        # Collects all properties with their composition source annotation.
+        # Returns an array of [PropertyEntry, source] tuples where source is
+        # nil (own), "allOf", "anyOf", or "oneOf".
+        def collect_all_properties_with_source(schema, context_schema = schema)
+          inherited = []
+          composition_schemas_with_source(schema).each do |s, source|
+            resolved = resolve_composition_schema(s, context_schema)
+            inherited.concat(collect_all_properties_with_source(resolved,
+                                                                context_schema).map do |entry, src|
+              [entry, src || source]
+            end)
+          end
+          own = schema.property_entries.dup.map { |e| [e, nil] }
+          deduplicated_merge_with_source(inherited, own)
         end
 
         def collect_all_properties(schema, context_schema = schema)
@@ -100,6 +126,22 @@ module Lutaml
           schema.all_of + schema.any_of + schema.one_of
         end
 
+        def composition_schemas_with_source(schema)
+          result = schema.all_of.map { |s| [s, "allOf"] }
+          schema.any_of.each { |s| result << [s, "anyOf"] }
+          schema.one_of.each { |s| result << [s, "oneOf"] }
+          result
+        end
+
+        def deduplicated_merge_with_source(inherited, own)
+          seen = {}
+          all = inherited + own
+          all.each_with_index do |pair, idx|
+            seen[pair[0].name] = idx
+          end
+          seen.values.sort.map { |i| all[i] }
+        end
+
         def deduplicated_merge(inherited, own)
           seen = {}
           all = inherited + own
@@ -124,46 +166,56 @@ module Lutaml
               properties: properties,
               required: all_required,
               examples: s.examples,
+              min_properties: s.min_properties,
+              max_properties: s.max_properties,
             )
           end
         end
 
         def build_properties(entries, root_schema,
-all_required = root_schema.required)
+                            all_required = root_schema.required,
+                            source_map = nil)
           entries.map do |entry|
-            resolved = resolve_property(entry, root_schema)
-            SpaProperty.new(
-              name: entry.name,
-              title: resolved.title,
-              description: resolved.description,
-              type: resolved.type,
-              format: resolved.format,
-              required: all_required.include?(entry.name),
-              default: resolved.default,
-              pattern: resolved.pattern,
-              enum: resolved.enum,
-              ref: entry.schema.dollar_ref,
-              min_length: resolved.min_length,
-              max_length: resolved.max_length,
-              minimum: resolved.minimum,
-              maximum: resolved.maximum,
-              items_type: resolved.items&.type,
-              deprecated: resolved.deprecated,
-              read_only: resolved.read_only,
-              write_only: resolved.write_only,
-              examples: resolved.examples,
-              min_items: resolved.min_items,
-              max_items: resolved.max_items,
-              unique_items: resolved.unique_items,
-              multiple_of: resolved.multiple_of,
-              const_value: resolved.const,
-              exclusive_minimum: resolved.exclusive_minimum,
-              exclusive_maximum: resolved.exclusive_maximum,
-              additional_properties: resolved.additional_properties,
-              content_type: resolved.content_type,
-              content_encoding: resolved.content_encoding,
-            )
+            source = source_map ? source_map[entry.name] : nil
+            build_single_property(entry, root_schema, all_required, source)
           end
+        end
+
+        def build_single_property(entry, root_schema, all_required,
+                                  composition_source = nil)
+          resolved = resolve_property(entry, root_schema)
+          SpaProperty.new(
+            name: entry.name,
+            title: resolved.title,
+            description: resolved.description,
+            type: resolved.type,
+            format: resolved.format,
+            required: all_required.include?(entry.name),
+            default: resolved.default,
+            pattern: resolved.pattern,
+            enum: resolved.enum,
+            ref: entry.schema.dollar_ref,
+            min_length: resolved.min_length,
+            max_length: resolved.max_length,
+            minimum: resolved.minimum,
+            maximum: resolved.maximum,
+            items_type: resolved.items&.type,
+            deprecated: resolved.deprecated,
+            read_only: resolved.read_only,
+            write_only: resolved.write_only,
+            examples: resolved.examples,
+            min_items: resolved.min_items,
+            max_items: resolved.max_items,
+            unique_items: resolved.unique_items,
+            multiple_of: resolved.multiple_of,
+            const_value: resolved.const,
+            exclusive_minimum: resolved.exclusive_minimum,
+            exclusive_maximum: resolved.exclusive_maximum,
+            additional_properties: resolved.additional_properties,
+            content_type: resolved.content_type,
+            content_encoding: resolved.content_encoding,
+            composition_source: composition_source,
+          )
         end
 
         def resolve_property(entry, root_schema)
