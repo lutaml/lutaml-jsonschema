@@ -81,6 +81,21 @@
   --transition-fast: 100ms ease;
   --transition-normal: 150ms ease;
   --transition-slow: 200ms ease-out;
+
+  --type-string: #7cc242;
+  --type-string-bg: rgba(124, 194, 66, 0.1);
+  --type-number: #ea5624;
+  --type-number-bg: rgba(234, 86, 36, 0.1);
+  --type-integer: #dbab3e;
+  --type-integer-bg: rgba(219, 171, 62, 0.1);
+  --type-boolean: #5b9cd4;
+  --type-boolean-bg: rgba(91, 156, 212, 0.1);
+  --type-object: #26489e;
+  --type-object-bg: rgba(38, 72, 158, 0.1);
+  --type-array: #8b5cf6;
+  --type-array-bg: rgba(139, 92, 246, 0.1);
+  --type-null: #A8A29E;
+  --type-null-bg: rgba(168, 162, 158, 0.1);
 }
 
 :root[data-theme="dark"] {
@@ -113,6 +128,21 @@
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.6), 0 4px 6px -2px rgba(0, 0, 0, 0.4);
+
+  --type-string: #8bd450;
+  --type-string-bg: rgba(139, 212, 80, 0.15);
+  --type-number: #f0824a;
+  --type-number-bg: rgba(240, 130, 74, 0.15);
+  --type-integer: #f0ca6e;
+  --type-integer-bg: rgba(240, 202, 110, 0.15);
+  --type-boolean: #7db5e2;
+  --type-boolean-bg: rgba(125, 181, 226, 0.15);
+  --type-object: #5b9cd4;
+  --type-object-bg: rgba(91, 156, 212, 0.15);
+  --type-array: #a78bfa;
+  --type-array-bg: rgba(167, 139, 250, 0.15);
+  --type-null: #6b7a8f;
+  --type-null-bg: rgba(107, 122, 143, 0.15);
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -149,6 +179,11 @@ a { color: var(--color-primary); text-decoration: none; transition: color var(--
 a:hover { color: var(--color-primary-dark); text-decoration: underline; }
 
 button { font-family: inherit; font-size: inherit; cursor: pointer; border: none; background: none; }
+
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
 
 .btn {
   display: inline-flex; align-items: center; justify-content: center;
@@ -189,6 +224,14 @@ button { font-family: inherit; font-size: inherit; cursor: pointer; border: none
 
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideIn { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
 
 .text-muted { color: var(--text-muted); }
 .text-secondary { color: var(--text-secondary); }
