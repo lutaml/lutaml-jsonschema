@@ -38,8 +38,16 @@ describe('primaryType', () => {
 })
 
 describe('displayType', () => {
-  it('shows array<itemsType> for arrays', () => {
-    expect(displayType(prop({ type: 'array', itemsType: 'string' }))).toBe('array<string>')
+  it('shows "array of X" for arrays', () => {
+    expect(displayType(prop({ type: 'array', itemsType: 'string' }))).toBe('array of string')
+  })
+
+  it('shows resolved title for $ref props', () => {
+    expect(displayType(prop({ type: 'object', ref: '#/definitions/Addr' }), 'Address')).toBe('Address')
+  })
+
+  it('ignores resolved title when no ref', () => {
+    expect(displayType(prop({ type: 'object' }), 'Address')).toBe('object')
   })
 
   it('shows type (format) when format is set', () => {
@@ -225,24 +233,34 @@ describe('hasConstraints', () => {
 })
 
 describe('humanizeConstraints', () => {
-  it('returns string range constraint', () => {
+  it('returns string range constraint with bracket notation', () => {
     const chips = humanizeConstraints(prop({ type: 'string', minLength: 1, maxLength: 100 }))
-    expect(chips).toEqual([{ label: '1..100 characters' }])
+    expect(chips).toEqual([{ label: '[ 1 .. 100 ] characters' }])
   })
 
-  it('returns numeric >= and <= constraints', () => {
+  it('returns non-empty for minLength === 1', () => {
+    const chips = humanizeConstraints(prop({ type: 'string', minLength: 1 }))
+    expect(chips).toEqual([{ label: 'non-empty' }])
+  })
+
+  it('returns numeric range constraint with bracket notation', () => {
     const chips = humanizeConstraints(prop({ type: 'integer', minimum: 0, maximum: 100 }))
-    expect(chips.map(c => c.label)).toEqual(['>= 0', '<= 100'])
+    expect(chips.map(c => c.label)).toEqual(['[ 0 .. 100 ]'])
   })
 
-  it('returns exclusive bounds with > and <', () => {
+  it('returns exclusive bounds combined as range', () => {
     const chips = humanizeConstraints(prop({ type: 'number', exclusiveMinimum: 0, exclusiveMaximum: 100 }))
-    expect(chips.map(c => c.label)).toEqual(['> 0', '< 100'])
+    expect(chips.map(c => c.label)).toEqual(['( 0 .. 100 )'])
   })
 
-  it('returns array range constraint', () => {
+  it('returns inclusive range combined with exclusive modifier', () => {
+    const chips = humanizeConstraints(prop({ type: 'integer', minimum: 0, maximum: 100, exclusiveMinimum: 0 }))
+    expect(chips.map(c => c.label)).toEqual(['( 0 .. 100 ]'])
+  })
+
+  it('returns array range constraint with bracket notation', () => {
     const chips = humanizeConstraints(prop({ type: 'array', minItems: 1, maxItems: 10 }))
-    expect(chips).toEqual([{ label: '1..10 items' }])
+    expect(chips).toEqual([{ label: '[ 1 .. 10 ] items' }])
   })
 
   it('returns unique for uniqueItems', () => {
@@ -273,6 +291,26 @@ describe('humanizeConstraints', () => {
   it('returns empty array for no constraints', () => {
     const chips = humanizeConstraints(prop({ type: 'string' }))
     expect(chips).toEqual([])
+  })
+
+  it('returns "non-empty" for minLength 1', () => {
+    const chips = humanizeConstraints(prop({ type: 'string', minLength: 1 }))
+    expect(chips.map(c => c.label)).toEqual(['non-empty'])
+  })
+
+  it('returns "= N characters" when min equals max', () => {
+    const chips = humanizeConstraints(prop({ type: 'string', minLength: 10, maxLength: 10 }))
+    expect(chips.map(c => c.label)).toEqual(['= 10 characters'])
+  })
+
+  it('returns "= N items" when minItems equals maxItems', () => {
+    const chips = humanizeConstraints(prop({ type: 'array', minItems: 3, maxItems: 3 }))
+    expect(chips.map(c => c.label)).toEqual(['= 3 items'])
+  })
+
+  it('returns decimal places for small multipleOf', () => {
+    const chips = humanizeConstraints(prop({ type: 'number', multipleOf: 0.01 }))
+    expect(chips.map(c => c.label)).toEqual(['decimal places <= 2'])
   })
 
   it('returns contentMediaType and contentEncoding', () => {
