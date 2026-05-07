@@ -1,7 +1,7 @@
 <template>
   <div class="builder-layout">
     <div class="builder-fields">
-      <div v-for="(field, idx) in sortedFields" :key="field.prop.name" class="field-row" :class="{ 'field-row-alt': idx % 2 === 1 }">
+      <div v-for="(field, idx) in sortedFields" :key="field.prop.name" :id="`prop-${field.prop.name}`" class="field-row" :class="{ 'field-row-alt': idx % 2 === 1 }">
         <div class="field-main">
           <input
             type="checkbox"
@@ -10,16 +10,17 @@
             class="field-check"
             @change="toggleField(field, ($event.target as HTMLInputElement).checked)"
           />
-          <span class="field-name" :class="{ dimmed: !field.included }">
+          <button class="field-name" :class="{ dimmed: !field.included }" @click="openPropertyDetail(field.prop)">
             <span v-if="field.prop.title && field.prop.title !== field.prop.name" class="field-human-title">{{ field.prop.title }}</span>
             <span class="font-mono">{{ field.prop.name }}</span>
-          </span>
+          </button>
           <span class="field-type-badge">{{ displayType(field.prop) }}</span>
           <span v-if="field.prop.format" class="field-format-badge">{{ field.prop.format }}</span>
           <span v-if="field.isRequired" class="req-badge">required</span>
           <span v-if="field.prop.deprecated" class="deprecated-badge">deprecated</span>
           <span v-if="field.prop.readOnly" class="readonly-badge">read-only</span>
           <span v-if="field.prop.writeOnly" class="writeonly-badge">write-only</span>
+          <span v-if="field.prop.compositionSource" class="composition-badge">{{ field.prop.compositionSource }}</span>
 
           <div class="field-control">
             <!-- Resolved $ref: expand button (works for object, array, and union types) -->
@@ -112,9 +113,12 @@
 
         <div v-if="field.prop.description" class="field-desc text-secondary">{{ field.prop.description }}</div>
 
-        <div v-if="hasConstraints(field.prop) || field.prop.ref" class="field-constraints">
+        <div v-if="hasConstraints(field.prop) || field.prop.ref || field.prop.enum?.length" class="field-constraints">
           <span v-if="field.prop.ref" class="constraint-chip chip-ref">ref → {{ field.resolvedDef?.title || field.resolvedDef?.name || field.prop.ref }}</span>
-          <span v-if="field.prop.enum?.length && isObjectProperty(field.prop)" class="constraint-chip">enum: {{ field.prop.enum.join(' | ') }}</span>
+          <template v-if="field.prop.enum?.length && !isObjectProperty(field.prop)">
+            <span v-for="e in field.prop.enum" :key="e" class="enum-chip" :class="{ 'enum-chip-active': field.rawValue === e }">{{ e }}</span>
+          </template>
+          <span v-else-if="field.prop.enum?.length && isObjectProperty(field.prop)" class="constraint-chip">enum: {{ field.prop.enum.join(' | ') }}</span>
           <span v-for="(chip, idx) in humanizeConstraints(field.prop)" :key="idx" class="constraint-chip" :class="chip.class">{{ chip.label }}</span>
           <span v-if="field.prop.additionalProperties === false" class="constraint-chip chip-locked">no additional properties</span>
         </div>
@@ -168,6 +172,8 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import type { SpaProperty, SpaSchema } from '../types'
+import { useSchemaStore } from '../stores/schemaStore'
+import { useUiStore } from '../stores/uiStore'
 import {
   primaryType,
   displayType,
@@ -184,6 +190,14 @@ import {
   parseFieldValue,
 } from '../composables/useBuilderField'
 import type { BuilderField } from '../composables/useBuilderField'
+
+const schemaStore = useSchemaStore()
+const uiStore = useUiStore()
+
+function openPropertyDetail(prop: SpaProperty) {
+  schemaStore.selectProperty(prop.name)
+  uiStore.openDetailPanel()
+}
 
 const props = withDefaults(defineProps<{
   properties: SpaProperty[]
@@ -317,6 +331,17 @@ async function copyJson() {
   flex-direction: column;
   gap: 0;
   line-height: 1.3;
+  text-align: left;
+  cursor: pointer;
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font-family: inherit;
+}
+
+.field-name:hover .font-mono {
+  color: var(--color-primary);
 }
 
 .field-human-title {
@@ -390,6 +415,18 @@ async function copyJson() {
 .writeonly-badge {
   color: var(--color-orange);
   background: var(--color-orange-alpha);
+}
+
+.composition-badge {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: none;
+  color: var(--color-teal);
+  background: var(--color-teal-alpha);
+  padding: 1px 5px;
+  border-radius: 2px;
+  flex-shrink: 0;
+  font-family: var(--font-mono);
 }
 
 .field-control {
@@ -494,6 +531,25 @@ async function copyJson() {
 .constraint-chip.chip-locked {
   color: var(--color-orange);
   background: var(--color-orange-alpha);
+  font-weight: 500;
+}
+
+/* Enum chips */
+.enum-chip {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  background: var(--bg-secondary);
+  padding: 1px 5px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-light);
+  transition: all var(--transition-fast);
+}
+
+.enum-chip-active {
+  color: var(--color-primary);
+  background: var(--color-primary-alpha);
+  border-color: var(--color-primary);
   font-weight: 500;
 }
 

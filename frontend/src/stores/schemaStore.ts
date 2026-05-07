@@ -85,14 +85,17 @@ export const useSchemaStore = defineStore('schema', () => {
   function selectSchema(name: string | null) {
     selectedSchemaName.value = name
     selectedItemKey.value = null
+    updateHash()
   }
 
   function selectDefinition(name: string) {
     selectedItemKey.value = `def:${name}`
+    updateHash()
   }
 
   function selectProperty(name: string) {
     selectedItemKey.value = `prop:${name}`
+    updateHash()
   }
 
   function clearSelection() {
@@ -101,6 +104,26 @@ export const useSchemaStore = defineStore('schema', () => {
 
   function schemaByName(name: string): SpaSchema | undefined {
     return schemas.value.find(s => s.name === name)
+  }
+
+  function updateHash() {
+    const schema = selectedSchemaName.value
+    if (!schema) {
+      history.replaceState(null, '', window.location.pathname)
+      return
+    }
+    const key = selectedItemKey.value
+    if (!key) {
+      history.replaceState(null, '', `#${encodeURIComponent(schema)}`)
+      return
+    }
+    let fragment = ''
+    if (key.startsWith('def:')) {
+      fragment = `def-${key.slice(4)}`
+    } else if (key.startsWith('prop:')) {
+      fragment = `prop-${key.slice(5)}`
+    }
+    history.replaceState(null, '', `#${encodeURIComponent(schema)}/${encodeURIComponent(fragment)}`)
   }
 
   return {

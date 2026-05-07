@@ -28,6 +28,11 @@
             <span v-if="schemaStore.selectedSchema.required.length" class="text-muted">&middot; {{ schemaStore.selectedSchema.required.length }} required</span>
             <span v-if="schemaStore.selectedSchema.definitions.length" class="text-muted">&middot; {{ schemaStore.selectedSchema.definitions.length }} definitions</span>
             <span v-if="schemaStore.selectedSchema.additionalProperties === false" class="badge badge-locked">no additional properties</span>
+            <span v-if="schemaStore.selectedSchema.hasAllOf" class="badge badge-composition">allOf</span>
+            <span v-if="schemaStore.selectedSchema.hasAnyOf" class="badge badge-composition">anyOf</span>
+            <span v-if="schemaStore.selectedSchema.hasOneOf" class="badge badge-composition">oneOf</span>
+            <span v-if="schemaStore.selectedSchema.minProperties != null" class="text-muted">&middot; min {{ schemaStore.selectedSchema.minProperties }} props</span>
+            <span v-if="schemaStore.selectedSchema.maxProperties != null" class="text-muted">&middot; max {{ schemaStore.selectedSchema.maxProperties }} props</span>
           </div>
           <div v-if="schemaStore.selectedSchema.$schema || schemaStore.selectedSchema.$id" class="schema-id-row">
             <span v-if="schemaStore.selectedSchema.$schema" class="meta-id-chip font-mono text-muted" title="JSON Schema version">{{ schemaStore.selectedSchema.$schema }}</span>
@@ -83,6 +88,8 @@
               <span class="text-muted">{{ def.properties.length }} props</span>
               <span v-if="def.required?.length" class="text-muted">&middot; {{ def.required.length }} req</span>
               <span v-if="def.examples?.length" class="text-muted">&middot; {{ def.examples.length }} ex</span>
+              <span v-if="def.minProperties != null" class="text-muted">&middot; min {{ def.minProperties }}</span>
+              <span v-if="def.maxProperties != null" class="text-muted">&middot; max {{ def.maxProperties }}</span>
             </div>
             <div class="def-card-info">
               <p v-if="def.description" class="def-card-desc text-secondary">{{ def.description }}</p>
@@ -93,8 +100,20 @@
                 <summary class="text-muted">Examples</summary>
                 <pre class="def-examples-pre"><code>{{ formatJson(def.examples) }}</code></pre>
               </details>
+              <div v-if="!expandedDefs.has(def.name) && def.properties.length" class="def-mini-table">
+                <div v-for="prop in def.properties.slice(0, 5)" :key="prop.name" class="def-mini-row">
+                  <span class="def-mini-name font-mono">{{ prop.name }}</span>
+                  <span class="def-mini-type">{{ prop.type || 'any' }}</span>
+                  <span v-if="prop.required" class="def-mini-req">*</span>
+                  <span v-if="prop.deprecated" class="def-mini-dep">dep</span>
+                </div>
+                <div v-if="def.properties.length > 5" class="def-mini-more text-muted">
+                  +{{ def.properties.length - 5 }} more properties
+                </div>
+              </div>
             </div>
             <div v-if="expandedDefs.has(def.name)" class="def-card-body">
+              <div v-if="def.description" class="def-body-desc text-secondary">{{ def.description }}</div>
               <SchemaBuilder
                 :properties="def.properties"
                 :required="def.required"
@@ -110,7 +129,16 @@
       <!-- Source JSON View -->
       <div v-if="viewMode === 'source'" class="schema-section">
         <div v-if="schemaStore.selectedSchema.sourceJson" class="source-viewer">
-          <pre class="source-pre"><code v-html="highlightedSource"></code></pre>
+          <div class="source-toolbar">
+            <span class="text-muted">{{ sourceLineCount }} lines</span>
+            <button class="btn btn-ghost btn-sm" @click="copySource">
+              {{ sourceCopied ? 'Copied!' : 'Copy' }}
+            </button>
+          </div>
+          <div class="source-code-wrapper">
+            <div class="source-lines" aria-hidden="true"><span v-for="n in sourceLineCount" :key="n">{{ n }}</span></div>
+            <pre class="source-pre"><code v-html="highlightedSource"></code></pre>
+          </div>
         </div>
         <div v-else class="source-empty">
           <p class="text-muted">Source JSON Schema not available for this schema.</p>
@@ -184,6 +212,7 @@ import type { SpaSchema } from '../types'
 const schemaStore = useSchemaStore()
 const expandedDefs = reactive(new Set<string>())
 const viewMode = ref<'builder' | 'source'>('builder')
+const sourceCopied = ref(false)
 
 function expandAllDefs() {
   for (const def of schemaStore.selectedSchema?.definitions ?? []) {
@@ -200,6 +229,21 @@ const highlightedSource = computed(() => {
   if (!src) return ''
   return syntaxHighlight(src)
 })
+
+const sourceLineCount = computed(() => {
+  const src = schemaStore.selectedSchema?.sourceJson
+  if (!src) return 0
+  return src.split('\n').length
+})
+
+function copySource() {
+  const src = schemaStore.selectedSchema?.sourceJson
+  if (!src) return
+  navigator.clipboard.writeText(src).then(() => {
+    sourceCopied.value = true
+    setTimeout(() => { sourceCopied.value = false }, 2000)
+  })
+}
 
 function syntaxHighlight(json: string): string {
   return json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -259,6 +303,21 @@ watch(() => schemaStore.selectedDefinitionName, (name) => {
     const el = document.getElementById(`def-${name}`)
     if (el) {
       el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  })
+})
+
+watch(() => schemaStore.selectedItemKey, (key) => {
+  if (!key) return
+  nextTick(() => {
+    let el: HTMLElement | null = null
+    if (key.startsWith('def:')) {
+      el = document.getElementById(`def-${key.slice(4)}`)
+    } else if (key.startsWith('prop:')) {
+      el = document.getElementById(`prop-${key.slice(5)}`)
+    }
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
     }
   })
 })
@@ -376,6 +435,16 @@ watch(() => schemaStore.selectedDefinitionName, (name) => {
   font-weight: 500;
 }
 
+.badge-composition {
+  font-size: 10px;
+  color: var(--color-teal);
+  background: var(--color-teal-alpha);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-weight: 500;
+  font-family: var(--font-mono);
+}
+
 .schema-required {
   display: flex;
   align-items: flex-start;
@@ -476,19 +545,52 @@ watch(() => schemaStore.selectedDefinitionName, (name) => {
 .source-viewer {
   border-radius: var(--radius-lg);
   overflow: hidden;
+  border: 1px solid var(--border-light);
+}
+
+.source-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-light);
+  font-size: var(--text-xs);
+}
+
+.source-code-wrapper {
+  display: flex;
+  max-height: 70vh;
+  overflow: auto;
+}
+
+.source-lines {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-4) var(--space-2) var(--space-4) var(--space-3);
+  text-align: right;
+  user-select: none;
+  flex-shrink: 0;
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--border-light);
+}
+
+.source-lines span {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--text-muted);
+  display: block;
 }
 
 .source-pre {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-lg);
+  background: var(--bg-primary);
   padding: var(--space-4);
   font-size: var(--text-sm);
   line-height: var(--leading-relaxed);
   overflow-x: auto;
-  max-height: 70vh;
-  overflow-y: auto;
   margin: 0;
+  flex: 1;
 }
 
 .source-pre :deep(.json-key) { color: var(--color-primary-dark); }
@@ -575,6 +677,76 @@ watch(() => schemaStore.selectedDefinitionName, (name) => {
   margin-bottom: var(--space-2);
 }
 
+/* Mini property table */
+.def-mini-table {
+  margin-top: var(--space-2);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  font-size: var(--text-xs);
+}
+
+.def-mini-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 3px var(--space-3);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.def-mini-row:last-child {
+  border-bottom: none;
+}
+
+.def-mini-row:nth-child(odd) {
+  background: var(--bg-secondary);
+}
+
+.def-mini-name {
+  font-weight: 500;
+  color: var(--text-primary);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.def-mini-type {
+  color: var(--badge-schema);
+  background: var(--badge-schema-bg);
+  padding: 1px 5px;
+  border-radius: var(--radius-sm);
+  font-size: 10px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.def-mini-req {
+  color: var(--badge-required);
+  font-weight: 700;
+  font-size: 10px;
+  flex-shrink: 0;
+}
+
+.def-mini-dep {
+  color: var(--badge-deprecated);
+  background: var(--badge-deprecated-bg);
+  padding: 1px 4px;
+  border-radius: 2px;
+  font-size: 9px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.def-mini-more {
+  padding: 3px var(--space-3);
+  font-size: var(--text-xs);
+  border-top: 1px solid var(--border-light);
+  text-align: center;
+  font-style: italic;
+}
+
 .def-card-examples {
   margin-top: var(--space-2);
 }
@@ -605,6 +777,14 @@ watch(() => schemaStore.selectedDefinitionName, (name) => {
   border-top: 1px solid var(--border-light);
   padding: var(--space-4);
   background: var(--bg-primary);
+}
+
+.def-body-desc {
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border-light);
 }
 
 .def-card-highlighted {

@@ -34,8 +34,31 @@ onMounted(() => {
     uiStore.updateResolvedTheme()
   }
 
+  handleHashNavigation()
+
   document.addEventListener('keydown', handleKeydown)
+  window.addEventListener('hashchange', handleHashNavigation)
 })
+
+function handleHashNavigation() {
+  const hash = window.location.hash.slice(1)
+  if (!hash) return
+
+  const parts = hash.split('/')
+  if (parts.length >= 1 && schemaStore.schemas.length > 0) {
+    const schemaName = decodeURIComponent(parts[0])
+    schemaStore.selectSchema(schemaName)
+
+    if (parts.length >= 2) {
+      const target = decodeURIComponent(parts[1])
+      if (target.startsWith('def-')) {
+        schemaStore.selectDefinition(target.slice(4))
+      } else if (target.startsWith('prop-')) {
+        schemaStore.selectProperty(target.slice(5))
+      }
+    }
+  }
+}
 
 function handleKeydown(e: KeyboardEvent) {
   if (e.key === '/' && !isInputFocused()) {
