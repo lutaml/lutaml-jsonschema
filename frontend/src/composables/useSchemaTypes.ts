@@ -11,11 +11,13 @@ export function primaryType(type?: string): string {
 
 /**
  * Human-readable type display for the type badge.
- * Shows array<> notation for arrays and format suffix for strings.
+ * Shows resolved definition title for $ref props, "array of X" notation,
+ * and format suffix for primitives.
  */
-export function displayType(prop: SpaProperty): string {
+export function displayType(prop: SpaProperty, resolvedTitle?: string): string {
   const t = primaryType(prop.type)
-  if (t === 'array' && prop.itemsType) return `array<${prop.itemsType}>`
+  if (t === 'array' && prop.itemsType) return `array of ${prop.itemsType}`
+  if (resolvedTitle && (t === 'object' || t === 'any') && prop.ref) return resolvedTitle
   if (prop.format) return `${t} (${prop.format})`
   return t
 }
@@ -165,36 +167,93 @@ export interface ConstraintChip {
   class?: string
 }
 
+function numberRange(prop: SpaProperty): string | undefined {
+  const hasMin = prop.minimum != null
+  const hasMax = prop.maximum != null
+  const hasExcMin = prop.exclusiveMinimum != null
+  const hasExcMax = prop.exclusiveMaximum != null
+  const excMin = prop.exclusiveMinimum != null
+  const excMax = prop.exclusiveMaximum != null
+
+  if (hasMin && hasMax) {
+    const l = excMin ? '( ' : '[ '
+    const r = excMax ? ' )' : ' ]'
+    return `${l}${prop.minimum} .. ${prop.maximum}${r}`
+  }
+  if (hasMin && hasExcMax) {
+    const l = excMin ? '( ' : '[ '
+    return `${l}${prop.minimum} .. ${prop.exclusiveMaximum} )`
+  }
+  if (hasExcMin && hasMax) {
+    const r = excMax ? ' )' : ' ]'
+    return `( ${prop.exclusiveMinimum} .. ${prop.maximum}${r}`
+  }
+  if (hasMax) return `${excMax ? '< ' : '<= '}${prop.maximum}`
+  if (hasMin) return `${excMin ? '> ' : '>= '}${prop.minimum}`
+  if (hasExcMin && hasExcMax) return `( ${prop.exclusiveMinimum} .. ${prop.exclusiveMaximum} )`
+  if (hasExcMax) return `< ${prop.exclusiveMaximum}`
+  if (hasExcMin) return `> ${prop.exclusiveMinimum}`
+  return undefined
+}
+
+function stringRange(prop: SpaProperty): string | undefined {
+  if (prop.minLength != null && prop.maxLength != null) {
+    if (prop.minLength === prop.maxLength) return `= ${prop.minLength} characters`
+    return `[ ${prop.minLength} .. ${prop.maxLength} ] characters`
+  }
+  if (prop.minLength != null) {
+    if (prop.minLength === 1) return 'non-empty'
+    return `>= ${prop.minLength} characters`
+  }
+  if (prop.maxLength != null) return `<= ${prop.maxLength} characters`
+  return undefined
+}
+
+function itemsRange(prop: SpaProperty): string | undefined {
+  if (prop.minItems != null && prop.maxItems != null) {
+    if (prop.minItems === prop.maxItems) return `= ${prop.minItems} items`
+    return `[ ${prop.minItems} .. ${prop.maxItems} ] items`
+  }
+  if (prop.minItems != null) {
+    if (prop.minItems === 1) return 'non-empty'
+    return `>= ${prop.minItems} items`
+  }
+  if (prop.maxItems != null) return `<= ${prop.maxItems} items`
+  return undefined
+}
+
 export function humanizeConstraints(prop: SpaProperty): ConstraintChip[] {
   const chips: ConstraintChip[] = []
   const t = primaryType(prop.type)
 
   if (prop.const != null) chips.push({ label: `const: ${prop.const}`, class: 'chip-const' })
 
-  if (t === 'string' || !t || t === 'any') {
-    if (prop.minLength != null && prop.maxLength != null)
-      chips.push({ label: `${prop.minLength}..${prop.maxLength} characters` })
-    else if (prop.minLength != null) chips.push({ label: `>= ${prop.minLength} characters` })
-    else if (prop.maxLength != null) chips.push({ label: `<= ${prop.maxLength} characters` })
+  const tIsString = t === 'string' || !t || t === 'any'
+  if (tIsString) {
+    const range = stringRange(prop)
+    if (range) chips.push({ label: range })
   }
 
   if (t === 'integer' || t === 'number') {
-    if (prop.minimum != null) chips.push({ label: `>= ${prop.minimum}` })
-    if (prop.exclusiveMinimum != null) chips.push({ label: `> ${prop.exclusiveMinimum}` })
-    if (prop.maximum != null) chips.push({ label: `<= ${prop.maximum}` })
-    if (prop.exclusiveMaximum != null) chips.push({ label: `< ${prop.exclusiveMaximum}` })
-    if (prop.multipleOf != null) chips.push({ label: `multiple of ${prop.multipleOf}` })
+    const range = numberRange(prop)
+    if (range) chips.push({ label: range })
+    if (prop.multipleOf != null) {
+      const s = prop.multipleOf.toString()
+      if (/^0\.0*1$/.test(s)) {
+        chips.push({ label: `decimal places <= ${s.split('.')[1].length}` })
+      } else {
+        chips.push({ label: `multiple of ${s}` })
+      }
+    }
   }
 
   if (t === 'array') {
-    if (prop.minItems != null && prop.maxItems != null)
-      chips.push({ label: `${prop.minItems}..${prop.maxItems} items` })
-    else if (prop.minItems != null) chips.push({ label: `>= ${prop.minItems} items` })
-    else if (prop.maxItems != null) chips.push({ label: `<= ${prop.maxItems} items` })
+    const range = itemsRange(prop)
+    if (range) chips.push({ label: range })
     if (prop.uniqueItems) chips.push({ label: 'unique', class: 'chip-unique' })
   }
 
-  if (prop.pattern) chips.push({ label: `${prop.pattern}`, class: 'chip-pattern' })
+  if (prop.pattern) chips.push({ label: prop.pattern, class: 'chip-pattern' })
   if (prop.default != null) chips.push({ label: `default: ${prop.default}`, class: 'chip-default' })
   if (prop.examples?.length) chips.push({ label: `e.g. ${prop.examples.join(', ')}`, class: 'chip-example' })
   if (prop.contentMediaType) chips.push({ label: `content-type: ${prop.contentMediaType}` })
