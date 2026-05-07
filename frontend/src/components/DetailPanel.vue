@@ -56,6 +56,10 @@
                   <span class="meta-label">Reference</span>
                   <span class="font-mono text-secondary">{{ (item as any).property.ref }}</span>
                 </div>
+                <div v-if="item.kind === 'property' && (item as any).property.compositionSource" class="meta-row">
+                  <span class="meta-label">Source</span>
+                  <span class="badge badge-composition-detail">{{ (item as any).property.compositionSource }}</span>
+                </div>
                 <div v-if="item.kind === 'property' && (item as any).property.default" class="meta-row">
                   <span class="meta-label">Default</span>
                   <span class="font-mono">{{ (item as any).property.default }}</span>
@@ -65,6 +69,34 @@
                   <div class="meta-tags">
                     <span v-for="r in schema.required" :key="r" class="badge badge-required-sm">{{ r }}</span>
                   </div>
+                </div>
+                <div v-if="item.kind === 'schema' && schema.$schema" class="meta-row">
+                  <span class="meta-label">JSON Schema</span>
+                  <span class="font-mono text-secondary" style="font-size: var(--text-xs); word-break: break-all;">{{ schema.$schema }}</span>
+                </div>
+                <div v-if="item.kind === 'schema' && schema.$id" class="meta-row">
+                  <span class="meta-label">$id</span>
+                  <span class="font-mono text-secondary" style="font-size: var(--text-xs); word-break: break-all;">{{ schema.$id }}</span>
+                </div>
+                <div v-if="item.kind === 'schema' && (schema.hasAllOf || schema.hasAnyOf || schema.hasOneOf)" class="meta-row">
+                  <span class="meta-label">Composition</span>
+                  <div class="meta-tags">
+                    <span v-if="schema.hasAllOf" class="badge badge-composition-detail">allOf</span>
+                    <span v-if="schema.hasAnyOf" class="badge badge-composition-detail">anyOf</span>
+                    <span v-if="schema.hasOneOf" class="badge badge-composition-detail">oneOf</span>
+                  </div>
+                </div>
+                <div v-if="item.kind === 'schema' && (schema.minProperties != null || schema.maxProperties != null)" class="meta-row">
+                  <span class="meta-label">Properties</span>
+                  <span class="text-secondary">
+                    <template v-if="schema.minProperties != null && schema.maxProperties != null">{{ schema.minProperties }}..{{ schema.maxProperties }}</template>
+                    <template v-else-if="schema.minProperties != null">&ge; {{ schema.minProperties }}</template>
+                    <template v-else>&le; {{ schema.maxProperties }}</template>
+                  </span>
+                </div>
+                <div v-if="item.kind === 'schema' && schema.additionalProperties === false" class="meta-row">
+                  <span class="meta-label">Additional</span>
+                  <span class="badge badge-locked-detail">Denied</span>
                 </div>
               </div>
             </div>
@@ -181,6 +213,23 @@
               <p v-else class="text-muted">No properties defined.</p>
             </div>
           </template>
+
+          <!-- Examples tab -->
+          <template v-if="uiStore.activePanelTab === 'examples'">
+            <div class="detail-section">
+              <div v-if="examples.length" class="example-group">
+                <h4 class="example-label">Provided Examples</h4>
+                <div v-for="(ex, idx) in examples" :key="idx" class="example-block">
+                  <pre class="example-pre"><code>{{ formatExample(ex) }}</code></pre>
+                </div>
+              </div>
+              <div v-if="generatedExample" class="example-group">
+                <h4 class="example-label">Generated Example</h4>
+                <pre class="example-pre example-generated"><code>{{ generatedExample }}</code></pre>
+              </div>
+              <p v-if="!examples.length && !generatedExample" class="text-muted">No examples available.</p>
+            </div>
+          </template>
         </template>
 
         <div v-else class="panel-empty">
@@ -239,6 +288,13 @@ const properties = computed<SpaProperty[]>(() => {
   }
 })
 
+function formatExample(value: unknown): string {
+  if (typeof value === 'string') {
+    try { return JSON.stringify(JSON.parse(value), null, 2) } catch { return value }
+  }
+  return JSON.stringify(value, null, 2)
+}
+
 const hasConstraints = computed(() => {
   if (item.value?.kind !== 'property') return false
   const p = item.value.property
@@ -251,7 +307,59 @@ const hasConstraints = computed(() => {
     p.contentMediaType || p.contentEncoding
 })
 
-type TabId = 'overview' | 'properties'
+type TabId = 'overview' | 'properties' | 'examples'
+
+const examples = computed(() => {
+  if (!item.value) return []
+  switch (item.value.kind) {
+    case 'schema': return item.value.schema.examples ?? []
+    case 'definition': return item.value.definition.examples ?? []
+    case 'property': return item.value.property.examples ?? []
+  }
+})
+
+const generatedExample = computed(() => {
+  if (!item.value) return null
+  if (item.value.kind === 'property') {
+    const p = item.value.property
+    if (p.default != null) return p.default
+    if (p.const != null) return p.const
+    if (p.enum?.length) return p.enum[0]
+    if (p.examples?.length) return p.examples[0]
+    const t = p.type?.split(',')[0]?.trim() || 'any'
+    switch (t) {
+      case 'string': return p.format === 'email' ? 'user@example.com' : p.format === 'uri' ? 'https://example.com' : '"string"'
+      case 'integer': return '0'
+      case 'number': return '0.0'
+      case 'boolean': return 'false'
+      case 'array': return '[]'
+      case 'object': return '{}'
+      default: return null
+    }
+  }
+  if (item.value.kind === 'schema' || item.value.kind === 'definition') {
+    const props = item.value.kind === 'schema' ? item.value.schema.properties : item.value.definition.properties
+    const req = item.value.kind === 'schema' ? item.value.schema.required : item.value.definition.required
+    const obj: Record<string, unknown> = {}
+    for (const prop of props) {
+      if (prop.default != null) { obj[prop.name] = prop.default; continue }
+      if (prop.const != null) { obj[prop.name] = prop.const; continue }
+      if (prop.enum?.length) { obj[prop.name] = prop.enum[0]; continue }
+      if (prop.examples?.length) { obj[prop.name] = prop.examples[0]; continue }
+      const t = prop.type?.split(',')[0]?.trim() || 'any'
+      switch (t) {
+        case 'string': obj[prop.name] = prop.format === 'email' ? 'user@example.com' : prop.format === 'uri' ? 'https://example.com' : 'string'; break
+        case 'integer': obj[prop.name] = 0; break
+        case 'number': obj[prop.name] = 0; break
+        case 'boolean': obj[prop.name] = false; break
+        case 'array': obj[prop.name] = []; break
+        default: obj[prop.name] = null
+      }
+    }
+    return JSON.stringify(obj, null, 2)
+  }
+  return null
+})
 
 const currentTabs = computed<{ id: TabId; label: string }[]>(() => {
   const tabs: { id: TabId; label: string }[] = [
@@ -259,6 +367,10 @@ const currentTabs = computed<{ id: TabId; label: string }[]>(() => {
   ]
   if (properties.value.length > 0) {
     tabs.push({ id: 'properties', label: `Properties (${properties.value.length})` })
+  }
+  if (examples.value.length > 0 || generatedExample.value) {
+    const count = examples.value.length || 1
+    tabs.push({ id: 'examples', label: `Examples (${count})` })
   }
   return tabs
 })
@@ -435,6 +547,25 @@ const currentTabs = computed<{ id: TabId; label: string }[]>(() => {
   margin-left: 4px;
 }
 
+.badge-composition-detail {
+  font-size: 11px;
+  color: var(--color-teal);
+  background: var(--color-teal-alpha);
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-weight: 500;
+}
+
+.badge-locked-detail {
+  font-size: 11px;
+  color: var(--color-orange);
+  background: var(--color-orange-alpha);
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  font-weight: 500;
+}
+
 .constraint-table td:first-child {
   font-weight: 500;
   color: var(--text-secondary);
@@ -443,5 +574,40 @@ const currentTabs = computed<{ id: TabId; label: string }[]>(() => {
 
 .constraint-key {
   white-space: nowrap;
+}
+
+/* Examples */
+.example-group {
+  margin-bottom: var(--space-4);
+}
+
+.example-label {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: var(--space-2);
+}
+
+.example-block {
+  margin-bottom: var(--space-2);
+}
+
+.example-pre {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  font-size: var(--text-sm);
+  overflow-x: auto;
+  margin: 0;
+}
+
+.example-pre code {
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+}
+
+.example-generated {
+  border-color: var(--color-primary-alpha);
 }
 </style>

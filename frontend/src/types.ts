@@ -39,6 +39,7 @@ export interface SpaProperty {
   additionalProperties?: boolean
   contentMediaType?: string
   contentEncoding?: string
+  compositionSource?: string
 }
 
 export interface SpaDefinition {
@@ -49,6 +50,8 @@ export interface SpaDefinition {
   properties: SpaProperty[]
   required: string[]
   examples?: string[]
+  minProperties?: number
+  maxProperties?: number
 }
 
 export interface SpaSchema {
@@ -64,6 +67,11 @@ export interface SpaSchema {
   $schema?: string
   $id?: string
   additionalProperties?: boolean
+  minProperties?: number
+  maxProperties?: number
+  hasAllOf?: boolean
+  hasAnyOf?: boolean
+  hasOneOf?: boolean
 }
 
 export interface SpaSearchEntry {

@@ -34,7 +34,36 @@
         <div class="section-header">
           <span class="section-title">Schemas</span>
         </div>
-        <div class="schema-tree">
+        <div class="search-box">
+          <svg class="search-icon" width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <circle cx="5.5" cy="5.5" r="4.5" stroke="currentColor" stroke-width="1.3"/>
+            <path d="M9 9l4 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+          </svg>
+          <input
+            v-model="searchQuery"
+            type="text"
+            class="search-input"
+            placeholder="Search schemas, definitions..."
+          />
+          <button v-if="searchQuery" class="search-clear" @click="searchQuery = ''">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+        <div v-if="searchQuery && searchResults.length" class="search-results">
+          <button
+            v-for="result in searchResults"
+            :key="`${result.type}:${result.name}@${result.schemaName}`"
+            class="search-result-item"
+            @click="goToSearchResult(result)"
+          >
+            <span class="badge" :class="resultBadgeClass(result.type)">{{ resultTypeLabel(result.type) }}</span>
+            <span class="search-result-name">{{ result.title || result.name }}</span>
+            <span class="search-result-schema text-muted">{{ result.schemaName }}</span>
+          </button>
+        </div>
+        <div v-else class="schema-tree">
           <div
             v-for="schema in schemaStore.schemas"
             :key="schema.name"
@@ -49,6 +78,7 @@
                 <path d="M4 3l3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
               <span class="schema-name">{{ schema.title || schema.name }}</span>
+              <span v-if="schema.$id" class="schema-id-hint" :title="schema.$id">{{ schema.$id }}</span>
               <span class="schema-badge-count">{{ schema.definitions.length }}D</span>
             </div>
 
@@ -101,6 +131,7 @@
             Generated with
             <a href="https://github.com/lutaml/lutaml-jsonschema" target="_blank" rel="noopener">LutaML JSON Schema</a>
           </span>
+          <span v-if="schemaStore.metadata?.version" class="footer-text">{{ schemaStore.metadata.version }}</span>
         </div>
       </div>
     </div>
@@ -108,11 +139,54 @@
 </template>
 
 <script setup lang="ts">
+import { ref, computed } from 'vue'
 import { useSchemaStore } from '../stores/schemaStore'
 import { useUiStore } from '../stores/uiStore'
+import type { SpaSearchEntry } from '../types'
 
 const schemaStore = useSchemaStore()
 const uiStore = useUiStore()
+
+const searchQuery = ref('')
+
+const searchResults = computed(() => {
+  const q = searchQuery.value.trim().toLowerCase()
+  if (!q) return []
+  return schemaStore.searchIndex.filter(entry =>
+    entry.name.toLowerCase().includes(q) ||
+    (entry.title && entry.title.toLowerCase().includes(q)) ||
+    entry.schemaName.toLowerCase().includes(q),
+  ).slice(0, 15)
+})
+
+function goToSearchResult(result: SpaSearchEntry) {
+  schemaStore.selectSchema(result.schemaName)
+  if (result.type === 'definition') {
+    schemaStore.selectDefinition(result.name)
+  } else if (result.type === 'property') {
+    schemaStore.selectProperty(result.name)
+  }
+  searchQuery.value = ''
+  uiStore.closeDetailPanel()
+}
+
+function resultTypeLabel(type: string): string {
+  switch (type) {
+    case 'schema': return 'S'
+    case 'definition': return 'D'
+    case 'property': return 'P'
+    default: return '?'
+  }
+}
+
+function resultBadgeClass(type: string): string {
+  switch (type) {
+    case 'schema': return 'badge-schema-sm'
+    case 'definition': return 'badge-definition-sm'
+    case 'property': return 'badge-property-sm'
+    default: return ''
+  }
+}
 
 function goHome() {
   schemaStore.selectSchema(null)
@@ -297,6 +371,17 @@ function selectDefinition(schemaName: string, defName: string) {
   text-overflow: ellipsis;
 }
 
+.schema-id-hint {
+  font-size: 9px;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 .schema-badge-count {
   font-size: var(--text-xs);
   color: var(--text-muted);
@@ -360,6 +445,121 @@ function selectDefinition(schemaName: string, defName: string) {
   border-radius: 2px;
   font-weight: 600;
   flex-shrink: 0;
+}
+
+.badge-schema-sm {
+  background: var(--badge-schema-bg);
+  color: var(--badge-schema);
+  font-size: 9px;
+  padding: 1px 4px;
+  border-radius: 2px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.badge-property-sm {
+  background: var(--bg-secondary);
+  color: var(--text-muted);
+  font-size: 9px;
+  padding: 1px 4px;
+  border-radius: 2px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+/* Search */
+.search-box {
+  position: relative;
+  margin-bottom: var(--space-2);
+}
+
+.search-icon {
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.search-input {
+  width: 100%;
+  padding: 6px 28px 6px 28px;
+  font-size: var(--text-sm);
+  background: var(--bg-primary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+}
+
+.search-input::placeholder {
+  color: var(--text-muted);
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.search-clear {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+}
+
+.search-clear:hover {
+  color: var(--text-primary);
+}
+
+.search-results {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-bottom: var(--space-2);
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.search-result-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 4px 6px;
+  font-size: var(--text-xs);
+  text-align: left;
+  background: var(--bg-primary);
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  width: 100%;
+  transition: background var(--transition-fast);
+}
+
+.search-result-item:hover {
+  background: var(--bg-hover);
+}
+
+.search-result-name {
+  flex: 1;
+  color: var(--text-primary);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.search-result-schema {
+  font-size: 10px;
+  white-space: nowrap;
 }
 
 .stats-section {
