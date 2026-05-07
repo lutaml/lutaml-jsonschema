@@ -1,5 +1,5 @@
 <template>
-  <aside class="sidebar" :class="{ collapsed: uiStore.sidebarCollapsed }">
+  <aside class="sidebar" :class="{ collapsed: uiStore.sidebarCollapsed }" :aria-label="`${schemaStore.metadata?.title || 'JSON Schema Docs'} navigation`">
     <div class="sidebar-content">
       <!-- Branding -->
       <div class="sidebar-branding">
@@ -44,24 +44,30 @@
             type="text"
             class="search-input"
             placeholder="Search schemas, definitions..."
+            aria-label="Search schemas and definitions"
+            @keydown="handleSearchKey"
           />
-          <button v-if="searchQuery" class="search-clear" @click="searchQuery = ''">
+          <button v-if="searchQuery" class="search-clear" aria-label="Clear search" @click="searchQuery = ''">
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
               <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
             </svg>
           </button>
         </div>
-        <div v-if="searchQuery && searchResults.length" class="search-results">
+        <div v-if="debouncedQuery && searchResults.length" class="search-results">
           <button
-            v-for="result in searchResults"
+            v-for="(result, idx) in searchResults"
             :key="`${result.type}:${result.name}@${result.schemaName}`"
             class="search-result-item"
+            :class="{ active: idx === activeResultIdx }"
             @click="goToSearchResult(result)"
           >
             <span class="badge" :class="resultBadgeClass(result.type)">{{ resultTypeLabel(result.type) }}</span>
             <span class="search-result-name">{{ result.title || result.name }}</span>
             <span class="search-result-schema text-muted">{{ result.schemaName }}</span>
           </button>
+        </div>
+        <div v-else-if="debouncedQuery && !searchResults.length && searchQuery" class="search-no-results text-muted">
+          No results found
         </div>
         <div v-else class="schema-tree">
           <div
@@ -72,7 +78,12 @@
             <div
               class="schema-node-header"
               :class="{ active: schema.name === schemaStore.selectedSchemaName }"
+              role="treeitem"
+              :aria-expanded="uiStore.isSchemaExpanded(schema.name)"
+              tabindex="0"
               @click="toggleAndSelect(schema.name)"
+              @keydown.enter="toggleAndSelect(schema.name)"
+              @keydown.space.prevent="toggleAndSelect(schema.name)"
             >
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none" :class="{ expanded: uiStore.isSchemaExpanded(schema.name) }">
                 <path d="M4 3l3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -139,7 +150,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useSchemaStore } from '../stores/schemaStore'
 import { useUiStore } from '../stores/uiStore'
 import type { SpaSearchEntry } from '../types'
@@ -148,9 +159,23 @@ const schemaStore = useSchemaStore()
 const uiStore = useUiStore()
 
 const searchQuery = ref('')
+const debouncedQuery = ref('')
+const activeResultIdx = ref(-1)
+
+let debounceTimer: ReturnType<typeof setTimeout> | null = null
+
+watch(searchQuery, (q) => {
+  if (debounceTimer) clearTimeout(debounceTimer)
+  if (!q.trim()) {
+    debouncedQuery.value = ''
+    activeResultIdx.value = -1
+    return
+  }
+  debounceTimer = setTimeout(() => { debouncedQuery.value = q }, 300)
+})
 
 const searchResults = computed(() => {
-  const q = searchQuery.value.trim().toLowerCase()
+  const q = debouncedQuery.value.trim().toLowerCase()
   if (!q) return []
   return schemaStore.searchIndex.filter(entry =>
     entry.name.toLowerCase().includes(q) ||
@@ -158,6 +183,25 @@ const searchResults = computed(() => {
     entry.schemaName.toLowerCase().includes(q),
   ).slice(0, 15)
 })
+
+watch(searchResults, () => { activeResultIdx.value = -1 })
+
+function handleSearchKey(event: KeyboardEvent) {
+  if (event.key === 'ArrowDown') {
+    activeResultIdx.value = Math.min(activeResultIdx.value + 1, searchResults.value.length - 1)
+    event.preventDefault()
+  } else if (event.key === 'ArrowUp') {
+    activeResultIdx.value = Math.max(0, activeResultIdx.value - 1)
+    event.preventDefault()
+  } else if (event.key === 'Enter') {
+    const result = searchResults.value[activeResultIdx.value]
+    if (result) goToSearchResult(result)
+    activeResultIdx.value = -1
+  } else if (event.key === 'Escape') {
+    searchQuery.value = ''
+    activeResultIdx.value = -1
+  }
+}
 
 function goToSearchResult(result: SpaSearchEntry) {
   schemaStore.selectSchema(result.schemaName)
@@ -167,6 +211,7 @@ function goToSearchResult(result: SpaSearchEntry) {
     schemaStore.selectProperty(result.name)
   }
   searchQuery.value = ''
+  debouncedQuery.value = ''
   uiStore.closeDetailPanel()
 }
 
@@ -544,8 +589,15 @@ function selectDefinition(schemaName: string, defName: string) {
   transition: background var(--transition-fast);
 }
 
-.search-result-item:hover {
+.search-result-item:hover,
+.search-result-item.active {
   background: var(--bg-hover);
+}
+
+.search-no-results {
+  padding: var(--space-3) var(--space-2);
+  font-size: var(--text-xs);
+  text-align: center;
 }
 
 .search-result-name {
@@ -628,5 +680,20 @@ function selectDefinition(schemaName: string, defName: string) {
 
 .footer-text a:hover {
   text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 40;
+    box-shadow: var(--shadow-lg);
+  }
+  .sidebar.collapsed {
+    transform: translateX(-100%);
+    width: 280px;
+  }
 }
 </style>

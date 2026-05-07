@@ -21,7 +21,7 @@
             </div>
           </div>
           <span v-if="schemaStore.selectedSchema.title && schemaStore.selectedSchema.title !== schemaStore.selectedSchema.name" class="schema-name-hint font-mono text-muted">{{ schemaStore.selectedSchema.name }}</span>
-          <p v-if="schemaStore.selectedSchema.description" class="schema-desc text-secondary">{{ schemaStore.selectedSchema.description }}</p>
+          <p v-if="schemaStore.selectedSchema.description" class="schema-desc text-secondary" v-html="renderInlineMarkdown(schemaStore.selectedSchema.description)"></p>
           <div class="schema-meta-row">
             <span class="badge badge-type">{{ schemaStore.selectedSchema.type || 'any' }}</span>
             <span class="text-muted">{{ schemaStore.selectedSchema.properties.length }} properties</span>
@@ -31,8 +31,7 @@
             <span v-if="schemaStore.selectedSchema.hasAllOf" class="badge badge-composition">allOf</span>
             <span v-if="schemaStore.selectedSchema.hasAnyOf" class="badge badge-composition">anyOf</span>
             <span v-if="schemaStore.selectedSchema.hasOneOf" class="badge badge-composition">oneOf</span>
-            <span v-if="schemaStore.selectedSchema.minProperties != null" class="text-muted">&middot; min {{ schemaStore.selectedSchema.minProperties }} props</span>
-            <span v-if="schemaStore.selectedSchema.maxProperties != null" class="text-muted">&middot; max {{ schemaStore.selectedSchema.maxProperties }} props</span>
+            <span v-if="schemaPropsRange" class="badge badge-range">{{ schemaPropsRange }}</span>
           </div>
           <div v-if="schemaStore.selectedSchema.$schema || schemaStore.selectedSchema.$id" class="schema-id-row">
             <span v-if="schemaStore.selectedSchema.$schema" class="meta-id-chip font-mono text-muted" title="JSON Schema version">{{ schemaStore.selectedSchema.$schema }}</span>
@@ -92,7 +91,7 @@
               <span v-if="def.maxProperties != null" class="text-muted">&middot; max {{ def.maxProperties }}</span>
             </div>
             <div class="def-card-info">
-              <p v-if="def.description" class="def-card-desc text-secondary">{{ def.description }}</p>
+              <p v-if="def.description" class="def-card-desc text-secondary" v-html="renderInlineMarkdown(def.description)"></p>
               <div v-if="def.required?.length" class="def-card-required">
                 <span v-for="r in def.required" :key="r" class="required-tag-sm">{{ r }}</span>
               </div>
@@ -112,8 +111,9 @@
                 </div>
               </div>
             </div>
+            <Transition name="def-expand">
             <div v-if="expandedDefs.has(def.name)" class="def-card-body">
-              <div v-if="def.description" class="def-body-desc text-secondary">{{ def.description }}</div>
+              <div v-if="def.description" class="def-body-desc text-secondary" v-html="renderInlineMarkdown(def.description)"></div>
               <SchemaBuilder
                 :properties="def.properties"
                 :required="def.required"
@@ -121,6 +121,7 @@
                 :all-schemas="schemaStore.schemas"
               />
             </div>
+            </Transition>
           </div>
         </div>
       </div>
@@ -174,7 +175,11 @@
           v-for="schema in schemaStore.schemas"
           :key="schema.name"
           class="schema-card card"
+          role="button"
+          tabindex="0"
           @click="selectSchema(schema.name)"
+          @keydown.enter="selectSchema(schema.name)"
+          @keydown.space.prevent="selectSchema(schema.name)"
         >
           <div class="schema-card-icon">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -188,6 +193,9 @@
             <p v-if="schema.description" class="schema-card-desc text-secondary">{{ schema.description }}</p>
             <div class="schema-card-meta">
               <span class="badge badge-type-sm">{{ schema.type || 'any' }}</span>
+              <span v-if="schema.hasAllOf" class="badge badge-comp-sm">allOf</span>
+              <span v-if="schema.hasAnyOf" class="badge badge-comp-sm">anyOf</span>
+              <span v-if="schema.hasOneOf" class="badge badge-comp-sm">oneOf</span>
             </div>
             <div class="schema-card-stats">
               <span>{{ schema.properties.length }} props</span>
@@ -207,12 +215,24 @@ import { ref, reactive, computed, watch, nextTick } from 'vue'
 import { useSchemaStore } from '../stores/schemaStore'
 import SchemaBuilder from '../components/SchemaBuilder.vue'
 import { downloadFile } from '../composables/useDownload'
+import { renderInlineMarkdown } from '../composables/useMarkdownLite'
 import type { SpaSchema } from '../types'
 
 const schemaStore = useSchemaStore()
 const expandedDefs = reactive(new Set<string>())
 const viewMode = ref<'builder' | 'source'>('builder')
 const sourceCopied = ref(false)
+
+const schemaPropsRange = computed(() => {
+  const s = schemaStore.selectedSchema
+  if (!s) return ''
+  const min = s.minProperties
+  const max = s.maxProperties
+  if (min != null && max != null) return `[ ${min} .. ${max} ] properties`
+  if (min != null) return min === 1 ? 'non-empty object' : `>= ${min} properties`
+  if (max != null) return `<= ${max} properties`
+  return ''
+})
 
 function expandAllDefs() {
   for (const def of schemaStore.selectedSchema?.definitions ?? []) {
@@ -445,6 +465,16 @@ watch(() => schemaStore.selectedItemKey, (key) => {
   font-family: var(--font-mono);
 }
 
+.badge-range {
+  font-size: 10px;
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-weight: 500;
+}
+
 .schema-required {
   display: flex;
   align-items: flex-start;
@@ -665,6 +695,30 @@ watch(() => schemaStore.selectedItemKey, (key) => {
   margin-bottom: var(--space-2);
 }
 
+.def-card-desc :deep(.md-code),
+.def-body-desc :deep(.md-code),
+.schema-desc :deep(.md-code) {
+  font-family: var(--font-mono);
+  font-size: inherit;
+  background: var(--bg-secondary);
+  padding: 1px 4px;
+  border-radius: 2px;
+  border: 1px solid var(--border-light);
+}
+
+.def-card-desc :deep(.md-link),
+.def-body-desc :deep(.md-link),
+.schema-desc :deep(.md-link) {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.def-card-desc :deep(.md-link:hover),
+.def-body-desc :deep(.md-link:hover),
+.schema-desc :deep(.md-link:hover) {
+  text-decoration: underline;
+}
+
 .def-card-info {
   padding: 0 var(--space-4) var(--space-3);
   margin-top: calc(var(--space-1) * -1);
@@ -803,6 +857,16 @@ watch(() => schemaStore.selectedItemKey, (key) => {
   font-size: 10px;
 }
 
+.badge-comp-sm {
+  font-size: 10px;
+  color: var(--color-teal);
+  background: var(--color-teal-alpha);
+  padding: 1px 5px;
+  border-radius: var(--radius-sm);
+  font-weight: 500;
+  font-family: var(--font-mono);
+}
+
 /* Landing page */
 .landing-page {
   padding: var(--space-6);
@@ -910,5 +974,45 @@ watch(() => schemaStore.selectedItemKey, (key) => {
 .empty-state {
   padding: var(--space-8);
   text-align: center;
+}
+
+/* Definition card expand transition */
+.def-expand-enter-active,
+.def-expand-leave-active {
+  transition: all var(--transition-slow);
+  overflow: hidden;
+}
+.def-expand-enter-from,
+.def-expand-leave-to {
+  opacity: 0;
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+.def-expand-enter-to,
+.def-expand-leave-from {
+  opacity: 1;
+  max-height: 2000px;
+}
+
+/* Schema card focus-visible */
+.schema-card:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .schema-title-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .schema-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  .schema-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
