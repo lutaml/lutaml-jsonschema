@@ -33,6 +33,7 @@ module Lutaml
         attribute :additional_properties, :boolean
         attribute :content_type, :string
         attribute :content_encoding, :string
+        attribute :composition_source, :string
 
         json do
           map "name", to: :name
@@ -64,6 +65,7 @@ module Lutaml
           map "additionalProperties", to: :additional_properties
           map "contentMediaType", to: :content_type
           map "contentEncoding", to: :content_encoding
+          map "compositionSource", to: :composition_source
         end
       end
     end

@@ -18,6 +18,11 @@ module Lutaml
         attribute :dollar_schema, :string
         attribute :dollar_id, :string
         attribute :additional_properties, :boolean
+        attribute :min_properties, :integer
+        attribute :max_properties, :integer
+        attribute :has_all_of, :boolean
+        attribute :has_any_of, :boolean
+        attribute :has_one_of, :boolean
 
         json do
           map "name", to: :name
@@ -32,6 +37,11 @@ module Lutaml
           map "$schema", to: :dollar_schema
           map "$id", to: :dollar_id
           map "additionalProperties", to: :additional_properties
+          map "minProperties", to: :min_properties
+          map "maxProperties", to: :max_properties
+          map "hasAllOf", to: :has_all_of
+          map "hasAnyOf", to: :has_any_of
+          map "hasOneOf", to: :has_one_of
         end
       end
     end
