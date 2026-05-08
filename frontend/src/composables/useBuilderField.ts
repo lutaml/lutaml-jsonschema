@@ -24,17 +24,19 @@ export function createField(
   requiredNames: string[],
   schema: SpaSchema,
   allSchemas?: SpaSchema[],
+  depth: number = 0,
 ): BuilderField {
   const isReq = requiredNames.includes(prop.name) || prop.required === true
   const def = resolveSchemaRef(prop.ref, schema, allSchemas)
   const isArray = primaryType(prop.type) === 'array'
+  const shouldExpand = depth === 0 && !!def && def.properties.length <= 8
 
   return {
     prop,
     included: isReq,
     isRequired: isReq,
     rawValue: initialValue(prop),
-    expanded: false,
+    expanded: shouldExpand,
     resolvedDef: def,
     nestedJson: def ? buildDefaultJson(def.properties) : {},
     arrayItems: isArray ? [arrayDefaultValue(prop.itemsType)] : [],

@@ -309,7 +309,7 @@ function validate(name: string, rawValue: string, prop: SpaProperty) {
   validationErrors.value = m
 }
 
-const fields = ref<BuilderField[]>(props.properties.map(p => createField(p, props.required, props.schema, props.allSchemas)))
+const fields = ref<BuilderField[]>(props.properties.map(p => createField(p, props.required, props.schema, props.allSchemas, depth)))
 
 const sortedFields = computed(() => {
   return [...fields.value].sort((a, b) => {
@@ -801,10 +801,11 @@ async function copyJson() {
 
 .constraint-chip {
   font-size: 11px;
-  color: var(--text-muted);
-  background: var(--bg-secondary);
+  color: var(--color-primary);
+  background: var(--color-primary-alpha);
   padding: 1px 5px;
   border-radius: var(--radius-sm);
+  border: 1px solid rgba(91, 156, 212, 0.2);
 }
 
 .constraint-chip.chip-pattern {
@@ -838,28 +839,54 @@ async function copyJson() {
 .constraint-chip.chip-locked {
   color: var(--color-orange);
   background: var(--color-orange-alpha);
+  border-color: rgba(234, 86, 36, 0.2);
   font-weight: 500;
+}
+
+.constraint-chip.chip-default {
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  border-color: var(--border-light);
+}
+
+.constraint-chip.chip-const {
+  color: var(--color-primary);
+  background: var(--color-primary-alpha);
+  border-color: rgba(91, 156, 212, 0.2);
+}
+
+.constraint-chip.chip-unique {
+  color: var(--color-teal);
+  background: var(--color-teal-alpha);
+  border-color: rgba(96, 195, 167, 0.2);
 }
 
 .constraint-chip.chip-example {
   font-style: italic;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   background: transparent;
   padding: 0;
+  border: none;
   margin-right: 0;
 }
 
 .example-chip {
   font-size: 10px;
   font-family: var(--font-mono);
-  color: var(--color-primary);
-  background: var(--color-primary-alpha);
+  color: var(--text-primary);
+  background: rgba(28, 25, 23, 0.04);
   padding: 1px 5px;
   border-radius: var(--radius-sm);
+  border: 1px solid var(--border-light);
   max-width: 200px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+:root[data-theme="dark"] .example-chip {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--border-medium);
 }
 
 /* Enum chips */
@@ -888,19 +915,29 @@ async function copyJson() {
   border: 1px solid var(--border-light);
   border-radius: var(--radius-md);
   background: var(--bg-secondary);
-  border-left: 3px solid var(--color-primary);
   position: relative;
 }
 
+/* Tree line connector: vertical line from parent to nested section */
 .nested-section::before {
   content: '';
   position: absolute;
   left: -11px;
   top: 0;
   bottom: 0;
-  width: 2px;
-  background: var(--border-light);
-  border-radius: 1px;
+  width: 1px;
+  background: var(--border-medium);
+}
+
+/* Tree line connector: horizontal branch into nested section */
+.nested-section::after {
+  content: '';
+  position: absolute;
+  left: -11px;
+  top: 14px;
+  width: 10px;
+  height: 1px;
+  background: var(--border-medium);
 }
 
 /* Depth-aware alternating backgrounds */

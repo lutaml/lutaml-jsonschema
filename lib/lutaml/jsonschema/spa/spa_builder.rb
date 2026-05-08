@@ -168,6 +168,10 @@ module Lutaml
               examples: s.examples,
               min_properties: s.min_properties,
               max_properties: s.max_properties,
+              additional_properties: s.additional_properties,
+              has_all_of: s.all_of.any?,
+              has_any_of: s.any_of.any?,
+              has_one_of: s.one_of.any?,
             )
           end
         end
@@ -232,6 +236,7 @@ module Lutaml
             entries = [SpaSearchEntry.new(
               name: spa_schema.name,
               title: spa_schema.title,
+              description: spa_schema.description,
               type: "schema",
               schema_name: spa_schema.name,
             )]
@@ -240,6 +245,7 @@ module Lutaml
               entries << SpaSearchEntry.new(
                 name: prop.name,
                 title: prop.title,
+                description: prop.description,
                 type: "property",
                 schema_name: spa_schema.name,
               )
@@ -249,6 +255,7 @@ module Lutaml
               entries << SpaSearchEntry.new(
                 name: defn.name,
                 title: defn.title,
+                description: defn.description,
                 type: "definition",
                 schema_name: spa_schema.name,
               )
@@ -257,6 +264,7 @@ module Lutaml
                 entries << SpaSearchEntry.new(
                   name: prop.name,
                   title: prop.title,
+                  description: prop.description,
                   type: "property",
                   schema_name: spa_schema.name,
                 )

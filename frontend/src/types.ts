@@ -52,6 +52,10 @@ export interface SpaDefinition {
   examples?: string[]
   minProperties?: number
   maxProperties?: number
+  additionalProperties?: boolean
+  hasAllOf?: boolean
+  hasAnyOf?: boolean
+  hasOneOf?: boolean
 }
 
 export interface SpaSchema {
