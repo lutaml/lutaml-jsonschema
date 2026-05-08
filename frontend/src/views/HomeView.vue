@@ -166,7 +166,7 @@
           class="btn btn-outline btn-sm"
           @click="downloadAllSchemas"
         >
-          Download All Schemas (.zip)
+          Download All Schemas
         </button>
       </div>
 

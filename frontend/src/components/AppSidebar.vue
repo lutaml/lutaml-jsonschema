@@ -180,7 +180,8 @@ const searchResults = computed(() => {
   return schemaStore.searchIndex.filter(entry =>
     entry.name.toLowerCase().includes(q) ||
     (entry.title && entry.title.toLowerCase().includes(q)) ||
-    entry.schemaName.toLowerCase().includes(q),
+    entry.schemaName.toLowerCase().includes(q) ||
+    (entry.description && entry.description.toLowerCase().includes(q)),
   ).slice(0, 15)
 })
 

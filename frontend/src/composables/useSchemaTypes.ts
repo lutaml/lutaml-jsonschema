@@ -16,10 +16,12 @@ export function primaryType(type?: string): string {
  */
 export function displayType(prop: SpaProperty, resolvedTitle?: string): string {
   const t = primaryType(prop.type)
-  if (t === 'array' && prop.itemsType) return `array of ${prop.itemsType}`
-  if (resolvedTitle && (t === 'object' || t === 'any') && prop.ref) return resolvedTitle
-  if (prop.format) return `${t} (${prop.format})`
-  return t
+  const isNullable = (prop.type || '').split(',').map(s => s.trim()).includes('null')
+  const suffix = isNullable ? ' | null' : ''
+  if (t === 'array' && prop.itemsType) return `array of ${prop.itemsType}${suffix}`
+  if (resolvedTitle && (t === 'object' || t === 'any') && prop.ref) return resolvedTitle + suffix
+  if (prop.format) return `${t} (${prop.format})${suffix}`
+  return t + suffix
 }
 
 /**
@@ -69,6 +71,7 @@ export function initialValue(prop: SpaProperty): string {
     case 'number': return '0.0'
     case 'boolean': return 'false'
     case 'string': return formatDefault(prop.format)
+    case 'object': return '{}'
     default: return ''
   }
 }
@@ -158,7 +161,9 @@ export function parsePropertyValue(rawValue: string, prop: SpaProperty): unknown
     const n = parseFloat(rawValue)
     return isNaN(n) ? 0 : n
   }
-  if (t === 'object' && !prop.ref) return {}
+  if (t === 'object' && !prop.ref) {
+    try { return JSON.parse(rawValue) } catch { return {} }
+  }
   return rawValue
 }
 
@@ -260,4 +265,53 @@ export function humanizeConstraints(prop: SpaProperty): ConstraintChip[] {
   if (prop.contentEncoding) chips.push({ label: `encoding: ${prop.contentEncoding}` })
 
   return chips
+}
+
+export type ValidationError = string
+
+export function validateFieldValue(rawValue: string, prop: SpaProperty): ValidationError | null {
+  const t = primaryType(prop.type)
+
+  if (t === 'string' || t === 'any' || !t) {
+    if (prop.minLength != null && rawValue.length < prop.minLength && rawValue.length > 0) {
+      return `Min ${prop.minLength} characters`
+    }
+    if (prop.maxLength != null && rawValue.length > prop.maxLength) {
+      return `Max ${prop.maxLength} characters`
+    }
+    if (prop.pattern && rawValue.length > 0) {
+      try {
+        if (!new RegExp(prop.pattern).test(rawValue)) {
+          return `Must match /${prop.pattern.length > 30 ? prop.pattern.slice(0, 30) + '…' : prop.pattern}/`
+        }
+      } catch { /* invalid regex, skip */ }
+    }
+  }
+
+  if (t === 'integer' || t === 'number') {
+    const n = t === 'integer' ? parseInt(rawValue, 10) : parseFloat(rawValue)
+    if (rawValue !== '' && isNaN(n)) return 'Invalid number'
+    if (!isNaN(n)) {
+      if (prop.minimum != null && n < prop.minimum) return `Must be >= ${prop.minimum}`
+      if (prop.maximum != null && n > prop.maximum) return `Must be <= ${prop.maximum}`
+      if (prop.exclusiveMinimum != null && n <= prop.exclusiveMinimum) return `Must be > ${prop.exclusiveMinimum}`
+      if (prop.exclusiveMaximum != null && n >= prop.exclusiveMaximum) return `Must be < ${prop.exclusiveMaximum}`
+      if (prop.multipleOf != null && n % prop.multipleOf !== 0) return `Must be multiple of ${prop.multipleOf}`
+    }
+  }
+
+  if (t === 'array') {
+    if (rawValue.length > 0) {
+      try {
+        const arr = JSON.parse(rawValue)
+        if (Array.isArray(arr)) {
+          if (prop.minItems != null && arr.length < prop.minItems) return `Min ${prop.minItems} items`
+          if (prop.maxItems != null && arr.length > prop.maxItems) return `Max ${prop.maxItems} items`
+          if (prop.uniqueItems && new Set(arr).size !== arr.length) return 'Items must be unique'
+        }
+      } catch { /* not JSON, skip */ }
+    }
+  }
+
+  return null
 }

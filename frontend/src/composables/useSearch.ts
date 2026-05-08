@@ -8,6 +8,7 @@ interface SearchResult {
   name: string
   rawName: string
   schemaName: string
+  description?: string
 }
 
 export function useSearch() {
@@ -26,6 +27,7 @@ export function useSearch() {
       name: entry.title || entry.name,
       rawName: entry.name,
       schemaName: entry.schemaName,
+      description: entry.description,
     }))
   }
 
@@ -41,7 +43,8 @@ export function useSearch() {
 
     results.value = entries.filter(e =>
       e.name.toLowerCase().includes(q) ||
-      e.schemaName.toLowerCase().includes(q)
+      e.schemaName.toLowerCase().includes(q) ||
+      (e.description && e.description.toLowerCase().includes(q))
     ).slice(0, 50)
 
     isSearching.value = false

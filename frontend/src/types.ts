@@ -77,6 +77,7 @@ export interface SpaSchema {
 export interface SpaSearchEntry {
   name: string
   title?: string
+  description?: string
   type: string
   schemaName: string
 }

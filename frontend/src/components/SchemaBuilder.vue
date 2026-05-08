@@ -66,7 +66,9 @@
               :value="field.rawValue"
               :disabled="!field.included"
               class="ctrl-number"
+              :class="{ 'ctrl-error': fieldError(field.prop.name) }"
               @input="field.rawValue = ($event.target as HTMLInputElement).value"
+              @blur="validate(field.prop.name, field.rawValue, field.prop)"
             />
 
             <!-- Number -->
@@ -76,11 +78,22 @@
               :value="field.rawValue"
               :disabled="!field.included"
               class="ctrl-number"
+              :class="{ 'ctrl-error': fieldError(field.prop.name) }"
               @input="field.rawValue = ($event.target as HTMLInputElement).value"
+              @blur="validate(field.prop.name, field.rawValue, field.prop)"
             />
 
-            <!-- Object without $ref -->
-            <span v-else-if="isObjectProperty(field.prop)" class="ctrl-static">{"..."}</span>
+            <!-- Object without $ref: editable JSON textarea -->
+            <textarea
+              v-else-if="isObjectProperty(field.prop)"
+              v-model="field.rawValue"
+              :disabled="!field.included"
+              class="ctrl-textarea"
+              :class="{ 'ctrl-error': fieldError(field.prop.name) }"
+              rows="2"
+              placeholder='{"key": "value"}'
+              @blur="validate(field.prop.name, field.rawValue, field.prop)"
+            />
 
             <!-- Array with itemsType -->
             <div v-else-if="primaryType(field.prop.type) === 'array'" class="ctrl-array">
@@ -113,9 +126,15 @@
               :value="field.rawValue"
               :disabled="!field.included"
               class="ctrl-text"
+              :class="{ 'ctrl-error': fieldError(field.prop.name) }"
               @input="field.rawValue = ($event.target as HTMLInputElement).value"
+              @blur="validate(field.prop.name, field.rawValue, field.prop)"
             />
           </div>
+        </div>
+
+        <div v-if="fieldError(field.prop.name)" class="field-error-hint">
+          {{ fieldError(field.prop.name) }}
         </div>
 
         <div v-if="field.prop.description" class="field-desc-wrap">
@@ -215,6 +234,7 @@ import {
   isObjectProperty,
   hasConstraints,
   humanizeConstraints,
+  validateFieldValue,
 } from '../composables/useSchemaTypes'
 import {
   createField,
@@ -256,6 +276,7 @@ const descExpanded = ref(new Set<string>())
 const enumExpanded = ref(new Set<string>())
 
 const MAX_ENUM_SHOW = 8
+const validationErrors = ref<Map<string, string>>(new Map())
 
 function toggleDesc(name: string) {
   const s = new Set(descExpanded.value)
@@ -274,6 +295,18 @@ function toggleEnum(name: string) {
   if (s.has(name)) s.delete(name)
   else s.add(name)
   enumExpanded.value = s
+}
+
+function fieldError(name: string): string | undefined {
+  return validationErrors.value.get(name)
+}
+
+function validate(name: string, rawValue: string, prop: SpaProperty) {
+  const err = validateFieldValue(rawValue, prop)
+  const m = new Map(validationErrors.value)
+  if (err) m.set(name, err)
+  else m.delete(name)
+  validationErrors.value = m
 }
 
 const fields = ref<BuilderField[]>(props.properties.map(p => createField(p, props.required, props.schema, props.allSchemas)))
@@ -618,6 +651,21 @@ async function copyJson() {
   border-color: var(--color-primary);
 }
 
+.ctrl-error {
+  border-color: var(--color-red) !important;
+}
+
+.ctrl-error:focus {
+  box-shadow: 0 0 0 2px rgba(179, 31, 36, 0.15);
+}
+
+.field-error-hint {
+  font-size: var(--text-xs);
+  color: var(--color-red);
+  margin-top: 2px;
+  margin-left: 22px;
+}
+
 .ctrl-toggle {
   display: flex;
   align-items: center;
@@ -647,6 +695,28 @@ async function copyJson() {
   font-size: var(--text-sm);
   font-family: var(--font-mono);
   color: var(--text-muted);
+}
+
+.ctrl-textarea {
+  width: 100%;
+  padding: 3px 8px;
+  font-size: var(--text-sm);
+  font-family: var(--font-mono);
+  background: var(--bg-primary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  resize: vertical;
+  min-height: 2em;
+}
+
+.ctrl-textarea:disabled {
+  opacity: 0.35;
+}
+
+.ctrl-textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
 }
 
 .chevron {
@@ -984,6 +1054,11 @@ async function copyJson() {
 .json-block :deep(.jv-link) {
   color: var(--color-primary);
   text-decoration: underline;
+}
+
+.json-block :deep(.jv-row:hover) {
+  background: var(--bg-hover);
+  border-radius: 2px;
 }
 
 :root[data-theme="dark"] .json-block :deep(.jv-key) { color: var(--color-primary-light); }
