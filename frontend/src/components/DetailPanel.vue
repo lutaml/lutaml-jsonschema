@@ -34,35 +34,35 @@
                   <span class="meta-label">Type</span>
                   <span class="badge badge-type">{{ itemType }}</span>
                 </div>
-                <div v-if="item.kind === 'property' && (item as any).property.format" class="meta-row">
+                <div v-if="propertyItem?.format" class="meta-row">
                   <span class="meta-label">Format</span>
-                  <span class="badge badge-format">{{ (item as any).property.format }}</span>
+                  <span class="badge badge-format">{{ propertyItem.format }}</span>
                 </div>
                 <div v-if="itemDescription" class="meta-row">
                   <span class="meta-label">Description</span>
                   <span class="text-secondary">{{ itemDescription }}</span>
                 </div>
-                <div v-if="item.kind === 'property'" class="meta-row">
+                <div v-if="propertyItem" class="meta-row">
                   <span class="meta-label">Required</span>
-                  <span :class="['badge', (item as any).property.required ? 'badge-required' : 'badge-optional']">
-                    {{ (item as any).property.required ? 'Yes' : 'No' }}
+                  <span :class="['badge', propertyItem.required ? 'badge-required' : 'badge-optional']">
+                    {{ propertyItem.required ? 'Yes' : 'No' }}
                   </span>
                 </div>
-                <div v-if="item.kind === 'property' && (item as any).property.deprecated" class="meta-row">
+                <div v-if="propertyItem?.deprecated" class="meta-row">
                   <span class="meta-label">Status</span>
                   <span class="badge badge-deprecated">Deprecated</span>
                 </div>
-                <div v-if="item.kind === 'property' && (item as any).property.ref" class="meta-row">
+                <div v-if="propertyItem?.ref" class="meta-row">
                   <span class="meta-label">Reference</span>
-                  <span class="font-mono text-secondary">{{ (item as any).property.ref }}</span>
+                  <span class="font-mono text-secondary">{{ propertyItem.ref }}</span>
                 </div>
-                <div v-if="item.kind === 'property' && (item as any).property.compositionSource" class="meta-row">
+                <div v-if="propertyItem?.compositionSource" class="meta-row">
                   <span class="meta-label">Source</span>
-                  <span class="badge badge-composition-detail">{{ (item as any).property.compositionSource }}</span>
+                  <span class="badge badge-composition-detail">{{ propertyItem.compositionSource }}</span>
                 </div>
-                <div v-if="item.kind === 'property' && (item as any).property.default" class="meta-row">
+                <div v-if="propertyItem?.default" class="meta-row">
                   <span class="meta-label">Default</span>
-                  <span class="font-mono">{{ (item as any).property.default }}</span>
+                  <span class="font-mono">{{ propertyItem.default }}</span>
                 </div>
                 <div v-if="item.kind === 'schema' && schema.required.length" class="meta-row">
                   <span class="meta-label">Required</span>
@@ -102,75 +102,75 @@
             </div>
 
             <!-- Constraints for property -->
-            <div v-if="item.kind === 'property' && hasConstraints" class="detail-section">
+            <div v-if="propertyItem && hasConstraints" class="detail-section">
               <h3 class="detail-heading">Constraints</h3>
               <table class="table constraint-table">
                 <tbody>
-                  <tr v-if="(item as any).property.minimum != null">
+                  <tr v-if="propertyItem.minimum != null">
                     <td class="constraint-key">Minimum</td>
-                    <td>{{ (item as any).property.minimum }}</td>
+                    <td>{{ propertyItem.minimum }}</td>
                   </tr>
-                  <tr v-if="(item as any).property.maximum != null">
+                  <tr v-if="propertyItem.maximum != null">
                     <td class="constraint-key">Maximum</td>
-                    <td>{{ (item as any).property.maximum }}</td>
+                    <td>{{ propertyItem.maximum }}</td>
                   </tr>
-                  <tr v-if="(item as any).property.minLength != null">
+                  <tr v-if="propertyItem.minLength != null">
                     <td class="constraint-key">Min Length</td>
-                    <td>{{ (item as any).property.minLength }}</td>
+                    <td>{{ propertyItem.minLength }}</td>
                   </tr>
-                  <tr v-if="(item as any).property.maxLength != null">
+                  <tr v-if="propertyItem.maxLength != null">
                     <td class="constraint-key">Max Length</td>
-                    <td>{{ (item as any).property.maxLength }}</td>
+                    <td>{{ propertyItem.maxLength }}</td>
                   </tr>
-                  <tr v-if="(item as any).property.pattern">
+                  <tr v-if="propertyItem.pattern">
                     <td class="constraint-key">Pattern</td>
-                    <td class="font-mono">{{ (item as any).property.pattern }}</td>
+                    <td class="font-mono">{{ propertyItem.pattern }}</td>
                   </tr>
-                  <tr v-if="(item as any).property.enum?.length">
+                  <tr v-if="propertyItem.enum?.length">
                     <td class="constraint-key">Enum</td>
-                    <td>{{ (item as any).property.enum.join(', ') }}</td>
+                    <td>{{ propertyItem.enum.join(', ') }}</td>
                   </tr>
-                  <tr v-if="(item as any).property.itemsType">
+                  <tr v-if="propertyItem.itemsType">
                     <td class="constraint-key">Items</td>
-                    <td>{{ (item as any).property.itemsType }}</td>
+                    <td>{{ propertyItem.itemsType }}</td>
                   </tr>
-                  <tr v-if="(item as any).property.exclusiveMinimum != null">
+                  <tr v-if="propertyItem.exclusiveMinimum != null">
                     <td class="constraint-key">Exclusive Min</td>
-                    <td>{{ (item as any).property.exclusiveMinimum }}</td>
+                    <td>{{ propertyItem.exclusiveMinimum }}</td>
                   </tr>
-                  <tr v-if="(item as any).property.exclusiveMaximum != null">
+                  <tr v-if="propertyItem.exclusiveMaximum != null">
                     <td class="constraint-key">Exclusive Max</td>
-                    <td>{{ (item as any).property.exclusiveMaximum }}</td>
+                    <td>{{ propertyItem.exclusiveMaximum }}</td>
                   </tr>
-                  <tr v-if="(item as any).property.minItems != null">
+                  <tr v-if="propertyItem.minItems != null">
                     <td class="constraint-key">Min Items</td>
-                    <td>{{ (item as any).property.minItems }}</td>
+                    <td>{{ propertyItem.minItems }}</td>
                   </tr>
-                  <tr v-if="(item as any).property.maxItems != null">
+                  <tr v-if="propertyItem.maxItems != null">
                     <td class="constraint-key">Max Items</td>
-                    <td>{{ (item as any).property.maxItems }}</td>
+                    <td>{{ propertyItem.maxItems }}</td>
                   </tr>
-                  <tr v-if="(item as any).property.uniqueItems">
+                  <tr v-if="propertyItem.uniqueItems">
                     <td class="constraint-key">Unique Items</td>
                     <td>Yes</td>
                   </tr>
-                  <tr v-if="(item as any).property.multipleOf != null">
+                  <tr v-if="propertyItem.multipleOf != null">
                     <td class="constraint-key">Multiple Of</td>
-                    <td>{{ (item as any).property.multipleOf }}</td>
+                    <td>{{ propertyItem.multipleOf }}</td>
                   </tr>
-                  <tr v-if="(item as any).property.const != null">
+                  <tr v-if="propertyItem.const != null">
                     <td class="constraint-key">Const</td>
-                    <td class="font-mono">{{ (item as any).property.const }}</td>
+                    <td class="font-mono">{{ propertyItem.const }}</td>
                   </tr>
-                  <tr v-if="(item as any).property.contentMediaType">
+                  <tr v-if="propertyItem.contentMediaType">
                     <td class="constraint-key">Content Type</td>
-                    <td>{{ (item as any).property.contentMediaType }}</td>
+                    <td>{{ propertyItem.contentMediaType }}</td>
                   </tr>
-                  <tr v-if="(item as any).property.contentEncoding">
+                  <tr v-if="propertyItem.contentEncoding">
                     <td class="constraint-key">Content Encoding</td>
-                    <td>{{ (item as any).property.contentEncoding }}</td>
+                    <td>{{ propertyItem.contentEncoding }}</td>
                   </tr>
-                  <tr v-if="(item as any).property.additionalProperties === false">
+                  <tr v-if="propertyItem.additionalProperties === false">
                     <td class="constraint-key">Additional Props</td>
                     <td>Denied</td>
                   </tr>
@@ -296,8 +296,8 @@ function formatExample(value: unknown): string {
 }
 
 const hasConstraints = computed(() => {
-  if (item.value?.kind !== 'property') return false
-  const p = item.value.property
+  const p = propertyItem.value
+  if (!p) return false
   return p.minimum != null || p.maximum != null ||
     p.minLength != null || p.maxLength != null ||
     p.pattern || p.enum?.length || p.itemsType ||
@@ -373,6 +373,11 @@ const currentTabs = computed<{ id: TabId; label: string }[]>(() => {
     tabs.push({ id: 'examples', label: `Examples (${count})` })
   }
   return tabs
+})
+
+const propertyItem = computed<SpaProperty | null>(() => {
+  if (item.value?.kind !== 'property') return null
+  return item.value.property
 })
 </script>
 
