@@ -89,6 +89,10 @@
               <span v-if="def.examples?.length" class="text-muted">&middot; {{ def.examples.length }} ex</span>
               <span v-if="def.minProperties != null" class="text-muted">&middot; min {{ def.minProperties }}</span>
               <span v-if="def.maxProperties != null" class="text-muted">&middot; max {{ def.maxProperties }}</span>
+              <span v-if="def.additionalProperties === false" class="badge badge-locked">no additional</span>
+              <span v-if="def.hasAllOf" class="badge badge-composition">allOf</span>
+              <span v-if="def.hasAnyOf" class="badge badge-composition">anyOf</span>
+              <span v-if="def.hasOneOf" class="badge badge-composition">oneOf</span>
             </div>
             <div class="def-card-info">
               <p v-if="def.description" class="def-card-desc text-secondary" v-html="renderInlineMarkdown(def.description)"></p>
