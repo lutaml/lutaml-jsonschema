@@ -8,7 +8,7 @@ export const useUiStore = defineStore('ui', () => {
   const resolvedTheme = ref<'light' | 'dark'>('light')
   const sidebarCollapsed = ref(false)
   const detailPanelOpen = ref(false)
-  const activePanelTab = ref<'overview' | 'definition'>('overview')
+  const activePanelTab = ref<'overview' | 'properties' | 'examples'>('overview')
   const searchOpen = ref(false)
   const expandedSchemaNames = ref<Set<string>>(new Set())
 
@@ -47,7 +47,7 @@ export const useUiStore = defineStore('ui', () => {
   function toggleSidebar() { sidebarCollapsed.value = !sidebarCollapsed.value }
   function openDetailPanel() { detailPanelOpen.value = true }
   function closeDetailPanel() { detailPanelOpen.value = false }
-  function setPanelTab(tab: 'overview' | 'definition') { activePanelTab.value = tab }
+  function setPanelTab(tab: 'overview' | 'properties' | 'examples') { activePanelTab.value = tab }
   function openSearch() { searchOpen.value = true }
   function closeSearch() { searchOpen.value = false }
 
