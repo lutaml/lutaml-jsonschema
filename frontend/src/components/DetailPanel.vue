@@ -98,6 +98,32 @@
                   <span class="meta-label">Additional</span>
                   <span class="badge badge-locked-detail">Denied</span>
                 </div>
+                <div v-if="definitionItem && definitionItem.required?.length" class="meta-row">
+                  <span class="meta-label">Required</span>
+                  <div class="meta-tags">
+                    <span v-for="r in definitionItem.required" :key="r" class="badge badge-required-sm">{{ r }}</span>
+                  </div>
+                </div>
+                <div v-if="definitionItem && (definitionItem.hasAllOf || definitionItem.hasAnyOf || definitionItem.hasOneOf)" class="meta-row">
+                  <span class="meta-label">Composition</span>
+                  <div class="meta-tags">
+                    <span v-if="definitionItem.hasAllOf" class="badge badge-composition-detail">allOf</span>
+                    <span v-if="definitionItem.hasAnyOf" class="badge badge-composition-detail">anyOf</span>
+                    <span v-if="definitionItem.hasOneOf" class="badge badge-composition-detail">oneOf</span>
+                  </div>
+                </div>
+                <div v-if="definitionItem && (definitionItem.minProperties != null || definitionItem.maxProperties != null)" class="meta-row">
+                  <span class="meta-label">Properties</span>
+                  <span class="text-secondary">
+                    <template v-if="definitionItem.minProperties != null && definitionItem.maxProperties != null">{{ definitionItem.minProperties }}..{{ definitionItem.maxProperties }}</template>
+                    <template v-else-if="definitionItem.minProperties != null">&ge; {{ definitionItem.minProperties }}</template>
+                    <template v-else>&le; {{ definitionItem.maxProperties }}</template>
+                  </span>
+                </div>
+                <div v-if="definitionItem && definitionItem.additionalProperties === false" class="meta-row">
+                  <span class="meta-label">Additional</span>
+                  <span class="badge badge-locked-detail">Denied</span>
+                </div>
               </div>
             </div>
 
@@ -378,6 +404,11 @@ const currentTabs = computed<{ id: TabId; label: string }[]>(() => {
 const propertyItem = computed<SpaProperty | null>(() => {
   if (item.value?.kind !== 'property') return null
   return item.value.property
+})
+
+const definitionItem = computed(() => {
+  if (item.value?.kind !== 'definition') return null
+  return item.value.definition
 })
 </script>
 
