@@ -69,7 +69,7 @@
         <div v-else-if="debouncedQuery && !searchResults.length && searchQuery" class="search-no-results text-muted">
           No results found
         </div>
-        <div v-else class="schema-tree">
+        <div v-else class="schema-tree" ref="sidebarTreeRef">
           <div
             v-for="schema in schemaStore.schemas"
             :key="schema.name"
@@ -150,13 +150,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import { useSchemaStore } from '../stores/schemaStore'
 import { useUiStore } from '../stores/uiStore'
 import type { SpaSearchEntry } from '../types'
 
 const schemaStore = useSchemaStore()
 const uiStore = useUiStore()
+const sidebarTreeRef = ref<HTMLElement | null>(null)
 
 const searchQuery = ref('')
 const debouncedQuery = ref('')
@@ -177,15 +178,40 @@ watch(searchQuery, (q) => {
 const searchResults = computed(() => {
   const q = debouncedQuery.value.trim().toLowerCase()
   if (!q) return []
-  return schemaStore.searchIndex.filter(entry =>
-    entry.name.toLowerCase().includes(q) ||
-    (entry.title && entry.title.toLowerCase().includes(q)) ||
-    entry.schemaName.toLowerCase().includes(q) ||
-    (entry.description && entry.description.toLowerCase().includes(q)),
-  ).slice(0, 15)
+  const scored = schemaStore.searchIndex
+    .map(entry => {
+      let score = 0
+      const nameLower = entry.name.toLowerCase()
+      const titleLower = (entry.title || '').toLowerCase()
+      const descLower = (entry.description || '').toLowerCase()
+      const schemaLower = entry.schemaName.toLowerCase()
+      if (nameLower === q) score += 100
+      else if (nameLower.startsWith(q)) score += 50
+      else if (nameLower.includes(q)) score += 30
+      if (titleLower === q) score += 80
+      else if (titleLower.startsWith(q)) score += 40
+      else if (titleLower.includes(q)) score += 20
+      if (descLower.includes(q)) score += 10
+      if (schemaLower.includes(q)) score += 5
+      return { entry, score }
+    })
+    .filter(r => r.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 15)
+    .map(r => r.entry)
+  return scored
 })
 
 watch(searchResults, () => { activeResultIdx.value = -1 })
+
+watch(() => schemaStore.selectedSchemaName, () => {
+  nextTick(() => {
+    const container = sidebarTreeRef.value
+    if (!container) return
+    const active = container.querySelector('.schema-node-header.active') as HTMLElement | null
+    if (active) active.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+  })
+})
 
 function handleSearchKey(event: KeyboardEvent) {
   if (event.key === 'ArrowDown') {

@@ -136,8 +136,9 @@
         <div v-if="schemaStore.selectedSchema.sourceJson" class="source-viewer">
           <div class="source-toolbar">
             <span class="text-muted">{{ sourceLineCount }} lines</span>
-            <button class="btn btn-ghost btn-sm" @click="copySource">
-              {{ sourceCopied ? 'Copied!' : 'Copy' }}
+            <button class="btn btn-ghost btn-sm copy-btn-wrap" @click="copySource">
+              Copy
+              <span v-if="sourceCopied" class="copy-tooltip">Copied!</span>
             </button>
           </div>
           <div class="source-code-wrapper">
@@ -590,6 +591,33 @@ watch(() => schemaStore.selectedItemKey, (key) => {
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border-light);
   font-size: var(--text-xs);
+}
+
+/* Copy button tooltip */
+.copy-btn-wrap {
+  position: relative;
+}
+
+.copy-tooltip {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  font-size: var(--text-xs);
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-md);
+  white-space: nowrap;
+  pointer-events: none;
+  animation: tooltipFade var(--transition-slow);
+}
+
+@keyframes tooltipFade {
+  from { opacity: 0; transform: translateX(-50%) translateY(2px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 
 .source-code-wrapper {

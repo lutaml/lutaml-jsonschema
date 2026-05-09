@@ -209,8 +209,9 @@
           <div class="toolbar-actions">
             <button class="btn btn-ghost btn-sm" @click="expandAllJson">Expand all</button>
             <button class="btn btn-ghost btn-sm" @click="collapseAllJson">Collapse all</button>
-            <button class="btn btn-ghost btn-sm" @click="copyJson">
-              {{ copied ? 'Copied!' : 'Copy' }}
+            <button class="btn btn-ghost btn-sm copy-btn-wrap" @click="copyJson">
+              Copy
+              <span v-if="copied" class="copy-tooltip">Copied!</span>
             </button>
           </div>
         </div>
@@ -1048,11 +1049,8 @@ async function copyJson() {
   display: none;
   color: var(--text-muted);
   font-size: var(--text-xs);
+  font-style: italic;
   margin-left: 4px;
-}
-
-.json-block :deep(.jv-ellipsis::after) {
-  content: ' … ';
 }
 
 .json-block :deep(.jv-children.jv-collapsed) {
@@ -1104,6 +1102,33 @@ async function copyJson() {
 .toolbar-actions {
   display: flex;
   gap: var(--space-1);
+}
+
+/* Copy button tooltip */
+.copy-btn-wrap {
+  position: relative;
+}
+
+.copy-tooltip {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  font-size: var(--text-xs);
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-md);
+  white-space: nowrap;
+  pointer-events: none;
+  animation: tooltipFade var(--transition-slow);
+}
+
+@keyframes tooltipFade {
+  from { opacity: 0; transform: translateX(-50%) translateY(2px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 
 .empty-hint {
