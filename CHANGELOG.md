@@ -1,5 +1,15 @@
 ## [Unreleased]
 
+## [0.1.11] - 2026-05-09
+
+### Redoc-style UX improvements (round 5)
+
+- Dark JSON preview panel with themed syntax colors in SchemaBuilder
+- Select-on-click for source viewer and builder JSON blocks (double-click to select all)
+- Print stylesheet: hides sidebar, header, controls; content prints full-width
+- Format badges display with angle brackets (`<email>`) and accent color
+- Responsive builder layout: stacks vertically on mobile (<768px)
+
 ## [0.1.10] - 2026-05-09
 
 ### Redoc-style UX improvements
