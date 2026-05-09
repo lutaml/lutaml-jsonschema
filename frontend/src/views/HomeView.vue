@@ -143,7 +143,7 @@
           </div>
           <div class="source-code-wrapper">
             <div class="source-lines" aria-hidden="true"><span v-for="n in sourceLineCount" :key="n">{{ n }}</span></div>
-            <pre class="source-pre"><code v-html="highlightedSource"></code></pre>
+            <pre class="source-pre" @dblclick="selectSourceBlock"><code v-html="highlightedSource"></code></pre>
           </div>
         </div>
         <div v-else class="source-empty">
@@ -283,6 +283,18 @@ function syntaxHighlight(json: string): string {
       }
       return `<span class="${cls}">${match}</span>`
     })
+}
+
+function selectSourceBlock() {
+  const el = document.querySelector('.source-pre') as HTMLElement | null
+  if (!el) return
+  const range = document.createRange()
+  range.selectNodeContents(el)
+  const selection = window.getSelection()
+  if (selection) {
+    selection.removeAllRanges()
+    selection.addRange(range)
+  }
 }
 
 function selectSchema(name: string) {
