@@ -16,7 +16,7 @@
             <span class="font-mono">{{ field.prop.name }}</span>
           </button>
           <span class="field-type-badge" :class="typeBadgeClass(field.prop)">{{ displayType(field.prop, field.resolvedDef?.title || field.resolvedDef?.name) }}</span>
-          <span v-if="field.prop.format" class="field-format-badge">{{ field.prop.format }}</span>
+          <span v-if="field.prop.format" class="field-format-badge">&lt;{{ field.prop.format }}&gt;</span>
           <span v-if="field.prop.contentMediaType" class="field-format-badge">content-type: {{ field.prop.contentMediaType }}</span>
           <span v-if="field.prop.contentEncoding" class="field-format-badge">encoding: {{ field.prop.contentEncoding }}</span>
           <span v-if="field.prop.const != null" class="const-badge font-mono">const: {{ field.prop.const }}</span>
@@ -206,17 +206,17 @@
     <div class="builder-preview">
       <div class="preview-inner">
         <div class="preview-toolbar">
-          <span class="toolbar-label text-muted">JSON Preview</span>
+          <span class="toolbar-label">JSON Preview</span>
           <div class="toolbar-actions">
-            <button class="btn btn-ghost btn-sm" @click="expandAllJson">Expand all</button>
-            <button class="btn btn-ghost btn-sm" @click="collapseAllJson">Collapse all</button>
-            <button class="btn btn-ghost btn-sm copy-btn-wrap" @click="copyJson">
+            <button class="btn btn-sm btn-dark-panel" @click="expandAllJson">Expand all</button>
+            <button class="btn btn-sm btn-dark-panel" @click="collapseAllJson">Collapse all</button>
+            <button class="btn btn-sm btn-dark-panel copy-btn-wrap" @click="copyJson">
               Copy
               <span v-if="copied" class="copy-tooltip">Copied!</span>
             </button>
           </div>
         </div>
-        <pre ref="jsonBlockRef" class="json-block" @click="handleJsonClick" v-html="highlightedJson"></pre>
+        <pre ref="jsonBlockRef" class="json-block" @click="handleJsonClick" @dblclick="selectJsonBlock" v-html="highlightedJson"></pre>
       </div>
     </div>
   </div>
@@ -391,6 +391,18 @@ function handleJsonClick(event: MouseEvent) {
   }
 }
 
+function selectJsonBlock() {
+  const el = jsonBlockRef.value
+  if (!el) return
+  const range = document.createRange()
+  range.selectNodeContents(el)
+  const selection = window.getSelection()
+  if (selection) {
+    selection.removeAllRanges()
+    selection.addRange(range)
+  }
+}
+
 const MAX_PATTERN_LEN = 45
 
 function typeBadgeClass(prop: SpaProperty): string {
@@ -551,11 +563,12 @@ async function copyJson() {
 
 .field-format-badge {
   font-size: 10px;
-  color: var(--text-muted);
-  background: var(--bg-secondary);
+  color: var(--color-accent);
+  background: var(--color-accent-alpha);
   padding: 1px 5px;
   border-radius: var(--radius-sm);
   font-family: var(--font-mono);
+  font-weight: 500;
 }
 
 .deprecated-badge {
@@ -1000,6 +1013,7 @@ async function copyJson() {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  color: var(--panel-dark-muted);
 }
 
 .toolbar-label {
@@ -1011,9 +1025,18 @@ async function copyJson() {
   padding: var(--space-1) var(--space-2);
 }
 
+.btn-dark-panel {
+  color: var(--panel-dark-muted);
+}
+
+.btn-dark-panel:hover {
+  color: var(--panel-dark-text);
+  background: rgba(255, 255, 255, 0.08);
+}
+
 .json-block {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-light);
+  background: var(--panel-dark-bg);
+  border: 1px solid var(--panel-dark-bg);
   border-radius: var(--radius-md);
   padding: var(--space-4);
   overflow-x: auto;
@@ -1023,7 +1046,7 @@ async function copyJson() {
   max-height: 70vh;
   overflow-y: auto;
   font-family: var(--font-mono);
-  color: var(--text-primary);
+  color: var(--panel-dark-text);
 }
 
 .json-block :deep(ul) {
@@ -1038,7 +1061,7 @@ async function copyJson() {
 
 .json-block :deep(.jv-toggle) {
   background: none;
-  border: 1px solid var(--border-light);
+  border: 1px solid var(--panel-dark-muted);
   border-radius: 2px;
   cursor: pointer;
   width: 14px;
@@ -1064,7 +1087,7 @@ async function copyJson() {
 
 .json-block :deep(.jv-ellipsis) {
   display: none;
-  color: var(--text-muted);
+  color: var(--panel-dark-muted);
   font-size: var(--text-xs);
   font-style: italic;
   margin-left: 4px;
@@ -1079,42 +1102,39 @@ async function copyJson() {
 }
 
 .json-block :deep(.jv-key) {
-  color: var(--color-primary-dark);
+  color: var(--panel-dark-key);
 }
 
 .json-block :deep(.jv-punct) {
-  color: var(--text-muted);
+  color: var(--panel-dark-muted);
 }
 
 .json-block :deep(.jv-string) {
-  color: var(--color-green);
+  color: var(--panel-dark-string);
 }
 
 .json-block :deep(.jv-number) {
-  color: var(--color-orange);
+  color: var(--panel-dark-number);
 }
 
 .json-block :deep(.jv-boolean) {
-  color: var(--color-accent);
+  color: var(--panel-dark-boolean);
 }
 
 .json-block :deep(.jv-null) {
-  color: var(--text-muted);
+  color: var(--panel-dark-null);
   font-style: italic;
 }
 
 .json-block :deep(.jv-link) {
-  color: var(--color-primary);
+  color: var(--panel-dark-string);
   text-decoration: underline;
 }
 
 .json-block :deep(.jv-row:hover) {
-  background: var(--bg-hover);
+  background: rgba(255, 255, 255, 0.06);
   border-radius: 2px;
 }
-
-:root[data-theme="dark"] .json-block :deep(.jv-key) { color: var(--color-primary-light); }
-:root[data-theme="dark"] .json-block :deep(.jv-string) { color: var(--color-teal); }
 
 .toolbar-actions {
   display: flex;
