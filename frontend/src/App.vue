@@ -1,6 +1,7 @@
 <template>
   <div class="app-layout">
     <AppSidebar />
+    <div v-if="!uiStore.sidebarCollapsed" class="sidebar-overlay" @click="uiStore.toggleSidebar"></div>
     <div class="main-content">
       <AppHeader />
       <div class="content-area">
@@ -99,5 +100,20 @@ function isInputFocused(): boolean {
   overflow: auto;
   padding: var(--space-6);
   background: var(--bg-primary);
+}
+
+/* Mobile sidebar overlay — hidden on desktop, shown on mobile when sidebar open */
+.sidebar-overlay {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .sidebar-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 39;
+  }
 }
 </style>

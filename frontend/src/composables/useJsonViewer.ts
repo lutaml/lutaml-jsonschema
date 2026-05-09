@@ -56,7 +56,7 @@ function renderArray(arr: unknown[], maxExpand: number, level: number): string {
     html += '</div></li>'
   })
   html += '</ul>'
-  html += `<span class="jv-ellipsis"></span>`
+  html += `<span class="jv-ellipsis">${arr.length} items</span>`
   html += punct(']')
   return html
 }
@@ -76,7 +76,8 @@ function renderObject(obj: Record<string, unknown>, maxExpand: number, level: nu
     html += '</div></li>'
   })
   html += '</ul>'
-  html += `<span class="jv-ellipsis"></span>`
+  const previewKeys = keys.length <= 5 ? keys : [...keys.slice(0, 5), `+${keys.length - 5}`]
+  html += `<span class="jv-ellipsis">${previewKeys.map(k => escHtml(k)).join(', ')}</span>`
   html += punct('}')
   return html
 }
