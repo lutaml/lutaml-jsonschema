@@ -1,11 +1,11 @@
 <template>
   <div class="detail-panel-overlay" @click.self="uiStore.closeDetailPanel">
-    <aside class="detail-panel">
+    <aside class="detail-panel" ref="panelRef">
       <div class="panel-header">
         <div class="panel-title">
           <h2 v-if="item">{{ itemTitle }}</h2>
         </div>
-        <button class="btn btn-ghost" @click="uiStore.closeDetailPanel">
+        <button ref="closeBtnRef" class="btn btn-ghost" @click="uiStore.closeDetailPanel" aria-label="Close panel">
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
             <path d="M5 5l8 8M13 5l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
           </svg>
@@ -267,13 +267,40 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useSchemaStore, type SelectedItem } from '../stores/schemaStore'
 import { useUiStore } from '../stores/uiStore'
 import type { SpaProperty } from '../types'
 
 const schemaStore = useSchemaStore()
 const uiStore = useUiStore()
+
+const panelRef = ref<HTMLElement | null>(null)
+const closeBtnRef = ref<HTMLButtonElement | null>(null)
+
+onMounted(() => {
+  closeBtnRef.value?.focus()
+  document.addEventListener('keydown', trapFocus)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('keydown', trapFocus)
+})
+
+function trapFocus(e: KeyboardEvent) {
+  if (e.key !== 'Tab' || !panelRef.value) return
+  const focusable = panelRef.value.querySelectorAll<HTMLElement>(
+    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+  )
+  if (!focusable.length) return
+  const first = focusable[0]
+  const last = focusable[focusable.length - 1]
+  if (e.shiftKey) {
+    if (document.activeElement === first) { e.preventDefault(); last.focus() }
+  } else {
+    if (document.activeElement === last) { e.preventDefault(); first.focus() }
+  }
+}
 
 const item = computed<SelectedItem | null>(() => schemaStore.selectedItem)
 const schema = computed(() => schemaStore.selectedSchema)

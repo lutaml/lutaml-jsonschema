@@ -25,6 +25,7 @@
           <span v-if="field.prop.deprecated" class="deprecated-badge">deprecated</span>
           <span v-if="field.prop.readOnly" class="readonly-badge">read-only</span>
           <span v-if="field.prop.writeOnly" class="writeonly-badge">write-only</span>
+          <span v-if="isNullableType(field.prop.type)" class="nullable-badge">nullable</span>
           <span v-if="field.prop.compositionSource" class="composition-badge">{{ field.prop.compositionSource }}</span>
 
           <div class="field-control">
@@ -406,6 +407,10 @@ function typeBadgeClass(prop: SpaProperty): string {
   }
 }
 
+function isNullableType(type?: string): boolean {
+  return (type || '').split(',').map(s => s.trim()).includes('null')
+}
+
 function truncatedPattern(pattern: string): { text: string; truncated: boolean } {
   if (pattern.length <= MAX_PATTERN_LEN) return { text: pattern, truncated: false }
   if (expandedPatterns.value.has(pattern)) return { text: pattern, truncated: true }
@@ -582,6 +587,18 @@ async function copyJson() {
 .writeonly-badge {
   color: var(--color-orange);
   background: var(--color-orange-alpha);
+}
+
+.nullable-badge {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  background: var(--bg-secondary);
+  border: 1px dashed var(--border-medium);
+  padding: 1px 5px;
+  border-radius: 2px;
+  flex-shrink: 0;
 }
 
 .composition-badge {
