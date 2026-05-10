@@ -18,6 +18,10 @@
 - Landing page card descriptions rendered with markdown
 - Keyboard shortcut: `/` focuses search input from anywhere
 - Search input placeholder shows shortcut hint
+- Search results expand schema tree node automatically
+- Hash navigation expands schema tree node automatically
+- Definition mini-table type badges color-coded by type (string/number/integer/boolean/object/array)
+- Definition mini-table rows show hover effect
 
 ## [0.1.13] - 2026-05-10
 

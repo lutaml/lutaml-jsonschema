@@ -123,7 +123,7 @@
                   <span class="def-mini-name font-mono" :class="{ 'def-mini-deprecated': prop.deprecated }">{{ prop.name }}</span>
                   <span v-if="prop.ref" class="def-mini-ref" @click.stop="navigateToDefRef(prop.ref)">→ {{ defRefName(prop.ref) }}</span>
                   <template v-else>
-                    <span class="def-mini-type">{{ prop.type || 'any' }}</span>
+                    <span class="def-mini-type" :class="miniTypeClass(prop.type)">{{ prop.type || 'any' }}</span>
                     <span v-if="prop.format" class="def-mini-format">&lt;{{ prop.format }}&gt;</span>
                   </template>
                   <span v-if="prop.enum?.length" class="def-mini-enum">{{ prop.enum.length }} enum</span>
@@ -391,6 +391,19 @@ function navigateToDefRef(ref: string) {
   const match = ref.match(/^#\/(?:definitions|\$defs)\/([^/]+)$/)
   if (match) {
     schemaStore.selectDefinition(match[1])
+  }
+}
+
+function miniTypeClass(type?: string): string {
+  const t = (type || 'any').split(',')[0].trim()
+  switch (t) {
+    case 'string': return 'mini-type-string'
+    case 'number': return 'mini-type-number'
+    case 'integer': return 'mini-type-integer'
+    case 'boolean': return 'mini-type-boolean'
+    case 'object': return 'mini-type-object'
+    case 'array': return 'mini-type-array'
+    default: return ''
   }
 }
 
@@ -931,6 +944,11 @@ watch(() => schemaStore.selectedItemKey, (key) => {
   gap: var(--space-2);
   padding: 3px var(--space-3);
   border-bottom: 1px solid var(--border-light);
+  transition: background var(--transition-fast);
+}
+
+.def-mini-row:hover {
+  background: var(--bg-hover);
 }
 
 .def-mini-row:last-child {
@@ -952,14 +970,21 @@ watch(() => schemaStore.selectedItemKey, (key) => {
 }
 
 .def-mini-type {
-  color: var(--badge-schema);
-  background: var(--badge-schema-bg);
   padding: 1px 5px;
   border-radius: var(--radius-sm);
   font-size: 10px;
   font-weight: 500;
   flex-shrink: 0;
+  background: var(--badge-schema-bg);
+  color: var(--badge-schema);
 }
+
+.def-mini-type.mini-type-string { background: var(--type-string-bg); color: var(--type-string); }
+.def-mini-type.mini-type-number { background: var(--type-number-bg); color: var(--type-number); }
+.def-mini-type.mini-type-integer { background: var(--type-integer-bg); color: var(--type-integer); }
+.def-mini-type.mini-type-boolean { background: var(--type-boolean-bg); color: var(--type-boolean); }
+.def-mini-type.mini-type-object { background: var(--type-object-bg); color: var(--type-object); }
+.def-mini-type.mini-type-array { background: var(--type-array-bg); color: var(--type-array); }
 
 .def-mini-req {
   color: var(--badge-required);

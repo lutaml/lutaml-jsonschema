@@ -50,6 +50,10 @@ function handleHashNavigation() {
     const schemaName = decodeURIComponent(parts[0])
     schemaStore.selectSchema(schemaName)
 
+    if (!uiStore.isSchemaExpanded(schemaName)) {
+      uiStore.toggleSchemaExpanded(schemaName)
+    }
+
     if (parts.length >= 2) {
       const target = decodeURIComponent(parts[1])
       if (target.startsWith('def-')) {
