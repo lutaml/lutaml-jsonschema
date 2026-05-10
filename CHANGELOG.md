@@ -1,5 +1,16 @@
 ## [Unreleased]
 
+## [0.1.13] - 2026-05-10
+
+### Redoc-style UX improvements (round 7)
+
+- SeeMore description fade uses CSS mask-image instead of background gradient (works on any background)
+- Array type badge shows items range constraint inline (e.g. `array of string [ 1 .. 10 ]`)
+- Schema tree sidebar shows property count badge (P) alongside definition count (D)
+- Definition mini-table shows format (`<email>`) and enum count badges
+- Definition card description truncated to 2 lines when collapsed
+- Landing card stats show min/max properties count
+
 ## [0.1.12] - 2026-05-10
 
 ### Redoc-style UX improvements (round 6)

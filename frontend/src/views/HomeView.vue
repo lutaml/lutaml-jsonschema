@@ -95,7 +95,7 @@
               <span v-if="def.hasOneOf" class="badge badge-composition">oneOf</span>
             </div>
             <div class="def-card-info">
-              <p v-if="def.description" class="def-card-desc text-secondary" v-html="renderInlineMarkdown(def.description)"></p>
+              <p v-if="def.description" class="def-card-desc text-secondary" :class="{ 'desc-truncated': !expandedDefs.has(def.name) }" v-html="renderInlineMarkdown(def.description)"></p>
               <div v-if="def.required?.length" class="def-card-required">
                 <span v-for="r in def.required" :key="r" class="required-tag-sm">{{ r }}</span>
               </div>
@@ -107,6 +107,8 @@
                 <div v-for="prop in def.properties.slice(0, 5)" :key="prop.name" class="def-mini-row">
                   <span class="def-mini-name font-mono">{{ prop.name }}</span>
                   <span class="def-mini-type">{{ prop.type || 'any' }}</span>
+                  <span v-if="prop.format" class="def-mini-format">&lt;{{ prop.format }}&gt;</span>
+                  <span v-if="prop.enum?.length" class="def-mini-enum">{{ prop.enum.length }}</span>
                   <span v-if="prop.required" class="def-mini-req">*</span>
                   <span v-if="prop.deprecated" class="def-mini-dep">dep</span>
                 </div>
@@ -207,6 +209,8 @@
               <span>{{ schema.definitions.length }} defs</span>
               <span v-if="schema.required.length">{{ schema.required.length }} required</span>
               <span v-if="schema.examples?.length">{{ schema.examples.length }} examples</span>
+              <span v-if="schema.minProperties != null">{{ schema.minProperties }} min</span>
+              <span v-if="schema.maxProperties != null">{{ schema.maxProperties }} max</span>
             </div>
           </div>
         </div>
@@ -752,6 +756,13 @@ watch(() => schemaStore.selectedItemKey, (key) => {
   margin-bottom: var(--space-2);
 }
 
+.def-card-desc.desc-truncated {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 .def-card-desc :deep(.md-code),
 .def-body-desc :deep(.md-code),
 .schema-desc :deep(.md-code) {
@@ -847,6 +858,22 @@ watch(() => schemaStore.selectedItemKey, (key) => {
   border-radius: 2px;
   font-size: 9px;
   font-weight: 600;
+  flex-shrink: 0;
+}
+
+.def-mini-format {
+  font-size: 9px;
+  color: var(--color-accent);
+  font-family: var(--font-mono);
+  flex-shrink: 0;
+}
+
+.def-mini-enum {
+  font-size: 9px;
+  color: var(--color-teal);
+  background: var(--color-teal-alpha);
+  padding: 0px 3px;
+  border-radius: 2px;
   flex-shrink: 0;
 }
 

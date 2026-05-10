@@ -781,21 +781,8 @@ async function copyJson() {
 .field-desc.desc-collapsed {
   max-height: 3.6em;
   overflow: hidden;
-  position: relative;
-}
-
-.field-desc.desc-collapsed::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 1.8em;
-  background: linear-gradient(transparent, var(--bg-primary));
-}
-
-.field-row-alt .field-desc.desc-collapsed::after {
-  background: linear-gradient(transparent, var(--bg-secondary));
+  -webkit-mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+  mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
 }
 
 .btn-see-more {
