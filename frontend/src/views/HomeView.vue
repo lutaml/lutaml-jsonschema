@@ -127,17 +127,18 @@
               </details>
               <div v-if="!expandedDefs.has(def.name) && def.properties.length" class="def-mini-table">
                 <div v-for="prop in def.properties.slice(0, 5)" :key="prop.name" class="def-mini-row def-mini-row-clickable" :title="prop.description ? truncateMiniDesc(prop.description) : undefined" @click.stop="openPropertyDetail(prop.name)">
-                  <span class="def-mini-name font-mono" :class="{ 'def-mini-deprecated': prop.deprecated }">{{ prop.name }}</span>
+                  <span class="def-mini-name font-mono" :class="{ 'def-mini-deprecated': prop.deprecated, 'def-mini-required': prop.required }">{{ prop.name }}</span>
                   <span v-if="prop.ref" class="def-mini-ref" @click.stop="navigateToDefRef(prop.ref)">→ {{ defRefName(prop.ref) }}</span>
                   <template v-else>
                     <span class="def-mini-type" :class="miniTypeClass(prop.type)">{{ prop.type || 'any' }}</span>
                     <span v-if="prop.format" class="def-mini-format">&lt;{{ prop.format }}&gt;</span>
+                    <span v-if="prop.itemsType" class="def-mini-items">[{{ prop.itemsType }}]</span>
                   </template>
                   <span v-if="prop.enum?.length" class="def-mini-enum">{{ prop.enum.length }} enum</span>
+                  <span v-if="prop.uniqueItems" class="def-mini-unique">unique</span>
                   <span v-if="prop.compositionSource" class="def-mini-comp">{{ prop.compositionSource }}</span>
                   <span v-if="prop.const != null" class="def-mini-const">const: {{ prop.const }}</span>
                   <span v-else-if="prop.default != null" class="def-mini-default">default: {{ prop.default }}</span>
-                  <span v-if="prop.required" class="def-mini-req">*</span>
                   <span v-if="prop.deprecated" class="def-mini-dep">dep</span>
                 </div>
                 <div v-if="def.properties.length > 5" class="def-mini-more text-muted">
@@ -1192,6 +1193,32 @@ watch(() => schemaStore.selectedItemKey, (key) => {
 .def-mini-deprecated {
   text-decoration: line-through;
   opacity: 0.6;
+}
+
+.def-mini-required {
+  font-weight: 700;
+}
+
+.def-mini-required::after {
+  content: ' *';
+  color: var(--badge-required);
+}
+
+.def-mini-items {
+  font-size: 9px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  flex-shrink: 0;
+}
+
+.def-mini-unique {
+  font-size: 9px;
+  color: var(--color-teal);
+  background: var(--color-teal-alpha);
+  padding: 0px 3px;
+  border-radius: 2px;
+  flex-shrink: 0;
+  font-weight: 500;
 }
 
 .def-mini-more {

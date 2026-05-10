@@ -13,6 +13,18 @@
 - Schema header meta badges with colored count chips (properties, required, definitions)
 - DetailPanel dark mode support (constraint colors, enum chips, example blocks)
 
+### Redoc-style UX improvements (round 17)
+
+- Sidebar tree shows properties alongside definitions with type labels
+- Copy link button in schema header for sharing current view via URL
+- selectedPropertyName computed added to schema store
+
+### Redoc-style UX improvements (round 18)
+
+- Mini-table required field names shown in bold with red asterisk (Redoc RequiredLabel pattern)
+- Mini-table shows uniqueItems badge for properties with unique constraint
+- Mini-table shows array items type `[type]` for array properties (constraint colors, enum chips, example blocks)
+
 ## [0.1.14] - 2026-05-10
 
 ### Redoc-style UX improvements (round 15)
