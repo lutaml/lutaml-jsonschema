@@ -11,6 +11,14 @@
 - Definition card description truncated to 2 lines when collapsed
 - Landing card stats show min/max properties count
 
+### Redoc-style UX improvements (round 8)
+
+- Auto-expand definitions with single property (Redoc expandSingleSchemaField pattern)
+- Clickable $ref navigation — clicking ref chip scrolls to definition
+- Source viewer line numbers highlight on hover
+- Definition mini-table shows composition source (allOf/anyOf/oneOf) badges
+- Scroll centering for definition and property navigation
+
 ## [0.1.12] - 2026-05-10
 
 ### Redoc-style UX improvements (round 6)
