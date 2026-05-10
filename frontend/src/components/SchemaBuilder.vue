@@ -173,6 +173,7 @@
         <Transition name="expand">
         <div v-if="field.expanded && field.included && field.resolvedDef && !isCircular(field, visited)" class="nested-section">
           <div class="nested-header">
+            <span class="nested-path text-muted" v-if="depth > 0">{{ parentPath }}.</span>
             <span class="nested-title">{{ field.resolvedDef.title || field.resolvedDef.name }}</span>
             <span class="nested-meta text-muted">
               {{ field.resolvedDef.type || 'object' }}
@@ -187,6 +188,7 @@
             :all-schemas="allSchemas"
             :visited="new Set([...visited, field.resolvedDef.name])"
             :depth="depth + 1"
+            :parent-path="parentPath ? `${parentPath}.${field.prop.name}` : field.prop.name"
             @update:json="(v: Record<string, unknown>) => { field.nestedJson = v }"
           />
         </div>
@@ -275,9 +277,11 @@ const props = withDefaults(defineProps<{
   allSchemas?: SpaSchema[]
   visited?: Set<string>
   depth?: number
+  parentPath?: string
 }>(), {
   visited: () => new Set<string>(),
   depth: 0,
+  parentPath: '',
 })
 
 const emit = defineEmits<{
@@ -1010,6 +1014,12 @@ async function copyJson() {
   font-weight: 600;
   font-size: var(--text-sm);
   color: var(--color-primary);
+}
+
+.nested-path {
+  font-size: var(--text-xs);
+  font-family: var(--font-mono);
+  color: var(--text-muted);
 }
 
 .nested-meta {

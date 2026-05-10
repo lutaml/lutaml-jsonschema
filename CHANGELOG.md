@@ -25,6 +25,12 @@
 - JSON preview shows hint when no fields are checked
 - Definition expanded body shows title, type, property count, and composition badges
 
+### Redoc-style UX improvements (round 10)
+
+- Clickable $id/$schema URLs in schema header (opens in new tab)
+- Keyboard support for definition card toggle (Enter/Space)
+- Nested builder shows parent property path breadcrumb
+
 ## [0.1.12] - 2026-05-10
 
 ### Redoc-style UX improvements (round 6)
