@@ -264,6 +264,25 @@ button { font-family: inherit; font-size: inherit; cursor: pointer; border: none
   body { color: #000; background: #fff; }
 }
 
+/* Markdown fenced code blocks in descriptions */
+:deep(.md-pre) {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-xs);
+  overflow-x: auto;
+  margin: var(--space-2) 0;
+  line-height: var(--leading-relaxed);
+}
+:deep(.md-pre code) {
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+  background: none;
+  padding: 0;
+  border: none;
+}
+
 .text-muted { color: var(--text-muted); }
 .text-secondary { color: var(--text-secondary); }
 .font-mono { font-family: var(--font-mono); }

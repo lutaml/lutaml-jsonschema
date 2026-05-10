@@ -1,6 +1,20 @@
 <template>
   <div class="builder-layout">
     <div class="builder-fields">
+      <div v-if="properties.length > 8" class="builder-filter">
+        <input
+          v-model="filterQuery"
+          type="text"
+          class="filter-input"
+          placeholder="Filter properties..."
+          aria-label="Filter properties"
+        />
+        <button v-if="filterQuery" class="filter-clear" aria-label="Clear filter" @click="filterQuery = ''">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
       <div v-for="(field, idx) in sortedFields" :key="field.prop.name" :id="`prop-${field.prop.name}`" class="field-row" :class="{ 'field-row-alt': idx % 2 === 1, [`depth-${depth % 3}`]: depth > 0 }">
         <div class="field-main">
           <input
@@ -295,6 +309,7 @@ const emit = defineEmits<{
 }>()
 
 const copied = ref(false)
+const filterQuery = ref('')
 const expandedPatterns = ref(new Set<string>())
 const jsonBlockRef = ref<HTMLElement | null>(null)
 const descExpanded = ref(new Set<string>())
@@ -337,7 +352,17 @@ function validate(name: string, rawValue: string, prop: SpaProperty) {
 const fields = ref<BuilderField[]>(props.properties.map(p => createField(p, props.required, props.schema, props.allSchemas, depth)))
 
 const sortedFields = computed(() => {
-  return [...fields.value].sort((a, b) => {
+  const q = filterQuery.value.trim().toLowerCase()
+  let result = [...fields.value]
+  if (q) {
+    result = result.filter(f =>
+      f.prop.name.toLowerCase().includes(q) ||
+      (f.prop.title || '').toLowerCase().includes(q) ||
+      (f.prop.description || '').toLowerCase().includes(q) ||
+      (f.prop.type || '').toLowerCase().includes(q)
+    )
+  }
+  return result.sort((a, b) => {
     if (a.isRequired && !b.isRequired) return -1
     if (!a.isRequired && b.isRequired) return 1
     return 0
@@ -483,6 +508,49 @@ async function copyJson() {
   display: flex;
   flex-direction: column;
   gap: 2px;
+}
+
+.builder-filter {
+  position: relative;
+  margin-bottom: var(--space-2);
+}
+
+.filter-input {
+  width: 100%;
+  padding: 5px 28px 5px 10px;
+  font-size: var(--text-sm);
+  font-family: var(--font-sans);
+  background: var(--bg-primary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+}
+
+.filter-input::placeholder {
+  color: var(--text-muted);
+}
+
+.filter-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.filter-clear {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+}
+
+.filter-clear:hover {
+  color: var(--text-primary);
 }
 
 .field-row {
