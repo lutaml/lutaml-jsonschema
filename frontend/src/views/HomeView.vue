@@ -29,9 +29,9 @@
           <p v-if="schemaStore.selectedSchema.description" class="schema-desc text-secondary" v-html="renderInlineMarkdown(schemaStore.selectedSchema.description)"></p>
           <div class="schema-meta-row">
             <span class="badge badge-type">{{ schemaStore.selectedSchema.type || 'any' }}</span>
-            <span class="text-muted">{{ schemaStore.selectedSchema.properties.length }} properties</span>
-            <span v-if="schemaStore.selectedSchema.required.length" class="text-muted">&middot; {{ schemaStore.selectedSchema.required.length }} required</span>
-            <span v-if="schemaStore.selectedSchema.definitions.length" class="text-muted">&middot; {{ schemaStore.selectedSchema.definitions.length }} definitions</span>
+            <span class="meta-count">{{ schemaStore.selectedSchema.properties.length }} properties</span>
+            <span v-if="schemaStore.selectedSchema.required.length" class="meta-count meta-count-req">{{ schemaStore.selectedSchema.required.length }} required</span>
+            <span v-if="schemaStore.selectedSchema.definitions.length" class="meta-count">{{ schemaStore.selectedSchema.definitions.length }} definitions</span>
             <span v-if="schemaStore.selectedSchema.additionalProperties === false" class="badge badge-locked">no additional properties</span>
             <span v-if="schemaStore.selectedSchema.hasAllOf" class="badge badge-composition">allOf</span>
             <span v-if="schemaStore.selectedSchema.hasAnyOf" class="badge badge-composition">anyOf</span>
@@ -119,7 +119,7 @@
                 <pre class="def-examples-pre"><code>{{ formatJson(def.examples) }}</code></pre>
               </details>
               <div v-if="!expandedDefs.has(def.name) && def.properties.length" class="def-mini-table">
-                <div v-for="prop in def.properties.slice(0, 5)" :key="prop.name" class="def-mini-row def-mini-row-clickable" @click.stop="openPropertyDetail(prop.name)">
+                <div v-for="prop in def.properties.slice(0, 5)" :key="prop.name" class="def-mini-row def-mini-row-clickable" :title="prop.description ? truncateMiniDesc(prop.description) : undefined" @click.stop="openPropertyDetail(prop.name)">
                   <span class="def-mini-name font-mono" :class="{ 'def-mini-deprecated': prop.deprecated }">{{ prop.name }}</span>
                   <span v-if="prop.ref" class="def-mini-ref" @click.stop="navigateToDefRef(prop.ref)">→ {{ defRefName(prop.ref) }}</span>
                   <template v-else>
@@ -209,6 +209,20 @@
             <span class="separator">&middot;</span>
             <span>{{ schemaStore.schemaCounts.definitions }} definitions</span>
           </div>
+          <div v-if="schemaStore.schemas.length > 3" class="landing-search">
+            <input
+              v-model="landingSearch"
+              type="text"
+              class="landing-search-input"
+              :placeholder="`Search ${schemaStore.schemas.length} schemas...`"
+              aria-label="Search schemas"
+            />
+            <button v-if="landingSearch" class="landing-search-clear" aria-label="Clear search" @click="landingSearch = ''">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+              </svg>
+            </button>
+          </div>
         </div>
         <button
           v-if="hasSourceJson"
@@ -221,7 +235,7 @@
 
       <div class="schema-grid">
         <div
-          v-for="schema in schemaStore.schemas"
+          v-for="schema in filteredSchemas"
           :key="schema.name"
           class="schema-card card"
           role="button"
@@ -256,6 +270,10 @@
             </div>
           </div>
         </div>
+        <div v-if="!filteredSchemas.length && landingSearch" class="empty-state">
+          <p class="text-muted">No schemas match "{{ landingSearch }}"</p>
+          <button class="btn btn-ghost btn-sm" @click="landingSearch = ''">Clear search</button>
+        </div>
       </div>
     </div>
   </div>
@@ -277,6 +295,7 @@ const expandedDefs = reactive(new Set<string>())
 const viewMode = ref<'builder' | 'source'>('builder')
 const sourceCopied = ref(false)
 const activeSourceLine = ref(-1)
+const landingSearch = ref('')
 
 const selectedDefinitionTitle = computed(() => {
   const name = schemaStore.selectedDefinitionName
@@ -294,6 +313,17 @@ const schemaPropsRange = computed(() => {
   if (min != null) return min === 1 ? 'non-empty object' : `>= ${min} properties`
   if (max != null) return `<= ${max} properties`
   return ''
+})
+
+const filteredSchemas = computed(() => {
+  const q = landingSearch.value.trim().toLowerCase()
+  if (!q) return schemaStore.schemas
+  return schemaStore.schemas.filter(s =>
+    s.name.toLowerCase().includes(q) ||
+    (s.title || '').toLowerCase().includes(q) ||
+    (s.description || '').toLowerCase().includes(q) ||
+    (s.type || '').toLowerCase().includes(q)
+  )
 })
 
 function expandAllDefs() {
@@ -339,6 +369,14 @@ function syntaxHighlight(json: string): string {
         cls = 'json-boolean'
       } else if (/null/.test(match)) {
         cls = 'json-null'
+      }
+      // Detect URLs in string values and make them clickable
+      if (cls === 'json-string') {
+        const inner = match.slice(1, -1)
+        if (/^https?:\/\/[^\s]+$/.test(inner)) {
+          const href = inner.replace(/&amp;/g, '&')
+          return `<span class="json-string">"</span><a class="json-url" href="${href}" target="_blank" rel="noopener">${match.slice(1)}</a>`
+        }
       }
       return `<span class="${cls}">${match}</span>`
     })
@@ -413,6 +451,10 @@ function miniTypeClass(type?: string): string {
     case 'array': return 'mini-type-array'
     default: return ''
   }
+}
+
+function truncateMiniDesc(desc: string): string {
+  return desc.length <= 120 ? desc : desc.slice(0, 117) + '...'
 }
 
 function downloadAllSchemas() {
@@ -625,6 +667,20 @@ watch(() => schemaStore.selectedItemKey, (key) => {
   font-weight: 500;
 }
 
+.meta-count {
+  font-size: 11px;
+  color: var(--text-muted);
+  background: var(--bg-secondary);
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+}
+
+.meta-count-req {
+  color: var(--badge-required);
+  background: var(--badge-required-bg);
+  font-weight: 500;
+}
+
 .schema-required {
   display: flex;
   align-items: flex-start;
@@ -818,6 +874,15 @@ watch(() => schemaStore.selectedItemKey, (key) => {
 .source-pre :deep(.json-number) { color: var(--color-orange); }
 .source-pre :deep(.json-boolean) { color: var(--color-accent); }
 .source-pre :deep(.json-null) { color: var(--text-muted); }
+
+.source-pre :deep(.json-url) {
+  color: var(--color-green);
+  text-decoration: underline;
+  text-decoration-style: dotted;
+}
+.source-pre :deep(.json-url:hover) {
+  text-decoration-style: solid;
+}
 
 :root[data-theme="dark"] .source-pre :deep(.json-key) { color: var(--color-primary-light); }
 :root[data-theme="dark"] .source-pre :deep(.json-string) { color: var(--color-teal); }
@@ -1250,6 +1315,50 @@ watch(() => schemaStore.selectedItemKey, (key) => {
   color: var(--text-muted);
   font-size: var(--text-sm);
   margin-bottom: var(--space-3);
+}
+
+.landing-search {
+  position: relative;
+  max-width: 400px;
+  margin-top: var(--space-3);
+}
+
+.landing-search-input {
+  width: 100%;
+  padding: 6px 28px 6px 10px;
+  font-size: var(--text-sm);
+  font-family: var(--font-sans);
+  background: var(--bg-primary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+}
+
+.landing-search-input::placeholder {
+  color: var(--text-muted);
+}
+
+.landing-search-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.landing-search-clear {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+}
+
+.landing-search-clear:hover {
+  color: var(--text-primary);
 }
 
 .separator {

@@ -1,5 +1,18 @@
 ## [Unreleased]
 
+## [0.1.15] - 2026-05-10
+
+### Redoc-style UX improvements (round 16)
+
+- DetailPanel descriptions rendered with inline markdown (bold, italic, code, links)
+- Source viewer URLs are clickable links (Redoc jsonToHtml pattern)
+- Definition mini-table rows show description tooltip on hover
+- SeeMore component uses scrollHeight-based overflow detection (Redoc SeeMore pattern)
+- Landing page schema grid has search/filter input
+- Property sort toggle in SchemaBuilder (alphabetical vs required-first, Redoc sortPropsAlphabetically pattern)
+- Schema header meta badges with colored count chips (properties, required, definitions)
+- DetailPanel dark mode support (constraint colors, enum chips, example blocks)
+
 ## [0.1.14] - 2026-05-10
 
 ### Redoc-style UX improvements (round 15)
