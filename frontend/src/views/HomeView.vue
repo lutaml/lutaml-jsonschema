@@ -101,7 +101,7 @@
                 <span v-for="r in def.required" :key="r" class="def-header-req">{{ r }}</span>
               </template>
               <span v-else-if="def.required?.length" class="text-muted">{{ def.required.length }} req</span>
-              <span v-if="def.examples?.length" class="text-muted">&middot; {{ def.examples.length }} ex</span>
+              <span v-if="def.examples?.length" class="text-muted">&middot; {{ def.examples.length }} example{{ def.examples.length > 1 ? 's' : '' }}</span>
               <span v-if="def.minProperties != null" class="text-muted">&middot; min {{ def.minProperties }}</span>
               <span v-if="def.maxProperties != null" class="text-muted">&middot; max {{ def.maxProperties }}</span>
               <span v-if="def.additionalProperties === false" class="badge badge-locked">no additional</span>
@@ -120,11 +120,15 @@
               </details>
               <div v-if="!expandedDefs.has(def.name) && def.properties.length" class="def-mini-table">
                 <div v-for="prop in def.properties.slice(0, 5)" :key="prop.name" class="def-mini-row">
-                  <span class="def-mini-name font-mono">{{ prop.name }}</span>
-                  <span class="def-mini-type">{{ prop.type || 'any' }}</span>
-                  <span v-if="prop.format" class="def-mini-format">&lt;{{ prop.format }}&gt;</span>
-                  <span v-if="prop.enum?.length" class="def-mini-enum">{{ prop.enum.length }}</span>
+                  <span class="def-mini-name font-mono" :class="{ 'def-mini-deprecated': prop.deprecated }">{{ prop.name }}</span>
+                  <span v-if="prop.ref" class="def-mini-ref" @click.stop="navigateToDefRef(prop.ref)">→ {{ defRefName(prop.ref) }}</span>
+                  <template v-else>
+                    <span class="def-mini-type">{{ prop.type || 'any' }}</span>
+                    <span v-if="prop.format" class="def-mini-format">&lt;{{ prop.format }}&gt;</span>
+                  </template>
+                  <span v-if="prop.enum?.length" class="def-mini-enum">{{ prop.enum.length }} enum</span>
                   <span v-if="prop.compositionSource" class="def-mini-comp">{{ prop.compositionSource }}</span>
+                  <span v-if="prop.const != null" class="def-mini-const">const</span>
                   <span v-if="prop.required" class="def-mini-req">*</span>
                   <span v-if="prop.deprecated" class="def-mini-dep">dep</span>
                 </div>
@@ -145,9 +149,18 @@
                   <span v-if="def.hasAnyOf" class="badge badge-composition">anyOf</span>
                   <span v-if="def.hasOneOf" class="badge badge-composition">oneOf</span>
                   <span v-if="def.additionalProperties === false" class="badge badge-locked">no additional</span>
+                  <span v-if="def.examples?.length" class="text-muted">&middot; {{ def.examples.length }} examples</span>
+                </div>
+                <div v-if="def.required?.length" class="def-body-required">
+                  <span class="required-label text-muted">Required:</span>
+                  <span v-for="r in def.required" :key="r" class="required-tag-sm">{{ r }}</span>
                 </div>
               </div>
               <div v-if="def.description" class="def-body-desc text-secondary" v-html="renderInlineMarkdown(def.description)"></div>
+              <details v-if="def.examples?.length" class="def-card-examples def-body-examples">
+                <summary class="text-muted">Examples ({{ def.examples.length }})</summary>
+                <pre class="def-examples-pre"><code>{{ formatJson(def.examples) }}</code></pre>
+              </details>
               <SchemaBuilder
                 :properties="def.properties"
                 :required="def.required"
@@ -172,7 +185,7 @@
             </button>
           </div>
           <div class="source-code-wrapper">
-            <div class="source-lines" aria-hidden="true"><span v-for="n in sourceLineCount" :key="n">{{ n }}</span></div>
+            <div class="source-lines" aria-hidden="true"><span v-for="n in sourceLineCount" :key="n" :class="{ 'source-line-active': n === activeSourceLine }" @click="activeSourceLine = n">{{ n }}</span></div>
             <pre class="source-pre" @dblclick="selectSourceBlock"><code v-html="highlightedSource"></code></pre>
           </div>
         </div>
@@ -225,7 +238,7 @@
           <div class="schema-card-content">
             <h3>{{ schema.title || schema.name }}</h3>
             <span v-if="schema.title && schema.title !== schema.name" class="schema-card-name font-mono text-muted">{{ schema.name }}</span>
-            <p v-if="schema.description" class="schema-card-desc text-secondary">{{ schema.description }}</p>
+            <p v-if="schema.description" class="schema-card-desc text-secondary" v-html="renderInlineMarkdown(schema.description)"></p>
             <div class="schema-card-meta">
               <span class="badge badge-type-sm">{{ schema.type || 'any' }}</span>
               <span v-if="schema.hasAllOf" class="badge badge-comp-sm">allOf</span>
@@ -260,6 +273,7 @@ const schemaStore = useSchemaStore()
 const expandedDefs = reactive(new Set<string>())
 const viewMode = ref<'builder' | 'source'>('builder')
 const sourceCopied = ref(false)
+const activeSourceLine = ref(-1)
 
 const selectedDefinitionTitle = computed(() => {
   const name = schemaStore.selectedDefinitionName
@@ -366,6 +380,18 @@ function formatJson(value: unknown): string {
 
 function isUrl(str: string): boolean {
   return /^https?:\/\//.test(str)
+}
+
+function defRefName(ref: string): string {
+  const match = ref.match(/^#\/(?:definitions|\$defs)\/([^/]+)$/)
+  return match ? match[1] : ref
+}
+
+function navigateToDefRef(ref: string) {
+  const match = ref.match(/^#\/(?:definitions|\$defs)\/([^/]+)$/)
+  if (match) {
+    schemaStore.selectDefinition(match[1])
+  }
 }
 
 function downloadAllSchemas() {
@@ -759,6 +785,13 @@ watch(() => schemaStore.selectedItemKey, (key) => {
   border-radius: 2px;
 }
 
+.source-lines span.source-line-active {
+  background: var(--color-primary-alpha);
+  color: var(--color-primary);
+  border-radius: 2px;
+  font-weight: 600;
+}
+
 .source-pre :deep(.json-key) { color: var(--color-primary-dark); }
 .source-pre :deep(.json-string) { color: var(--color-green); }
 .source-pre :deep(.json-number) { color: var(--color-orange); }
@@ -971,6 +1004,32 @@ watch(() => schemaStore.selectedItemKey, (key) => {
   flex-shrink: 0;
 }
 
+.def-mini-ref {
+  font-size: 9px;
+  color: var(--color-primary);
+  font-family: var(--font-mono);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.def-mini-ref:hover {
+  text-decoration: underline;
+}
+
+.def-mini-const {
+  font-size: 9px;
+  color: var(--color-primary);
+  background: var(--color-primary-alpha);
+  padding: 0px 3px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.def-mini-deprecated {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
 .def-mini-more {
   padding: 3px var(--space-3);
   font-size: var(--text-xs);
@@ -1026,6 +1085,18 @@ watch(() => schemaStore.selectedItemKey, (key) => {
   align-items: center;
   gap: var(--space-2);
   flex-wrap: wrap;
+}
+
+.def-body-required {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-top: var(--space-1);
+  flex-wrap: wrap;
+}
+
+.def-body-examples {
+  margin-bottom: var(--space-3);
 }
 
 .def-body-desc {
@@ -1153,6 +1224,24 @@ watch(() => schemaStore.selectedItemKey, (key) => {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.schema-card-desc :deep(.md-code) {
+  font-family: var(--font-mono);
+  font-size: inherit;
+  background: var(--bg-secondary);
+  padding: 1px 4px;
+  border-radius: 2px;
+  border: 1px solid var(--border-light);
+}
+
+.schema-card-desc :deep(.md-link) {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.schema-card-desc :deep(.md-link:hover) {
+  text-decoration: underline;
 }
 
 .schema-card-meta {

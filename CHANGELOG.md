@@ -1,5 +1,24 @@
 ## [Unreleased]
 
+## [0.1.14] - 2026-05-10
+
+### Redoc-style UX improvements (round 15)
+
+- Markdown renderer converts `\n` to `<br>` for multi-line descriptions
+- Definition mini-table shows `$ref` target name with clickable navigation
+- Definition mini-table shows `const` badge for constant properties
+- Definition mini-table shows deprecated strikethrough on property names
+- Definition mini-table shows `N enum` label instead of just count
+- Definition card header shows `N examples` instead of `N ex`
+- Definition card expanded body shows required fields list and examples section
+- DetailPanel properties tab rows are clickable (navigate to property)
+- DetailPanel properties tab shows `$ref` target with clickable link
+- Improved circular reference label (shows type badge, name, hint text)
+- Source viewer: click on line number to highlight it
+- Landing page card descriptions rendered with markdown
+- Keyboard shortcut: `/` focuses search input from anywhere
+- Search input placeholder shows shortcut hint
+
 ## [0.1.13] - 2026-05-10
 
 ### Backend: property-level composition resolution
