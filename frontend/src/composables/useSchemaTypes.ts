@@ -18,7 +18,13 @@ export function displayType(prop: SpaProperty, resolvedTitle?: string): string {
   const t = primaryType(prop.type)
   const isNullable = (prop.type || '').split(',').map(s => s.trim()).includes('null')
   const suffix = isNullable ? ' | null' : ''
-  if (t === 'array' && prop.itemsType) return `array of ${prop.itemsType}${suffix}`
+  if (t === 'array') {
+    let label = prop.itemsType ? `array of ${prop.itemsType}` : 'array'
+    if (prop.minItems != null && prop.maxItems != null) label += ` [ ${prop.minItems} .. ${prop.maxItems} ]`
+    else if (prop.minItems != null) label += ` >= ${prop.minItems}`
+    else if (prop.maxItems != null) label += ` <= ${prop.maxItems}`
+    return label + suffix
+  }
   if (resolvedTitle && (t === 'object' || t === 'any') && prop.ref) return resolvedTitle + suffix
   if (prop.format) return `${t} (${prop.format})${suffix}`
   return t + suffix

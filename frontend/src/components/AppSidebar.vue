@@ -90,6 +90,7 @@
               </svg>
               <span class="schema-name">{{ schema.title || schema.name }}</span>
               <span v-if="schema.$id" class="schema-id-hint" :title="schema.$id">{{ schema.$id }}</span>
+              <span class="schema-badge-count">{{ schema.properties.length }}P</span>
               <span class="schema-badge-count">{{ schema.definitions.length }}D</span>
             </div>
 
