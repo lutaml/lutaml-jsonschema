@@ -119,7 +119,7 @@
                 <pre class="def-examples-pre"><code>{{ formatJson(def.examples) }}</code></pre>
               </details>
               <div v-if="!expandedDefs.has(def.name) && def.properties.length" class="def-mini-table">
-                <div v-for="prop in def.properties.slice(0, 5)" :key="prop.name" class="def-mini-row">
+                <div v-for="prop in def.properties.slice(0, 5)" :key="prop.name" class="def-mini-row def-mini-row-clickable" @click.stop="openPropertyDetail(prop.name)">
                   <span class="def-mini-name font-mono" :class="{ 'def-mini-deprecated': prop.deprecated }">{{ prop.name }}</span>
                   <span v-if="prop.ref" class="def-mini-ref" @click.stop="navigateToDefRef(prop.ref)">→ {{ defRefName(prop.ref) }}</span>
                   <template v-else>
@@ -263,6 +263,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch, nextTick } from 'vue'
 import { useSchemaStore } from '../stores/schemaStore'
+import { useUiStore } from '../stores/uiStore'
 import SchemaBuilder from '../components/SchemaBuilder.vue'
 import { downloadFile } from '../composables/useDownload'
 import { renderInlineMarkdown } from '../composables/useMarkdownLite'
@@ -270,6 +271,7 @@ import { copyToClipboard } from '../composables/useClipboard'
 import type { SpaSchema } from '../types'
 
 const schemaStore = useSchemaStore()
+const uiStore = useUiStore()
 const expandedDefs = reactive(new Set<string>())
 const viewMode = ref<'builder' | 'source'>('builder')
 const sourceCopied = ref(false)
@@ -392,6 +394,11 @@ function navigateToDefRef(ref: string) {
   if (match) {
     schemaStore.selectDefinition(match[1])
   }
+}
+
+function openPropertyDetail(propName: string) {
+  schemaStore.selectProperty(propName)
+  uiStore.openDetailPanel()
 }
 
 function miniTypeClass(type?: string): string {
@@ -813,6 +820,35 @@ watch(() => schemaStore.selectedItemKey, (key) => {
 
 :root[data-theme="dark"] .source-pre :deep(.json-key) { color: var(--color-primary-light); }
 :root[data-theme="dark"] .source-pre :deep(.json-string) { color: var(--color-teal); }
+:root[data-theme="dark"] .source-pre :deep(.json-number) { color: var(--color-accent-light); }
+:root[data-theme="dark"] .source-pre :deep(.json-boolean) { color: var(--color-primary-light); }
+:root[data-theme="dark"] .source-pre :deep(.json-null) { color: var(--text-muted); }
+
+:root[data-theme="dark"] .source-code-wrapper {
+  background: var(--panel-dark-bg);
+}
+:root[data-theme="dark"] .source-lines {
+  background: rgba(0, 0, 0, 0.15);
+  border-right-color: rgba(255, 255, 255, 0.08);
+}
+:root[data-theme="dark"] .source-lines span {
+  color: var(--panel-dark-muted);
+}
+:root[data-theme="dark"] .source-lines span:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+:root[data-theme="dark"] .source-lines span.source-line-active {
+  background: rgba(91, 156, 212, 0.2);
+  color: var(--color-primary-light);
+}
+:root[data-theme="dark"] .source-pre {
+  color: var(--panel-dark-text);
+}
+:root[data-theme="dark"] .source-toolbar {
+  background: rgba(0, 0, 0, 0.15);
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+  color: var(--panel-dark-muted);
+}
 
 .source-empty {
   padding: var(--space-8);
@@ -949,6 +985,10 @@ watch(() => schemaStore.selectedItemKey, (key) => {
 
 .def-mini-row:hover {
   background: var(--bg-hover);
+}
+
+.def-mini-row-clickable {
+  cursor: pointer;
 }
 
 .def-mini-row:last-child {
