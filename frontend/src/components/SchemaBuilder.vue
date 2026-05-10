@@ -1,18 +1,26 @@
 <template>
   <div class="builder-layout">
     <div class="builder-fields">
-      <div v-if="properties.length > 8" class="builder-filter">
-        <input
-          v-model="filterQuery"
-          type="text"
-          class="filter-input"
-          placeholder="Filter properties..."
-          aria-label="Filter properties"
-        />
-        <button v-if="filterQuery" class="filter-clear" aria-label="Clear filter" @click="filterQuery = ''">
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-            <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+      <div v-if="properties.length > 4" class="builder-toolbar">
+        <div v-if="properties.length > 8" class="builder-filter">
+          <input
+            v-model="filterQuery"
+            type="text"
+            class="filter-input"
+            placeholder="Filter properties..."
+            aria-label="Filter properties"
+          />
+          <button v-if="filterQuery" class="filter-clear" aria-label="Clear filter" @click="filterQuery = ''">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+        <button class="sort-toggle" :class="{ active: sortAlpha }" :title="sortAlpha ? 'Sorted A-Z' : 'Sorted by required first'" @click="sortAlpha = !sortAlpha">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M3 2v10M3 12l-2-2M3 12l2-2M11 2v10M11 12l-2-2M11 12l2-2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
+          {{ sortAlpha ? 'A-Z' : 'Req' }}
         </button>
       </div>
       <div v-for="(field, idx) in sortedFields" :key="field.prop.name" :id="`prop-${field.prop.name}`" class="field-row" :class="{ 'field-row-alt': idx % 2 === 1, [`depth-${depth % 3}`]: depth > 0 }">
@@ -159,10 +167,9 @@
         </div>
 
         <div v-if="field.prop.description" class="field-desc-wrap">
-          <div class="field-desc text-secondary" :class="{ 'desc-collapsed': !descExpanded.has(field.prop.name) && field.prop.description.length > 200 }" v-html="renderInlineMarkdown(field.prop.description)"></div>
-          <button v-if="field.prop.description.length > 200" class="btn-see-more" @click="toggleDesc(field.prop.name)">
-            {{ descExpanded.has(field.prop.name) ? 'Show less' : 'Show more' }}
-          </button>
+          <SeeMore max-height="3.6em">
+            <div class="field-desc text-secondary" v-html="renderInlineMarkdown(field.prop.description)"></div>
+          </SeeMore>
         </div>
 
         <div v-if="hasConstraints(field.prop) || field.prop.ref || field.prop.enum?.length" class="field-constraints">
@@ -275,6 +282,7 @@ import { renderInlineMarkdown } from '../composables/useMarkdownLite'
 import { jsonToCollapsibleHtml } from '../composables/useJsonViewer'
 import type { BuilderField } from '../composables/useBuilderField'
 import { copyToClipboard } from '../composables/useClipboard'
+import SeeMore from './SeeMore.vue'
 
 const schemaStore = useSchemaStore()
 const uiStore = useUiStore()
@@ -312,20 +320,13 @@ const emit = defineEmits<{
 
 const copied = ref(false)
 const filterQuery = ref('')
+const sortAlpha = ref(false)
 const expandedPatterns = ref(new Set<string>())
 const jsonBlockRef = ref<HTMLElement | null>(null)
-const descExpanded = ref(new Set<string>())
 const enumExpanded = ref(new Set<string>())
 
 const MAX_ENUM_SHOW = 8
 const validationErrors = ref<Map<string, string>>(new Map())
-
-function toggleDesc(name: string) {
-  const s = new Set(descExpanded.value)
-  if (s.has(name)) s.delete(name)
-  else s.add(name)
-  descExpanded.value = s
-}
 
 function visibleEnums(name: string, enums: string[]): string[] {
   if (enumExpanded.value.has(name) || enums.length <= MAX_ENUM_SHOW) return enums
@@ -363,6 +364,9 @@ const sortedFields = computed(() => {
       (f.prop.description || '').toLowerCase().includes(q) ||
       (f.prop.type || '').toLowerCase().includes(q)
     )
+  }
+  if (sortAlpha.value) {
+    return result.sort((a, b) => a.prop.name.localeCompare(b.prop.name))
   }
   return result.sort((a, b) => {
     if (a.isRequired && !b.isRequired) return -1
@@ -510,6 +514,41 @@ async function copyJson() {
   display: flex;
   flex-direction: column;
   gap: 2px;
+}
+
+.builder-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.sort-toggle {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all var(--transition-fast);
+}
+
+.sort-toggle:hover {
+  color: var(--text-primary);
+  border-color: var(--border-medium);
+}
+
+.sort-toggle.active {
+  color: var(--color-primary);
+  background: var(--color-primary-alpha);
+  border-color: var(--color-primary);
 }
 
 .builder-filter {
@@ -878,28 +917,6 @@ async function copyJson() {
 .field-desc {
   font-size: var(--text-xs);
   line-height: var(--leading-normal);
-}
-
-.field-desc.desc-collapsed {
-  max-height: 3.6em;
-  overflow: hidden;
-  -webkit-mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
-  mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
-}
-
-.btn-see-more {
-  display: block;
-  font-size: var(--text-xs);
-  color: var(--color-primary);
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 2px 0;
-  margin-top: 2px;
-}
-
-.btn-see-more:hover {
-  text-decoration: underline;
 }
 
 .field-desc :deep(.md-code) {

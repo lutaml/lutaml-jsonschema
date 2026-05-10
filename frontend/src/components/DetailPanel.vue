@@ -40,7 +40,7 @@
                 </div>
                 <div v-if="itemDescription" class="meta-row">
                   <span class="meta-label">Description</span>
-                  <span class="text-secondary">{{ itemDescription }}</span>
+                  <span class="text-secondary" v-html="renderInlineMarkdown(itemDescription)"></span>
                 </div>
                 <div v-if="propertyItem" class="meta-row">
                   <span class="meta-label">Required</span>
@@ -239,7 +239,8 @@
                       <span v-else class="text-muted">no</span>
                     </td>
                     <td>
-                      <span class="text-secondary">{{ prop.description || '—' }}</span>
+                      <span v-if="prop.description" class="text-secondary" v-html="renderInlineMarkdown(prop.description)"></span>
+                      <span v-else class="text-muted">—</span>
                       <div v-if="prop.examples?.length" class="prop-examples">
                         <span class="prop-examples-label">Examples:</span>
                         <span v-for="(ex, i) in prop.examples.slice(0, 3)" :key="i" class="prop-example-chip">{{ typeof ex === 'object' ? JSON.stringify(ex) : ex }}</span>
@@ -283,6 +284,7 @@
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useSchemaStore, type SelectedItem } from '../stores/schemaStore'
 import { useUiStore } from '../stores/uiStore'
+import { renderInlineMarkdown } from '../composables/useMarkdownLite'
 import type { SpaProperty } from '../types'
 
 const schemaStore = useSchemaStore()
@@ -892,5 +894,43 @@ function navigateToProperty(name: string) {
 
 .example-generated {
   border-color: var(--color-primary-alpha);
+}
+
+.panel-content :deep(.md-code) {
+  font-family: var(--font-mono);
+  font-size: inherit;
+  background: var(--bg-secondary);
+  padding: 1px 4px;
+  border-radius: 2px;
+  border: 1px solid var(--border-light);
+}
+
+.panel-content :deep(.md-link) {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.panel-content :deep(.md-link:hover) {
+  text-decoration: underline;
+}
+
+/* Dark mode overrides */
+:root[data-theme="dark"] .detail-panel {
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+:root[data-theme="dark"] .constraint-pattern {
+  color: #4dd0e1;
+  background: rgba(77, 208, 225, 0.1);
+}
+
+:root[data-theme="dark"] .enum-value-chip {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+:root[data-theme="dark"] .example-pre {
+  background: rgba(0, 0, 0, 0.15);
+  border-color: rgba(255, 255, 255, 0.08);
 }
 </style>
