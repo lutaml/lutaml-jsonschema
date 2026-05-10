@@ -1,10 +1,15 @@
 /**
  * Lightweight inline Markdown renderer for schema descriptions.
- * Handles: **bold**, *italic*, `code`, [link](url)
+ * Handles: **bold**, *italic*, `code`, [link](url), ```fenced code blocks```
  */
 export function renderInlineMarkdown(text: string): string {
   if (!text) return ''
   let html = escapeHtml(text)
+
+  // Fenced code blocks: ```lang\n...\n```  (must run before inline code)
+  html = html.replace(/```[\w]*\n([\s\S]*?)```/g, (_match, code: string) => {
+    return `<pre class="md-pre"><code>${code.trim()}</code></pre>`
+  })
 
   // Links: [text](url)
   html = html.replace(
