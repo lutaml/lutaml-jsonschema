@@ -44,6 +44,11 @@
               <span class="text-muted">{{ field.resolvedDef.properties.length }} props</span>
             </button>
 
+            <!-- Composition types (anyOf/oneOf/not) — static label -->
+            <span v-else-if="isCompositionType(primaryType(field.prop.type))" class="ctrl-static ctrl-composition">
+              {{ field.prop.description || 'Multiple variants accepted' }}
+            </span>
+
             <!-- Enum -->
             <select
               v-else-if="field.prop.enum?.length"
@@ -240,6 +245,7 @@ import {
   arrayItemInputType,
   arrayDefaultValue,
   isObjectProperty,
+  isCompositionType,
   hasConstraints,
   humanizeConstraints,
   validateFieldValue,
@@ -426,6 +432,7 @@ const MAX_PATTERN_LEN = 45
 
 function typeBadgeClass(prop: SpaProperty): string {
   const t = primaryType(prop.type)
+  if (isCompositionType(t)) return 'type-composition'
   switch (t) {
     case 'string': return 'type-string'
     case 'number': return 'type-number'
@@ -568,6 +575,7 @@ async function copyJson() {
 .field-type-badge.type-object { background: var(--type-object-bg); color: var(--type-object); }
 .field-type-badge.type-array { background: var(--type-array-bg); color: var(--type-array); }
 .field-type-badge.type-null { background: var(--type-null-bg); color: var(--type-null); }
+.field-type-badge.type-composition { background: var(--color-teal-alpha); color: var(--color-teal); font-family: var(--font-mono); font-size: 10px; }
 
 .req-badge {
   font-size: 10px;
@@ -752,6 +760,13 @@ async function copyJson() {
   font-size: var(--text-sm);
   font-family: var(--font-mono);
   color: var(--text-muted);
+}
+
+.ctrl-composition {
+  font-family: var(--font-sans);
+  font-style: italic;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
 }
 
 .ctrl-textarea {

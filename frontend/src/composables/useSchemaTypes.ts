@@ -3,10 +3,17 @@ import type { SpaProperty } from '../types'
 /**
  * Extract the primary JSON Schema type from a type string.
  * Handles union types like "string,integer" by returning the first component.
+ * Composition types (anyOf/oneOf/not) are returned as-is.
  */
 export function primaryType(type?: string): string {
   const t = (type || '').split(',')[0].trim()
   return t || 'any'
+}
+
+/** Whether the type string is a composition indicator from the backend. */
+export function isCompositionType(type?: string): boolean {
+  const t = type || ''
+  return t.startsWith('anyOf:') || t.startsWith('oneOf:') || t.startsWith('not ')
 }
 
 /**
@@ -18,6 +25,7 @@ export function displayType(prop: SpaProperty, resolvedTitle?: string): string {
   const t = primaryType(prop.type)
   const isNullable = (prop.type || '').split(',').map(s => s.trim()).includes('null')
   const suffix = isNullable ? ' | null' : ''
+  if (isCompositionType(t)) return t + suffix
   if (t === 'array') {
     let label = prop.itemsType ? `array of ${prop.itemsType}` : 'array'
     if (prop.minItems != null && prop.maxItems != null) label += ` [ ${prop.minItems} .. ${prop.maxItems} ]`
@@ -123,6 +131,7 @@ export function parseArrayItem(item: string, itemsType?: string): unknown {
  */
 export function isObjectProperty(prop: SpaProperty): boolean {
   const t = primaryType(prop.type)
+  if (isCompositionType(t)) return false
   return t === 'object' || (!prop.type && !!prop.ref)
 }
 
@@ -277,6 +286,8 @@ export type ValidationError = string
 
 export function validateFieldValue(rawValue: string, prop: SpaProperty): ValidationError | null {
   const t = primaryType(prop.type)
+
+  if (isCompositionType(t)) return null
 
   if (t === 'string' || t === 'any' || !t) {
     if (prop.minLength != null && rawValue.length < prop.minLength && rawValue.length > 0) {
