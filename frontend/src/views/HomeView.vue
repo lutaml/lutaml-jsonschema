@@ -128,7 +128,8 @@
                   </template>
                   <span v-if="prop.enum?.length" class="def-mini-enum">{{ prop.enum.length }} enum</span>
                   <span v-if="prop.compositionSource" class="def-mini-comp">{{ prop.compositionSource }}</span>
-                  <span v-if="prop.const != null" class="def-mini-const">const</span>
+                  <span v-if="prop.const != null" class="def-mini-const">const: {{ prop.const }}</span>
+                  <span v-else-if="prop.default != null" class="def-mini-default">default: {{ prop.default }}</span>
                   <span v-if="prop.required" class="def-mini-req">*</span>
                   <span v-if="prop.deprecated" class="def-mini-dep">dep</span>
                 </div>
@@ -1088,6 +1089,25 @@ watch(() => schemaStore.selectedItemKey, (key) => {
   padding: 0px 3px;
   border-radius: 2px;
   flex-shrink: 0;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+}
+
+.def-mini-default {
+  font-size: 9px;
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  padding: 0px 3px;
+  border-radius: 2px;
+  flex-shrink: 0;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-mono);
 }
 
 .def-mini-deprecated {

@@ -148,25 +148,21 @@
               <h3 class="detail-heading">Constraints</h3>
               <table class="table constraint-table">
                 <tbody>
-                  <tr v-if="propertyItem.minimum != null">
-                    <td class="constraint-key">Minimum</td>
-                    <td>{{ propertyItem.minimum }}</td>
+                  <tr v-if="propertyItem.minimum != null || propertyItem.maximum != null || propertyItem.exclusiveMinimum != null || propertyItem.exclusiveMaximum != null">
+                    <td class="constraint-key">Range</td>
+                    <td class="constraint-value">{{ numberRangeLabel }}</td>
                   </tr>
-                  <tr v-if="propertyItem.maximum != null">
-                    <td class="constraint-key">Maximum</td>
-                    <td>{{ propertyItem.maximum }}</td>
+                  <tr v-if="propertyItem.minLength != null || propertyItem.maxLength != null">
+                    <td class="constraint-key">Length</td>
+                    <td class="constraint-value">{{ stringRangeLabel }}</td>
                   </tr>
-                  <tr v-if="propertyItem.minLength != null">
-                    <td class="constraint-key">Min Length</td>
-                    <td>{{ propertyItem.minLength }}</td>
-                  </tr>
-                  <tr v-if="propertyItem.maxLength != null">
-                    <td class="constraint-key">Max Length</td>
-                    <td>{{ propertyItem.maxLength }}</td>
+                  <tr v-if="propertyItem.minItems != null || propertyItem.maxItems != null">
+                    <td class="constraint-key">Items</td>
+                    <td class="constraint-value">{{ itemsRangeLabel }}</td>
                   </tr>
                   <tr v-if="propertyItem.pattern">
                     <td class="constraint-key">Pattern</td>
-                    <td class="font-mono">{{ propertyItem.pattern }}</td>
+                    <td class="constraint-value font-mono constraint-pattern">{{ propertyItem.pattern }}</td>
                   </tr>
                   <tr v-if="propertyItem.enum?.length">
                     <td class="constraint-key">Enum</td>
@@ -177,48 +173,32 @@
                     </td>
                   </tr>
                   <tr v-if="propertyItem.itemsType">
-                    <td class="constraint-key">Items</td>
-                    <td>{{ propertyItem.itemsType }}</td>
-                  </tr>
-                  <tr v-if="propertyItem.exclusiveMinimum != null">
-                    <td class="constraint-key">Exclusive Min</td>
-                    <td>{{ propertyItem.exclusiveMinimum }}</td>
-                  </tr>
-                  <tr v-if="propertyItem.exclusiveMaximum != null">
-                    <td class="constraint-key">Exclusive Max</td>
-                    <td>{{ propertyItem.exclusiveMaximum }}</td>
-                  </tr>
-                  <tr v-if="propertyItem.minItems != null">
-                    <td class="constraint-key">Min Items</td>
-                    <td>{{ propertyItem.minItems }}</td>
-                  </tr>
-                  <tr v-if="propertyItem.maxItems != null">
-                    <td class="constraint-key">Max Items</td>
-                    <td>{{ propertyItem.maxItems }}</td>
+                    <td class="constraint-key">Items Type</td>
+                    <td class="constraint-value">{{ propertyItem.itemsType }}</td>
                   </tr>
                   <tr v-if="propertyItem.uniqueItems">
                     <td class="constraint-key">Unique Items</td>
-                    <td>Yes</td>
+                    <td class="constraint-value"><span class="constraint-yes">Yes</span></td>
                   </tr>
                   <tr v-if="propertyItem.multipleOf != null">
                     <td class="constraint-key">Multiple Of</td>
-                    <td>{{ propertyItem.multipleOf }}</td>
+                    <td class="constraint-value">{{ propertyItem.multipleOf }}</td>
                   </tr>
                   <tr v-if="propertyItem.const != null">
                     <td class="constraint-key">Const</td>
-                    <td class="font-mono">{{ propertyItem.const }}</td>
+                    <td class="constraint-value font-mono">{{ propertyItem.const }}</td>
                   </tr>
                   <tr v-if="propertyItem.contentMediaType">
                     <td class="constraint-key">Content Type</td>
-                    <td>{{ propertyItem.contentMediaType }}</td>
+                    <td class="constraint-value">{{ propertyItem.contentMediaType }}</td>
                   </tr>
                   <tr v-if="propertyItem.contentEncoding">
                     <td class="constraint-key">Content Encoding</td>
-                    <td>{{ propertyItem.contentEncoding }}</td>
+                    <td class="constraint-value">{{ propertyItem.contentEncoding }}</td>
                   </tr>
                   <tr v-if="propertyItem.additionalProperties === false">
                     <td class="constraint-key">Additional Props</td>
-                    <td>Denied</td>
+                    <td class="constraint-value"><span class="constraint-denied">Denied</span></td>
                   </tr>
                 </tbody>
               </table>
@@ -390,7 +370,50 @@ const hasConstraints = computed(() => {
     p.exclusiveMinimum != null || p.exclusiveMaximum != null ||
     p.minItems != null || p.maxItems != null || p.uniqueItems ||
     p.multipleOf != null || p.const != null ||
-    p.contentMediaType || p.contentEncoding
+    p.contentMediaType || p.contentEncoding ||
+    p.additionalProperties === false
+})
+
+const numberRangeLabel = computed(() => {
+  const p = propertyItem.value
+  if (!p) return ''
+  const hasMin = p.minimum != null
+  const hasMax = p.maximum != null
+  const excMin = p.exclusiveMinimum != null
+  const excMax = p.exclusiveMaximum != null
+  if (hasMin && hasMax) {
+    return `${excMin ? '( ' : '[ '}${p.minimum} .. ${p.maximum}${excMax ? ' )' : ' ]'}`
+  }
+  if (excMin && excMax) return `( ${p.exclusiveMinimum} .. ${p.exclusiveMaximum} )`
+  if (hasMin) return `${excMin ? '> ' : '>= '}${p.minimum}`
+  if (hasMax) return `${excMax ? '< ' : '<= '}${p.maximum}`
+  if (excMin) return `> ${p.exclusiveMinimum}`
+  if (excMax) return `< ${p.exclusiveMaximum}`
+  return ''
+})
+
+const stringRangeLabel = computed(() => {
+  const p = propertyItem.value
+  if (!p) return ''
+  if (p.minLength != null && p.maxLength != null) {
+    if (p.minLength === p.maxLength) return `= ${p.minLength} characters`
+    return `[ ${p.minLength} .. ${p.maxLength} ] characters`
+  }
+  if (p.minLength != null) return p.minLength === 1 ? 'non-empty' : `>= ${p.minLength} characters`
+  if (p.maxLength != null) return `<= ${p.maxLength} characters`
+  return ''
+})
+
+const itemsRangeLabel = computed(() => {
+  const p = propertyItem.value
+  if (!p) return ''
+  if (p.minItems != null && p.maxItems != null) {
+    if (p.minItems === p.maxItems) return `= ${p.minItems} items`
+    return `[ ${p.minItems} .. ${p.maxItems} ] items`
+  }
+  if (p.minItems != null) return p.minItems === 1 ? 'non-empty' : `>= ${p.minItems} items`
+  if (p.maxItems != null) return `<= ${p.maxItems} items`
+  return ''
 })
 
 type TabId = 'overview' | 'properties' | 'examples'
@@ -803,6 +826,37 @@ function navigateToProperty(name: string) {
 
 .constraint-key {
   white-space: nowrap;
+}
+
+.constraint-value {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
+.constraint-pattern {
+  word-break: break-all;
+  color: #0e7c86;
+  background: rgba(14, 124, 134, 0.08);
+  padding: 1px 4px;
+  border-radius: var(--radius-sm);
+}
+
+.constraint-yes {
+  color: var(--color-teal);
+  background: var(--color-teal-alpha);
+  padding: 1px 5px;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  font-weight: 500;
+}
+
+.constraint-denied {
+  color: var(--color-orange);
+  background: var(--color-orange-alpha);
+  padding: 1px 5px;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  font-weight: 500;
 }
 
 /* Examples */
