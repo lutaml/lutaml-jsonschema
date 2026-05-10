@@ -99,8 +99,22 @@
 
             <div v-if="uiStore.isSchemaExpanded(schema.name)" class="schema-children">
               <div
+                v-for="prop in schema.properties.slice(0, 10)"
+                :key="`p-${prop.name}`"
+                class="tree-item property-item"
+                :class="{ active: schema.name === schemaStore.selectedSchemaName && prop.name === schemaStore.selectedPropertyName }"
+                @click.stop="selectProperty(schema.name, prop.name)"
+              >
+                <span class="badge badge-property-sm">P</span>
+                <span class="tree-item-name">{{ prop.name }}</span>
+                <span class="tree-item-type">{{ prop.type || 'any' }}</span>
+              </div>
+              <div v-if="schema.properties.length > 10" class="tree-more text-muted">
+                +{{ schema.properties.length - 10 }} more
+              </div>
+              <div
                 v-for="def in schema.definitions"
-                :key="def.name"
+                :key="`d-${def.name}`"
                 class="tree-item definition-item"
                 :class="{ active: schema.name === schemaStore.selectedSchemaName && def.name === schemaStore.selectedDefinitionName }"
                 @click.stop="selectDefinition(schema.name, def.name)"
@@ -281,6 +295,12 @@ function selectDefinition(schemaName: string, defName: string) {
   schemaStore.selectSchema(schemaName)
   schemaStore.selectDefinition(defName)
   uiStore.closeDetailPanel()
+}
+
+function selectProperty(schemaName: string, propName: string) {
+  schemaStore.selectSchema(schemaName)
+  schemaStore.selectProperty(propName)
+  uiStore.openDetailPanel()
 }
 
 function truncateDesc(desc: string): string {
@@ -519,6 +539,19 @@ function truncateDesc(desc: string): string {
   padding: 0px 4px;
   border-radius: 2px;
   flex-shrink: 0;
+}
+
+.tree-item-type {
+  font-size: 9px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  flex-shrink: 0;
+}
+
+.tree-more {
+  font-size: 10px;
+  padding: 2px var(--space-2) 2px 24px;
+  font-style: italic;
 }
 
 .badge-definition-sm {

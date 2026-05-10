@@ -25,6 +25,11 @@ export const useSchemaStore = defineStore('schema', () => {
     return selectedItemKey.value.slice(4)
   })
 
+  const selectedPropertyName = computed<string | null>(() => {
+    if (!selectedItemKey.value?.startsWith('prop:')) return null
+    return selectedItemKey.value.slice(5)
+  })
+
   const selectedItem = computed<SelectedItem | null>(() => {
     const schema = selectedSchema.value
     if (!schema) return null
@@ -135,6 +140,7 @@ export const useSchemaStore = defineStore('schema', () => {
     searchIndex,
     selectedSchema,
     selectedDefinitionName,
+    selectedPropertyName,
     selectedItem,
     schemaCounts,
     loadFromWindow,
