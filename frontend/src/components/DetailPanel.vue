@@ -221,18 +221,28 @@
                   <tr v-for="prop in properties" :key="prop.name">
                     <td>
                       <span class="font-mono">{{ prop.name }}</span>
+                      <span v-if="prop.title && prop.title !== prop.name" class="prop-title">({{ prop.title }})</span>
                       <span v-if="prop.deprecated" class="badge badge-deprecated-sm">deprecated</span>
                     </td>
                     <td>
                       <span class="prop-type">{{ prop.type || 'any' }}</span>
-                      <span v-if="prop.format" class="prop-format">{{ prop.format }}</span>
+                      <span v-if="prop.format" class="prop-format">&lt;{{ prop.format }}&gt;</span>
                       <span v-if="prop.itemsType" class="prop-format">[{{ prop.itemsType }}]</span>
+                      <span v-if="prop.default != null" class="prop-default">default: {{ prop.default }}</span>
+                      <span v-if="prop.enum?.length" class="prop-enum">{{ prop.enum.length }} values</span>
                     </td>
                     <td>
                       <span v-if="prop.required" class="badge badge-required-sm">yes</span>
                       <span v-else class="text-muted">no</span>
                     </td>
-                    <td class="text-secondary">{{ prop.description || '—' }}</td>
+                    <td>
+                      <span class="text-secondary">{{ prop.description || '—' }}</span>
+                      <div v-if="prop.examples?.length" class="prop-examples">
+                        <span class="prop-examples-label">Examples:</span>
+                        <span v-for="(ex, i) in prop.examples.slice(0, 3)" :key="i" class="prop-example-chip">{{ typeof ex === 'object' ? JSON.stringify(ex) : ex }}</span>
+                        <span v-if="prop.examples.length > 3" class="text-muted">+{{ prop.examples.length - 3 }} more</span>
+                      </div>
+                    </td>
                   </tr>
                 </tbody>
               </table>
@@ -564,8 +574,57 @@ const definitionItem = computed(() => {
 
 .prop-format {
   font-size: var(--text-xs);
-  color: var(--text-muted);
+  color: var(--color-accent);
   margin-left: var(--space-1);
+  font-family: var(--font-mono);
+}
+
+.prop-title {
+  display: block;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.prop-default {
+  display: block;
+  font-size: 10px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+.prop-enum {
+  display: block;
+  font-size: 10px;
+  color: var(--color-teal);
+  background: var(--color-teal-alpha);
+  padding: 1px 4px;
+  border-radius: 2px;
+  display: inline-block;
+  margin-top: 2px;
+}
+
+.prop-examples {
+  margin-top: var(--space-1);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+
+.prop-examples-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.prop-example-chip {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  background: var(--bg-secondary);
+  padding: 1px 4px;
+  border-radius: 2px;
+  color: var(--text-secondary);
 }
 
 .badge-type {

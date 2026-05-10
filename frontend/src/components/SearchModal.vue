@@ -52,6 +52,7 @@
             <div class="result-content">
               <span class="result-name" v-html="highlightMatch(result.name)"></span>
               <span class="result-schema">{{ result.schemaName }}</span>
+              <span v-if="result.description" class="result-desc">{{ result.description }}</span>
             </div>
             <span :class="['badge', `badge-${result.type}`]">{{ result.type }}</span>
           </div>
@@ -233,6 +234,15 @@ function highlightMatch(text: string): string {
 .result-schema {
   font-size: var(--text-xs);
   color: var(--text-muted);
+}
+
+.result-desc {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .badge-schema {
