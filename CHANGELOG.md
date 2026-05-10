@@ -2,6 +2,15 @@
 
 ## [0.1.13] - 2026-05-10
 
+### Backend: property-level composition resolution
+
+- Resolve `allOf` properties by merging sub-schemas into a unified type with merged properties
+- Resolve `anyOf`/`oneOf` properties by showing variant type labels (e.g. `anyOf: object | object`)
+- Resolve `not` properties with negated type label (e.g. `not string`)
+- Extract `$ref` from allOf sub-schemas for frontend definition expansion
+- Frontend: composition type badges with teal color coding
+- Frontend: static label for composition properties instead of editable input
+
 ### Redoc-style UX improvements (round 7)
 
 - SeeMore description fade uses CSS mask-image instead of background gradient (works on any background)

@@ -188,6 +188,14 @@ module Lutaml
         def build_single_property(entry, root_schema, all_required,
                                   composition_source = nil)
           resolved = resolve_property(entry, root_schema)
+
+          if !resolved.type && composition_schema?(entry.schema)
+            resolved = resolve_composition_property(entry.schema,
+                                                    root_schema) || resolved
+          end
+
+          prop_ref = resolve_prop_ref(entry.schema)
+
           SpaProperty.new(
             name: entry.name,
             title: resolved.title,
@@ -198,7 +206,7 @@ module Lutaml
             default: resolved.default,
             pattern: resolved.pattern,
             enum: resolved.enum,
-            ref: entry.schema.dollar_ref,
+            ref: prop_ref,
             min_length: resolved.min_length,
             max_length: resolved.max_length,
             minimum: resolved.minimum,
@@ -222,11 +230,117 @@ module Lutaml
           )
         end
 
+        def resolve_prop_ref(schema)
+          return schema.dollar_ref if schema.dollar_ref
+
+          return nil unless schema.all_of.any?
+
+          schema.all_of
+            .filter_map(&:dollar_ref)
+            .first
+        end
+
         def resolve_property(entry, root_schema)
           return entry.schema unless entry.schema.dollar_ref
 
           @schema_set.resolve_ref(entry.schema.dollar_ref,
                                   root_schema) || entry.schema
+        end
+
+        def composition_schema?(schema)
+          schema.all_of.any? || schema.any_of.any? ||
+            schema.one_of.any? || schema.not_schema
+        end
+
+        # Resolve a property-level composition (allOf/anyOf/oneOf/not)
+        # into a synthetic Schema with merged type and properties.
+        def resolve_composition_property(schema, root_schema)
+          if schema.all_of.any?
+            resolve_all_of_property(schema, root_schema)
+          elsif schema.any_of.any?
+            resolve_any_of_property(schema, root_schema)
+          elsif schema.one_of.any?
+            resolve_one_of_property(schema, root_schema)
+          elsif schema.not_schema
+            resolve_not_property(schema, root_schema)
+          end
+        end
+
+        def resolve_all_of_property(schema, root_schema)
+          merged_type = nil
+          merged_properties = schema.property_entries.dup
+          merged_required = schema.required.dup
+          merged_title = schema.title
+          merged_description = schema.description
+
+          schema.all_of.each do |sub|
+            resolved = resolve_composition_schema(sub, root_schema)
+            merged_type ||= resolved.type
+            merged_title ||= resolved.title
+            merged_description ||= resolved.description
+            merged_properties.concat(resolved.property_entries)
+            merged_required.concat(resolved.required)
+          end
+
+          return nil unless merged_type
+
+          Schema.new(
+            type: merged_type,
+            title: merged_title,
+            description: merged_description,
+            property_entries: merged_properties,
+            required: merged_required,
+            additional_properties: schema.additional_properties,
+            min_properties: schema.min_properties,
+            max_properties: schema.max_properties,
+          )
+        end
+
+        def resolve_any_of_property(schema, root_schema)
+          variant_types = schema.any_of.filter_map do |sub|
+            resolved = resolve_composition_schema(sub, root_schema)
+            type_label(resolved)
+          end.compact
+
+          return nil if variant_types.empty?
+
+          Schema.new(
+            type: "anyOf: #{variant_types.join(' | ')}",
+            description: schema.description,
+          )
+        end
+
+        def resolve_one_of_property(schema, root_schema)
+          variant_types = schema.one_of.filter_map do |sub|
+            resolved = resolve_composition_schema(sub, root_schema)
+            type_label(resolved)
+          end.compact
+
+          return nil if variant_types.empty?
+
+          Schema.new(
+            type: "oneOf: #{variant_types.join(' | ')}",
+            description: schema.description,
+          )
+        end
+
+        def resolve_not_property(schema, _root_schema)
+          negated = schema.not_schema
+          negated_type = negated&.type || "any"
+          Schema.new(
+            type: "not #{negated_type}",
+            description: schema.description,
+          )
+        end
+
+        def type_label(schema)
+          title = schema.title
+          type = schema.type
+          if title
+            type ? "#{title} (#{type})" : title
+          elsif type
+            type
+          end
         end
 
         def build_search_index(schemas)
