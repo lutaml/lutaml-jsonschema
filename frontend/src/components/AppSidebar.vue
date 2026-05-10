@@ -61,9 +61,12 @@
             :class="{ active: idx === activeResultIdx }"
             @click="goToSearchResult(result)"
           >
-            <span class="badge" :class="resultBadgeClass(result.type)">{{ resultTypeLabel(result.type) }}</span>
-            <span class="search-result-name">{{ result.title || result.name }}</span>
-            <span class="search-result-schema text-muted">{{ result.schemaName }}</span>
+            <div class="search-result-row">
+              <span class="badge" :class="resultBadgeClass(result.type)">{{ resultTypeLabel(result.type) }}</span>
+              <span class="search-result-name">{{ result.title || result.name }}</span>
+              <span class="search-result-schema text-muted">{{ result.schemaName }}</span>
+            </div>
+            <div v-if="result.description" class="search-result-desc text-muted">{{ truncateDesc(result.description) }}</div>
           </button>
         </div>
         <div v-else-if="debouncedQuery && !searchResults.length && searchQuery" class="search-no-results text-muted">
@@ -275,6 +278,11 @@ function selectDefinition(schemaName: string, defName: string) {
   schemaStore.selectSchema(schemaName)
   schemaStore.selectDefinition(defName)
   uiStore.closeDetailPanel()
+}
+
+function truncateDesc(desc: string): string {
+  if (desc.length <= 80) return desc
+  return desc.slice(0, 77) + '...'
 }
 </script>
 
@@ -604,8 +612,8 @@ function selectDefinition(schemaName: string, defName: string) {
 
 .search-result-item {
   display: flex;
-  align-items: center;
-  gap: var(--space-2);
+  flex-direction: column;
+  gap: 2px;
   padding: 4px 6px;
   font-size: var(--text-xs);
   text-align: left;
@@ -615,6 +623,12 @@ function selectDefinition(schemaName: string, defName: string) {
   cursor: pointer;
   width: 100%;
   transition: background var(--transition-fast);
+}
+
+.search-result-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
 }
 
 .search-result-item:hover,
@@ -640,6 +654,16 @@ function selectDefinition(schemaName: string, defName: string) {
 .search-result-schema {
   font-size: 10px;
   white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.search-result-desc {
+  font-size: 10px;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding-left: 30px;
 }
 
 .stats-section {
