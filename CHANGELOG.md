@@ -1,5 +1,16 @@
 ## [Unreleased]
 
+## [0.1.12] - 2026-05-10
+
+### Redoc-style UX improvements (round 6)
+
+- Property title display in type row when it differs from name (Redoc TypeTitle pattern)
+- Copy fallback using `execCommand('copy')` for HTTP contexts where clipboard API unavailable
+- Dark panel full-height background via BackgroundStub `::before` pattern
+- Search result description snippets in search modal
+- Tooltip with directional CSS arrow on copy buttons
+- DetailPanel properties table: shows title, format with angle brackets, default value, enum count, inline examples
+
 ## [0.1.11] - 2026-05-09
 
 ### Redoc-style UX improvements (round 5)
