@@ -61,6 +61,9 @@ export function useSearch() {
 
   function selectResult(result: SearchResult) {
     schemaStore.selectSchema(result.schemaName)
+    if (!uiStore.isSchemaExpanded(result.schemaName)) {
+      uiStore.toggleSchemaExpanded(result.schemaName)
+    }
     if (result.type === 'definition') {
       schemaStore.selectDefinition(result.rawName)
     } else {

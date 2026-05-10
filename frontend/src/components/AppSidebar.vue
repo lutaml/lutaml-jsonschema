@@ -40,12 +40,11 @@
             <path d="M9 9l4 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
           </svg>
           <input
-            ref="searchInputRef"
             v-model="searchQuery"
             type="text"
             class="search-input"
-            placeholder="Search... (press /)"
-            aria-label="Search schemas and definitions"
+            placeholder="Filter schemas..."
+            aria-label="Filter schemas and definitions"
             @keydown="handleSearchKey"
           />
           <button v-if="searchQuery" class="search-clear" aria-label="Clear search" @click="searchQuery = ''">
@@ -155,7 +154,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import { useSchemaStore } from '../stores/schemaStore'
 import { useUiStore } from '../stores/uiStore'
 import type { SpaSearchEntry } from '../types'
@@ -163,34 +162,12 @@ import type { SpaSearchEntry } from '../types'
 const schemaStore = useSchemaStore()
 const uiStore = useUiStore()
 const sidebarTreeRef = ref<HTMLElement | null>(null)
-const searchInputRef = ref<HTMLInputElement | null>(null)
 
 const searchQuery = ref('')
 const debouncedQuery = ref('')
 const activeResultIdx = ref(-1)
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
-
-onMounted(() => {
-  document.addEventListener('keydown', handleGlobalKey)
-})
-
-onUnmounted(() => {
-  document.removeEventListener('keydown', handleGlobalKey)
-})
-
-function handleGlobalKey(e: KeyboardEvent) {
-  if (e.key === '/' && !isEditable(e.target)) {
-    e.preventDefault()
-    searchInputRef.value?.focus()
-  }
-}
-
-function isEditable(el: EventTarget | null): boolean {
-  if (!el || !(el instanceof HTMLElement)) return false
-  const tag = el.tagName
-  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (el as HTMLInputElement).isContentEditable
-}
 
 watch(searchQuery, (q) => {
   if (debounceTimer) clearTimeout(debounceTimer)
@@ -259,6 +236,9 @@ function handleSearchKey(event: KeyboardEvent) {
 
 function goToSearchResult(result: SpaSearchEntry) {
   schemaStore.selectSchema(result.schemaName)
+  if (!uiStore.isSchemaExpanded(result.schemaName)) {
+    uiStore.toggleSchemaExpanded(result.schemaName)
+  }
   if (result.type === 'definition') {
     schemaStore.selectDefinition(result.name)
   } else if (result.type === 'property') {
