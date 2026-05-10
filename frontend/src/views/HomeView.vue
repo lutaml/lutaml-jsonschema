@@ -126,7 +126,7 @@
                 <pre class="def-examples-pre"><code>{{ formatJson(def.examples) }}</code></pre>
               </details>
               <div v-if="!expandedDefs.has(def.name) && def.properties.length" class="def-mini-table">
-                <div v-for="prop in def.properties.slice(0, 5)" :key="prop.name" class="def-mini-row def-mini-row-clickable" :title="prop.description ? truncateMiniDesc(prop.description) : undefined" @click.stop="openPropertyDetail(prop.name)">
+                <div v-for="prop in miniTableProps(def.properties)" :key="prop.name" class="def-mini-row def-mini-row-clickable" :title="prop.description ? truncateMiniDesc(prop.description) : undefined" @click.stop="openPropertyDetail(prop.name)">
                   <span class="def-mini-name font-mono" :class="{ 'def-mini-deprecated': prop.deprecated, 'def-mini-required': prop.required }">{{ prop.name }}</span>
                   <span v-if="prop.ref" class="def-mini-ref" @click.stop="navigateToDefRef(prop.ref)">→ {{ defRefName(prop.ref) }}</span>
                   <template v-else>
@@ -141,7 +141,7 @@
                   <span v-else-if="prop.default != null" class="def-mini-default">default: {{ prop.default }}</span>
                   <span v-if="prop.deprecated" class="def-mini-dep">dep</span>
                 </div>
-                <div v-if="def.properties.length > 5" class="def-mini-more text-muted">
+                <div v-if="def.properties.length > 8" class="def-mini-more text-muted">
                   +{{ def.properties.length - 5 }} more properties
                 </div>
               </div>
@@ -295,7 +295,7 @@ import SchemaBuilder from '../components/SchemaBuilder.vue'
 import { downloadFile } from '../composables/useDownload'
 import { renderInlineMarkdown } from '../composables/useMarkdownLite'
 import { copyToClipboard } from '../composables/useClipboard'
-import type { SpaSchema } from '../types'
+import type { SpaSchema, SpaProperty } from '../types'
 
 const schemaStore = useSchemaStore()
 const uiStore = useUiStore()
@@ -464,6 +464,11 @@ function miniTypeClass(type?: string): string {
 
 function truncateMiniDesc(desc: string): string {
   return desc.length <= 120 ? desc : desc.slice(0, 117) + '...'
+}
+
+function miniTableProps(props: SpaProperty[]): SpaProperty[] {
+  if (props.length <= 8) return props
+  return props.slice(0, 5)
 }
 
 function downloadAllSchemas() {

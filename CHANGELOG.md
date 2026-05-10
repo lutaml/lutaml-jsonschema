@@ -23,7 +23,13 @@
 
 - Mini-table required field names shown in bold with red asterisk (Redoc RequiredLabel pattern)
 - Mini-table shows uniqueItems badge for properties with unique constraint
-- Mini-table shows array items type `[type]` for array properties (constraint colors, enum chips, example blocks)
+- Mini-table shows array items type `[type]` for array properties
+- Mini-table shows all properties when <= 8 (smart limit)
+
+### Redoc-style UX improvements (round 19)
+
+- Floating back-to-top button appears after scrolling 300px down
+- Back-to-top button responsive on mobile (smaller, closer to edge) (constraint colors, enum chips, example blocks)
 
 ## [0.1.14] - 2026-05-10
 

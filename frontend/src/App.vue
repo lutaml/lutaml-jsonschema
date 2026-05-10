@@ -4,17 +4,22 @@
     <div v-if="!uiStore.sidebarCollapsed" class="sidebar-overlay" @click="uiStore.toggleSidebar"></div>
     <div class="main-content">
       <AppHeader />
-      <div class="content-area">
+      <div class="content-area" ref="contentAreaRef" @scroll="handleScroll">
         <HomeView />
       </div>
     </div>
     <DetailPanel v-if="uiStore.detailPanelOpen" />
     <SearchModal v-if="uiStore.searchOpen" />
+    <button v-if="showBackToTop" class="back-to-top" @click="scrollToTop" title="Back to top">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path d="M8 13V3M4 7l4-4 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useSchemaStore } from './stores/schemaStore'
 import { useUiStore } from './stores/uiStore'
 import AppHeader from './components/AppHeader.vue'
@@ -25,6 +30,18 @@ import HomeView from './views/HomeView.vue'
 
 const schemaStore = useSchemaStore()
 const uiStore = useUiStore()
+const contentAreaRef = ref<HTMLElement | null>(null)
+const showBackToTop = ref(false)
+
+function handleScroll() {
+  const el = contentAreaRef.value
+  if (!el) return
+  showBackToTop.value = el.scrollTop > 300
+}
+
+function scrollToTop() {
+  contentAreaRef.value?.scrollTo({ top: 0, behavior: 'smooth' })
+}
 
 onMounted(() => {
   uiStore.initTheme()
@@ -111,6 +128,31 @@ function isInputFocused(): boolean {
   display: none;
 }
 
+.back-to-top {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-md);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  transition: all var(--transition-fast);
+}
+
+.back-to-top:hover {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-lg);
+}
+
 @media (max-width: 768px) {
   .sidebar-overlay {
     display: block;
@@ -118,6 +160,11 @@ function isInputFocused(): boolean {
     inset: 0;
     background: rgba(0, 0, 0, 0.4);
     z-index: 39;
+  }
+
+  .back-to-top {
+    bottom: 16px;
+    right: 16px;
   }
 }
 </style>
