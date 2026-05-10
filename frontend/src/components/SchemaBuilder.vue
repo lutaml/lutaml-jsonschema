@@ -215,8 +215,10 @@
 
         <!-- Circular reference label -->
         <div v-if="field.expanded && field.included && field.resolvedDef && isCircular(field, visited)" class="circular-ref-label">
-          <span class="circular-badge">Circular</span>
-          {{ field.resolvedDef?.name }}
+          <span class="circular-badge">Recursive</span>
+          <span class="circular-type">{{ field.resolvedDef?.type || 'object' }}</span>
+          <span class="circular-name font-mono">{{ field.resolvedDef?.name }}</span>
+          <span class="circular-hint text-muted">This schema references itself</span>
         </div>
       </div>
 
@@ -1365,6 +1367,23 @@ async function copyJson() {
   background: var(--color-orange-alpha);
   padding: 1px 5px;
   border-radius: 2px;
+}
+
+.circular-type {
+  font-size: 11px;
+  background: var(--type-object-bg);
+  color: var(--type-object);
+  padding: 1px 5px;
+  border-radius: var(--radius-sm);
+}
+
+.circular-name {
+  font-size: var(--text-xs);
+}
+
+.circular-hint {
+  font-size: var(--text-xs);
+  font-style: italic;
 }
 
 /* Responsive */

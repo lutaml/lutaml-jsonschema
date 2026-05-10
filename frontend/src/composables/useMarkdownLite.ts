@@ -11,6 +11,9 @@ export function renderInlineMarkdown(text: string): string {
     return `<pre class="md-pre"><code>${code.trim()}</code></pre>`
   })
 
+  // Line breaks: \n → <br> (after fenced code blocks are extracted)
+  html = html.replace(/\n/g, '<br>')
+
   // Links: [text](url)
   html = html.replace(
     /\[([^\]]+)\]\(([^)]+)\)/g,

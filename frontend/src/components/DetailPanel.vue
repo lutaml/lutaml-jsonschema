@@ -238,16 +238,19 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="prop in properties" :key="prop.name">
+                  <tr v-for="prop in properties" :key="prop.name" class="prop-row" @click="navigateToProperty(prop.name)">
                     <td>
                       <span class="font-mono">{{ prop.name }}</span>
                       <span v-if="prop.title && prop.title !== prop.name" class="prop-title">({{ prop.title }})</span>
                       <span v-if="prop.deprecated" class="badge badge-deprecated-sm">deprecated</span>
                     </td>
                     <td>
-                      <span class="prop-type">{{ prop.type || 'any' }}</span>
-                      <span v-if="prop.format" class="prop-format">&lt;{{ prop.format }}&gt;</span>
-                      <span v-if="prop.itemsType" class="prop-format">[{{ prop.itemsType }}]</span>
+                      <span v-if="prop.ref" class="prop-ref-link" role="button" tabindex="0" @click.stop="navigateToRef(prop.ref)">{{ prop.type || 'object' }} → {{ refName(prop.ref) }}</span>
+                      <template v-else>
+                        <span class="prop-type">{{ prop.type || 'any' }}</span>
+                        <span v-if="prop.format" class="prop-format">&lt;{{ prop.format }}&gt;</span>
+                        <span v-if="prop.itemsType" class="prop-format">[{{ prop.itemsType }}]</span>
+                      </template>
                       <span v-if="prop.default != null" class="prop-default">default: {{ prop.default }}</span>
                       <span v-if="prop.enum?.length" class="prop-enum">{{ prop.enum.length }} values</span>
                     </td>
@@ -476,6 +479,16 @@ function navigateToRef(ref: string | undefined) {
     schemaStore.selectDefinition(match[1])
   }
 }
+
+function refName(ref: string): string {
+  const match = ref.match(/^#\/(?:definitions|\$defs)\/([^/]+)$/)
+  return match ? match[1] : ref
+}
+
+function navigateToProperty(name: string) {
+  uiStore.closeDetailPanel()
+  schemaStore.selectProperty(name)
+}
 </script>
 
 <style scoped>
@@ -606,6 +619,26 @@ function navigateToRef(ref: string | undefined) {
   color: var(--color-accent);
   margin-left: var(--space-1);
   font-family: var(--font-mono);
+}
+
+.prop-row {
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.prop-row:hover {
+  background: var(--bg-hover);
+}
+
+.prop-ref-link {
+  color: var(--color-primary);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.prop-ref-link:hover {
+  text-decoration: underline;
 }
 
 .prop-title {
