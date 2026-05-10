@@ -218,6 +218,9 @@
           </div>
         </div>
         <pre ref="jsonBlockRef" class="json-block" @click="handleJsonClick" @dblclick="selectJsonBlock" v-html="highlightedJson"></pre>
+        <div v-if="!hasIncludedFields" class="json-empty-hint">
+          <span class="text-muted">Check fields to build JSON</span>
+        </div>
       </div>
     </div>
   </div>
@@ -348,6 +351,8 @@ const outputJson = computed(() => {
   }
   return JSON.stringify(obj, null, 2)
 })
+
+const hasIncludedFields = computed(() => fields.value.some(f => f.included))
 
 const outputObj = computed(() => {
   try { return JSON.parse(outputJson.value) } catch { return {} }
@@ -1204,6 +1209,13 @@ async function copyJson() {
 .empty-hint {
   padding: var(--space-8);
   text-align: center;
+}
+
+.json-empty-hint {
+  text-align: center;
+  padding: var(--space-8) var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--panel-dark-muted);
 }
 
 /* Editable arrays */

@@ -19,6 +19,12 @@
 - Definition mini-table shows composition source (allOf/anyOf/oneOf) badges
 - Scroll centering for definition and property navigation
 
+### Redoc-style UX improvements (round 9)
+
+- Definition card header shows required field names when ≤3 required fields
+- JSON preview shows hint when no fields are checked
+- Definition expanded body shows title, type, property count, and composition badges
+
 ## [0.1.12] - 2026-05-10
 
 ### Redoc-style UX improvements (round 6)

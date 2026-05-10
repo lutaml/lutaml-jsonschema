@@ -85,7 +85,11 @@
               <span v-if="def.title && def.title !== def.name" class="def-card-name font-mono text-muted">{{ def.name }}</span>
               <span v-if="def.type" class="def-type-badge">{{ def.type }}</span>
               <span class="text-muted">{{ def.properties.length }} props</span>
-              <span v-if="def.required?.length" class="text-muted">&middot; {{ def.required.length }} req</span>
+              <span v-if="def.required?.length" class="text-muted">&middot;</span>
+              <template v-if="def.required?.length && def.required.length <= 3">
+                <span v-for="r in def.required" :key="r" class="def-header-req">{{ r }}</span>
+              </template>
+              <span v-else-if="def.required?.length" class="text-muted">{{ def.required.length }} req</span>
               <span v-if="def.examples?.length" class="text-muted">&middot; {{ def.examples.length }} ex</span>
               <span v-if="def.minProperties != null" class="text-muted">&middot; min {{ def.minProperties }}</span>
               <span v-if="def.maxProperties != null" class="text-muted">&middot; max {{ def.maxProperties }}</span>
@@ -120,6 +124,18 @@
             </div>
             <Transition name="def-expand">
             <div v-if="expandedDefs.has(def.name)" class="def-card-body">
+              <div class="def-body-header">
+                <h3 class="def-body-title">{{ def.title || def.name }}</h3>
+                <div class="def-body-meta">
+                  <span v-if="def.type" class="def-type-badge">{{ def.type }}</span>
+                  <span class="text-muted">{{ def.properties.length }} properties</span>
+                  <span v-if="def.required?.length" class="text-muted">&middot; {{ def.required.length }} required</span>
+                  <span v-if="def.hasAllOf" class="badge badge-composition">allOf</span>
+                  <span v-if="def.hasAnyOf" class="badge badge-composition">anyOf</span>
+                  <span v-if="def.hasOneOf" class="badge badge-composition">oneOf</span>
+                  <span v-if="def.additionalProperties === false" class="badge badge-locked">no additional</span>
+                </div>
+              </div>
               <div v-if="def.description" class="def-body-desc text-secondary" v-html="renderInlineMarkdown(def.description)"></div>
               <SchemaBuilder
                 :properties="def.properties"
@@ -740,6 +756,15 @@ watch(() => schemaStore.selectedItemKey, (key) => {
   font-size: var(--text-xs);
 }
 
+.def-header-req {
+  font-size: 9px;
+  font-family: var(--font-mono);
+  color: var(--badge-required);
+  background: var(--badge-required-bg);
+  padding: 1px 4px;
+  border-radius: 2px;
+}
+
 .def-type-badge {
   font-size: 11px;
   background: var(--badge-schema-bg);
@@ -922,6 +947,23 @@ watch(() => schemaStore.selectedItemKey, (key) => {
   border-top: 1px solid var(--border-light);
   padding: var(--space-4);
   background: var(--bg-primary);
+}
+
+.def-body-header {
+  margin-bottom: var(--space-3);
+}
+
+.def-body-title {
+  font-size: var(--text-base);
+  font-weight: 600;
+  margin-bottom: var(--space-1);
+}
+
+.def-body-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
 }
 
 .def-body-desc {
