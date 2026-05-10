@@ -34,8 +34,14 @@
             <span v-if="schemaPropsRange" class="badge badge-range">{{ schemaPropsRange }}</span>
           </div>
           <div v-if="schemaStore.selectedSchema.$schema || schemaStore.selectedSchema.$id" class="schema-id-row">
-            <span v-if="schemaStore.selectedSchema.$schema" class="meta-id-chip font-mono text-muted" title="JSON Schema version">{{ schemaStore.selectedSchema.$schema }}</span>
-            <span v-if="schemaStore.selectedSchema.$id" class="meta-id-chip font-mono text-muted" title="Schema $id">{{ schemaStore.selectedSchema.$id }}</span>
+            <span v-if="schemaStore.selectedSchema.$schema" class="meta-id-chip font-mono text-muted" title="JSON Schema version">
+              <a v-if="isUrl(schemaStore.selectedSchema.$schema)" :href="schemaStore.selectedSchema.$schema" target="_blank" rel="noopener">{{ schemaStore.selectedSchema.$schema }}</a>
+              <template v-else>{{ schemaStore.selectedSchema.$schema }}</template>
+            </span>
+            <span v-if="schemaStore.selectedSchema.$id" class="meta-id-chip font-mono text-muted" title="Schema $id">
+              <a v-if="isUrl(schemaStore.selectedSchema.$id)" :href="schemaStore.selectedSchema.$id" target="_blank" rel="noopener">{{ schemaStore.selectedSchema.$id }}</a>
+              <template v-else>{{ schemaStore.selectedSchema.$id }}</template>
+            </span>
           </div>
           <div v-if="schemaStore.selectedSchema.required.length" class="schema-required">
             <span class="required-label text-muted">Required:</span>
@@ -79,7 +85,7 @@
             class="def-card card"
             :class="{ 'def-card-highlighted': def.name === schemaStore.selectedDefinitionName }"
           >
-            <div class="def-card-header" @click="toggleDef(def.name)">
+            <div class="def-card-header" role="button" tabindex="0" @click="toggleDef(def.name)" @keydown.enter="toggleDef(def.name)" @keydown.space.prevent="toggleDef(def.name)">
               <span class="def-chevron" :class="{ expanded: expandedDefs.has(def.name) }">&#9654;</span>
               <span class="def-card-title">{{ def.title || def.name }}</span>
               <span v-if="def.title && def.title !== def.name" class="def-card-name font-mono text-muted">{{ def.name }}</span>
@@ -346,6 +352,10 @@ function formatJson(value: unknown): string {
   return JSON.stringify(value, null, 2)
 }
 
+function isUrl(str: string): boolean {
+  return /^https?:\/\//.test(str)
+}
+
 function downloadAllSchemas() {
   const bundle: Record<string, unknown> = {}
   for (const s of schemaStore.schemas) {
@@ -485,6 +495,15 @@ watch(() => schemaStore.selectedItemKey, (key) => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.meta-id-chip a {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.meta-id-chip a:hover {
+  text-decoration: underline;
 }
 
 .badge-locked {
