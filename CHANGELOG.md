@@ -8,8 +8,7 @@
 - Resolve `anyOf`/`oneOf` properties by showing variant type labels (e.g. `anyOf: object | object`)
 - Resolve `not` properties with negated type label (e.g. `not string`)
 - Extract `$ref` from allOf sub-schemas for frontend definition expansion
-- Frontend: composition type badges with teal color coding
-- Frontend: static label for composition properties instead of editable input
+- Extract `resolve_prop_ref` helper to reduce complexity in `build_single_property`
 
 ### Redoc-style UX improvements (round 7)
 
@@ -39,6 +38,32 @@
 - Clickable $id/$schema URLs in schema header (opens in new tab)
 - Keyboard support for definition card toggle (Enter/Space)
 - Nested builder shows parent property path breadcrumb
+
+### Redoc-style UX improvements (round 11)
+
+- Composition type badges with teal color coding (type-composition class)
+- Static label for composition properties instead of editable input
+- `isCompositionType()` helper for frontend composition type detection
+- Skip validation for composition type properties
+
+### Redoc-style UX improvements (round 12)
+
+- DetailPanel: clickable $ref link navigates to definition (closes panel, scrolls to def)
+- DetailPanel: readOnly/writeOnly access badges in property overview
+- DetailPanel: enum values shown as individual chips instead of comma-separated list
+- DetailPanel: schema overview shows property count and definition count
+
+### Redoc-style UX improvements (round 13)
+
+- Search results show description snippets (truncated to 80 chars)
+- Schema header breadcrumb shows Schema > Definition when a definition is selected
+- Clickable breadcrumb link navigates back to schema overview
+
+### Redoc-style UX improvements (round 14)
+
+- Property filter in SchemaBuilder when schema has >8 properties (filters by name, title, description, type)
+- Markdown renderer handles fenced code blocks (` ```code``` `)
+- Global CSS for markdown pre/code blocks in descriptions
 
 ## [0.1.12] - 2026-05-10
 
