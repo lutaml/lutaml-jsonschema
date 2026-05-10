@@ -52,9 +52,17 @@
                   <span class="meta-label">Status</span>
                   <span class="badge badge-deprecated">Deprecated</span>
                 </div>
+                <div v-if="propertyItem?.readOnly" class="meta-row">
+                  <span class="meta-label">Access</span>
+                  <span class="badge badge-readonly-detail">Read-only</span>
+                </div>
+                <div v-if="propertyItem?.writeOnly" class="meta-row">
+                  <span class="meta-label">Access</span>
+                  <span class="badge badge-writeonly-detail">Write-only</span>
+                </div>
                 <div v-if="propertyItem?.ref" class="meta-row">
                   <span class="meta-label">Reference</span>
-                  <span class="font-mono text-secondary">{{ propertyItem.ref }}</span>
+                  <span class="ref-link font-mono" role="button" tabindex="0" @click="navigateToRef(propertyItem.ref)" @keydown.enter="navigateToRef(propertyItem.ref)">{{ propertyItem.ref }}</span>
                 </div>
                 <div v-if="propertyItem?.compositionSource" class="meta-row">
                   <span class="meta-label">Source</span>
@@ -69,6 +77,14 @@
                   <div class="meta-tags">
                     <span v-for="r in schema.required" :key="r" class="badge badge-required-sm">{{ r }}</span>
                   </div>
+                </div>
+                <div v-if="item.kind === 'schema'" class="meta-row">
+                  <span class="meta-label">Properties</span>
+                  <span class="text-secondary">{{ schema.properties.length }}</span>
+                </div>
+                <div v-if="item.kind === 'schema' && schema.definitions.length" class="meta-row">
+                  <span class="meta-label">Definitions</span>
+                  <span class="text-secondary">{{ schema.definitions.length }}</span>
                 </div>
                 <div v-if="item.kind === 'schema' && schema.$schema" class="meta-row">
                   <span class="meta-label">JSON Schema</span>
@@ -154,7 +170,11 @@
                   </tr>
                   <tr v-if="propertyItem.enum?.length">
                     <td class="constraint-key">Enum</td>
-                    <td>{{ propertyItem.enum.join(', ') }}</td>
+                    <td>
+                      <div class="enum-values-list">
+                        <span v-for="e in propertyItem.enum" :key="e" class="enum-value-chip">{{ e }}</span>
+                      </div>
+                    </td>
                   </tr>
                   <tr v-if="propertyItem.itemsType">
                     <td class="constraint-key">Items</td>
@@ -447,6 +467,15 @@ const definitionItem = computed(() => {
   if (item.value?.kind !== 'definition') return null
   return item.value.definition
 })
+
+function navigateToRef(ref: string | undefined) {
+  if (!ref) return
+  const match = ref.match(/^#\/(?:definitions|\$defs)\/([^/]+)$/)
+  if (match) {
+    uiStore.closeDetailPanel()
+    schemaStore.selectDefinition(match[1])
+  }
+}
 </script>
 
 <style scoped>
@@ -686,6 +715,51 @@ const definitionItem = computed(() => {
   padding: 1px 6px;
   border-radius: var(--radius-sm);
   font-weight: 500;
+}
+
+.badge-readonly-detail {
+  font-size: 11px;
+  color: var(--color-teal);
+  background: var(--color-teal-alpha);
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  font-weight: 500;
+}
+
+.badge-writeonly-detail {
+  font-size: 11px;
+  color: var(--color-orange);
+  background: var(--color-orange-alpha);
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  font-weight: 500;
+}
+
+.ref-link {
+  color: var(--color-primary);
+  cursor: pointer;
+  font-size: var(--text-xs);
+  word-break: break-all;
+}
+
+.ref-link:hover {
+  text-decoration: underline;
+}
+
+.enum-values-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.enum-value-chip {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
 }
 
 .constraint-table td:first-child {
