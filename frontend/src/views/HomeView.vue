@@ -17,6 +17,13 @@
                 <button class="toggle-btn" :class="{ active: viewMode === 'source' }" @click="viewMode = 'source'">Source</button>
               </div>
               <button
+                class="btn btn-outline btn-sm copy-btn-wrap"
+                @click="copyCurrentLink"
+              >
+                Copy Link
+                <span v-if="linkCopied" class="copy-tooltip">Copied!</span>
+              </button>
+              <button
                 v-if="schemaStore.selectedSchema.sourceJson"
                 class="btn btn-outline btn-sm"
                 @click="downloadSchema(schemaStore.selectedSchema)"
@@ -296,6 +303,7 @@ const viewMode = ref<'builder' | 'source'>('builder')
 const sourceCopied = ref(false)
 const activeSourceLine = ref(-1)
 const landingSearch = ref('')
+const linkCopied = ref(false)
 
 const selectedDefinitionTitle = computed(() => {
   const name = schemaStore.selectedDefinitionName
@@ -466,6 +474,12 @@ function downloadAllSchemas() {
   }
   const name = schemaStore.metadata?.title || 'schemas'
   downloadFile(`${name.replace(/\s+/g, '-')}-bundle.json`, JSON.stringify(bundle, null, 2))
+}
+
+async function copyCurrentLink() {
+  await copyToClipboard(window.location.href)
+  linkCopied.value = true
+  setTimeout(() => { linkCopied.value = false }, 2000)
 }
 
 watch(() => schemaStore.selectedDefinitionName, (name) => {
