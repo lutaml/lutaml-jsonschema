@@ -3,6 +3,11 @@
     <!-- Schema Detail Mode -->
     <div v-if="schemaStore.selectedSchema" class="selected-schema">
       <div class="schema-header">
+        <div v-if="schemaStore.selectedDefinitionName" class="schema-breadcrumb">
+          <button class="breadcrumb-link" @click="schemaStore.clearSelection()">{{ schemaStore.selectedSchema?.title || schemaStore.selectedSchema?.name }}</button>
+          <span class="breadcrumb-sep">/</span>
+          <span class="breadcrumb-current">{{ selectedDefinitionTitle }}</span>
+        </div>
         <div class="schema-header-info">
           <div class="schema-title-row">
             <h1>{{ schemaStore.selectedSchema.title || schemaStore.selectedSchema.name }}</h1>
@@ -256,6 +261,13 @@ const expandedDefs = reactive(new Set<string>())
 const viewMode = ref<'builder' | 'source'>('builder')
 const sourceCopied = ref(false)
 
+const selectedDefinitionTitle = computed(() => {
+  const name = schemaStore.selectedDefinitionName
+  if (!name) return ''
+  const def = schemaStore.selectedSchema?.definitions.find(d => d.name === name)
+  return def?.title || name
+})
+
 const schemaPropsRange = computed(() => {
   const s = schemaStore.selectedSchema
   if (!s) return ''
@@ -402,6 +414,37 @@ watch(() => schemaStore.selectedItemKey, (key) => {
 
 .schema-header {
   margin-bottom: var(--space-6);
+}
+
+.schema-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+  font-size: var(--text-sm);
+}
+
+.breadcrumb-link {
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  cursor: pointer;
+  padding: 0;
+  font-size: var(--text-sm);
+  font-weight: 500;
+}
+
+.breadcrumb-link:hover {
+  text-decoration: underline;
+}
+
+.breadcrumb-sep {
+  color: var(--text-muted);
+}
+
+.breadcrumb-current {
+  color: var(--text-secondary);
+  font-weight: 500;
 }
 
 .schema-header-info {
