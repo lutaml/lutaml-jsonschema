@@ -29,7 +29,8 @@ export function createField(
   const isReq = requiredNames.includes(prop.name) || prop.required === true
   const def = resolveSchemaRef(prop.ref, schema, allSchemas)
   const isArray = primaryType(prop.type) === 'array'
-  const shouldExpand = depth === 0 && !!def && def.properties.length <= 8
+  const hasSingleField = def && def.properties.length === 1
+  const shouldExpand = !!def && (hasSingleField || (depth === 0 && def.properties.length <= 8))
 
   return {
     prop,

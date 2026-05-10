@@ -147,7 +147,7 @@
         </div>
 
         <div v-if="hasConstraints(field.prop) || field.prop.ref || field.prop.enum?.length" class="field-constraints">
-          <span v-if="field.prop.ref" class="constraint-chip chip-ref">ref → {{ field.resolvedDef?.title || field.resolvedDef?.name || field.prop.ref }}</span>
+          <span v-if="field.prop.ref" class="constraint-chip chip-ref" role="button" tabindex="0" @click.stop="navigateToRef(field.prop.ref)" @keydown.enter.stop="navigateToRef(field.prop.ref)">ref → {{ field.resolvedDef?.title || field.resolvedDef?.name || field.prop.ref }}</span>
           <template v-if="field.prop.enum?.length && !isObjectProperty(field.prop)">
             <span v-for="e in visibleEnums(field.prop.name, field.prop.enum)" :key="e" class="enum-chip" :class="{ 'enum-chip-active': field.rawValue === e }">{{ e }}</span>
             <button v-if="field.prop.enum.length > MAX_ENUM_SHOW && !enumExpanded.has(field.prop.name)" class="btn-see-more" @click.stop="toggleEnum(field.prop.name)">+{{ field.prop.enum.length - MAX_ENUM_SHOW }} more</button>
@@ -255,6 +255,14 @@ const uiStore = useUiStore()
 function openPropertyDetail(prop: SpaProperty) {
   schemaStore.selectProperty(prop.name)
   uiStore.openDetailPanel()
+}
+
+function navigateToRef(ref: string | undefined) {
+  if (!ref) return
+  const match = ref.match(/^#\/(?:definitions|\$defs)\/([^/]+)$/)
+  if (match) {
+    schemaStore.selectDefinition(match[1])
+  }
 }
 
 const props = withDefaults(defineProps<{
@@ -861,6 +869,15 @@ async function copyJson() {
 
 .btn-toggle-pattern:hover {
   opacity: 0.8;
+}
+
+.constraint-chip.chip-ref {
+  cursor: pointer;
+}
+
+.constraint-chip.chip-ref:hover {
+  opacity: 0.8;
+  border-color: var(--color-primary);
 }
 
 .constraint-chip.chip-locked {

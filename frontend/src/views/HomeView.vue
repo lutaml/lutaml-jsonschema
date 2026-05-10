@@ -109,6 +109,7 @@
                   <span class="def-mini-type">{{ prop.type || 'any' }}</span>
                   <span v-if="prop.format" class="def-mini-format">&lt;{{ prop.format }}&gt;</span>
                   <span v-if="prop.enum?.length" class="def-mini-enum">{{ prop.enum.length }}</span>
+                  <span v-if="prop.compositionSource" class="def-mini-comp">{{ prop.compositionSource }}</span>
                   <span v-if="prop.required" class="def-mini-req">*</span>
                   <span v-if="prop.deprecated" class="def-mini-dep">dep</span>
                 </div>
@@ -346,7 +347,7 @@ watch(() => schemaStore.selectedDefinitionName, (name) => {
   nextTick(() => {
     const el = document.getElementById(`def-${name}`)
     if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
     }
   })
 })
@@ -672,16 +673,12 @@ watch(() => schemaStore.selectedItemKey, (key) => {
   line-height: var(--leading-relaxed);
   color: var(--text-muted);
   display: block;
+  padding: 0 4px;
 }
 
-.source-pre {
-  background: var(--bg-primary);
-  padding: var(--space-4);
-  font-size: var(--text-sm);
-  line-height: var(--leading-relaxed);
-  overflow-x: auto;
-  margin: 0;
-  flex: 1;
+.source-lines span:hover {
+  background: var(--bg-hover);
+  border-radius: 2px;
 }
 
 .source-pre :deep(.json-key) { color: var(--color-primary-dark); }
@@ -874,6 +871,16 @@ watch(() => schemaStore.selectedItemKey, (key) => {
   background: var(--color-teal-alpha);
   padding: 0px 3px;
   border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.def-mini-comp {
+  font-size: 8px;
+  color: var(--color-teal);
+  background: var(--color-teal-alpha);
+  padding: 0px 3px;
+  border-radius: 2px;
+  font-family: var(--font-mono);
   flex-shrink: 0;
 }
 
