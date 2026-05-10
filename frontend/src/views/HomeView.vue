@@ -221,6 +221,7 @@ import { useSchemaStore } from '../stores/schemaStore'
 import SchemaBuilder from '../components/SchemaBuilder.vue'
 import { downloadFile } from '../composables/useDownload'
 import { renderInlineMarkdown } from '../composables/useMarkdownLite'
+import { copyToClipboard } from '../composables/useClipboard'
 import type { SpaSchema } from '../types'
 
 const schemaStore = useSchemaStore()
@@ -264,9 +265,11 @@ const sourceLineCount = computed(() => {
 function copySource() {
   const src = schemaStore.selectedSchema?.sourceJson
   if (!src) return
-  navigator.clipboard.writeText(src).then(() => {
-    sourceCopied.value = true
-    setTimeout(() => { sourceCopied.value = false }, 2000)
+  copyToClipboard(src).then(ok => {
+    if (ok) {
+      sourceCopied.value = true
+      setTimeout(() => { sourceCopied.value = false }, 2000)
+    }
   })
 }
 
@@ -612,7 +615,7 @@ watch(() => schemaStore.selectedItemKey, (key) => {
 
 .copy-tooltip {
   position: absolute;
-  bottom: calc(100% + 4px);
+  bottom: calc(100% + 8px);
   left: 50%;
   transform: translateX(-50%);
   background: var(--bg-elevated);
@@ -625,6 +628,16 @@ watch(() => schemaStore.selectedItemKey, (key) => {
   white-space: nowrap;
   pointer-events: none;
   animation: tooltipFade var(--transition-slow);
+}
+
+.copy-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -4px;
+  border: 4px solid transparent;
+  border-top-color: var(--bg-elevated);
 }
 
 @keyframes tooltipFade {

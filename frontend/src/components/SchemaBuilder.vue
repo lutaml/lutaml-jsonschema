@@ -16,6 +16,7 @@
             <span class="font-mono">{{ field.prop.name }}</span>
           </button>
           <span class="field-type-badge" :class="typeBadgeClass(field.prop)">{{ displayType(field.prop, field.resolvedDef?.title || field.resolvedDef?.name) }}</span>
+          <span v-if="field.prop.title && field.prop.title !== field.prop.name" class="field-title-badge">{{ field.prop.title }}</span>
           <span v-if="field.prop.format" class="field-format-badge">&lt;{{ field.prop.format }}&gt;</span>
           <span v-if="field.prop.contentMediaType" class="field-format-badge">content-type: {{ field.prop.contentMediaType }}</span>
           <span v-if="field.prop.contentEncoding" class="field-format-badge">encoding: {{ field.prop.contentEncoding }}</span>
@@ -246,6 +247,7 @@ import {
 import { renderInlineMarkdown } from '../composables/useMarkdownLite'
 import { jsonToCollapsibleHtml } from '../composables/useJsonViewer'
 import type { BuilderField } from '../composables/useBuilderField'
+import { copyToClipboard } from '../composables/useClipboard'
 
 const schemaStore = useSchemaStore()
 const uiStore = useUiStore()
@@ -437,11 +439,11 @@ function togglePattern(pattern: string) {
 }
 
 async function copyJson() {
-  try {
-    await navigator.clipboard.writeText(outputJson.value)
+  const ok = await copyToClipboard(outputJson.value)
+  if (ok) {
     copied.value = true
     setTimeout(() => { copied.value = false }, 2000)
-  } catch { /* noop */ }
+  }
 }
 </script>
 
@@ -569,6 +571,13 @@ async function copyJson() {
   border-radius: var(--radius-sm);
   font-family: var(--font-mono);
   font-weight: 500;
+}
+
+.field-title-badge {
+  font-size: 10px;
+  font-style: italic;
+  color: var(--text-secondary);
+  flex-shrink: 0;
 }
 
 .deprecated-badge {
@@ -1001,6 +1010,16 @@ async function copyJson() {
 .builder-preview {
   position: sticky;
   top: var(--space-4);
+  z-index: 0;
+}
+
+.builder-preview::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--panel-dark-bg);
+  border-radius: var(--radius-md);
+  z-index: -1;
 }
 
 .preview-inner {
@@ -1148,7 +1167,7 @@ async function copyJson() {
 
 .copy-tooltip {
   position: absolute;
-  bottom: calc(100% + 4px);
+  bottom: calc(100% + 8px);
   left: 50%;
   transform: translateX(-50%);
   background: var(--bg-elevated);
@@ -1161,6 +1180,16 @@ async function copyJson() {
   white-space: nowrap;
   pointer-events: none;
   animation: tooltipFade var(--transition-slow);
+}
+
+.copy-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -4px;
+  border: 4px solid transparent;
+  border-top-color: var(--bg-elevated);
 }
 
 @keyframes tooltipFade {
