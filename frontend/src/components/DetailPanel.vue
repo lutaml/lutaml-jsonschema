@@ -682,10 +682,12 @@ function handleExampleKey(event: KeyboardEvent) {
 }
 
 .detail-heading {
-  font-size: var(--text-base);
-  font-weight: 600;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
   margin-bottom: var(--space-3);
-  color: var(--text-primary);
+  color: var(--text-secondary);
   padding-bottom: var(--space-2);
   border-bottom: 1px solid var(--border-light);
   position: relative;
