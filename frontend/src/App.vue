@@ -10,7 +10,7 @@
     </div>
     <DetailPanel v-if="uiStore.detailPanelOpen" />
     <SearchModal v-if="uiStore.searchOpen" />
-    <button v-if="showBackToTop" class="back-to-top" @click="scrollToTop" title="Back to top">
+    <button v-if="showBackToTop" class="back-to-top" @click="scrollToTop" title="Back to top" aria-label="Scroll to top">
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
         <path d="M8 13V3M4 7l4-4 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
@@ -132,11 +132,11 @@ function isInputFocused(): boolean {
   position: fixed;
   bottom: 24px;
   right: 24px;
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   background: var(--bg-elevated);
-  border: 1px solid var(--border-light);
+  border: 1px solid var(--border-medium);
   box-shadow: var(--shadow-md);
   color: var(--text-secondary);
   cursor: pointer;
@@ -144,13 +144,20 @@ function isInputFocused(): boolean {
   align-items: center;
   justify-content: center;
   z-index: 50;
-  transition: all var(--transition-fast);
+  transition: all var(--transition-normal);
 }
 
 .back-to-top:hover {
-  color: var(--color-primary);
+  background: var(--color-primary);
   border-color: var(--color-primary);
+  color: white;
   box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+}
+
+:root[data-theme="dark"] .back-to-top {
+  background: var(--bg-elevated);
+  border-color: var(--border-medium);
 }
 
 @media (max-width: 768px) {
