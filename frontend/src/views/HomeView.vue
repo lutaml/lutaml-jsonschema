@@ -127,6 +127,7 @@
               </details>
               <div v-if="!expandedDefs.has(def.name) && def.properties.length" class="def-mini-table">
                 <div v-for="prop in miniTableProps(def.properties)" :key="prop.name" class="def-mini-row def-mini-row-clickable" :title="prop.description ? truncateMiniDesc(prop.description) : undefined" @click.stop="openPropertyDetail(prop.name)">
+                  <span class="def-mini-bullet" aria-hidden="true"></span>
                   <span class="def-mini-name font-mono" :class="{ 'def-mini-deprecated': prop.deprecated, 'def-mini-required': prop.required }">{{ prop.name }}</span>
                   <span v-if="prop.ref" class="def-mini-ref" @click.stop="navigateToDefRef(prop.ref)">→ {{ defRefName(prop.ref) }}</span>
                   <template v-else>
@@ -756,16 +757,18 @@ watch(() => schemaStore.selectedItemKey, (key) => {
 
 .meta-count {
   font-size: 11px;
-  color: var(--text-muted);
-  background: var(--bg-secondary);
+  font-weight: 500;
+  color: var(--color-primary);
+  background: var(--color-primary-alpha);
   padding: 2px 8px;
-  border-radius: var(--radius-sm);
+  border-radius: 12px;
 }
 
 .meta-count-req {
-  color: var(--badge-required);
-  background: var(--badge-required-bg);
+  color: var(--schema-require-label);
+  background: rgba(179, 31, 36, 0.08);
   font-weight: 500;
+  border-radius: 12px;
 }
 
 .schema-required {
@@ -1090,8 +1093,8 @@ watch(() => schemaStore.selectedItemKey, (key) => {
 }
 
 .def-chevron {
-  font-size: 10px;
-  color: var(--text-muted);
+  font-size: var(--schema-arrow-size);
+  color: var(--schema-arrow-color);
   transition: transform var(--transition-fast);
   flex-shrink: 0;
 }
@@ -1112,14 +1115,15 @@ watch(() => schemaStore.selectedItemKey, (key) => {
 .def-header-req {
   font-size: 9px;
   font-family: var(--font-mono);
-  color: var(--badge-required);
-  background: var(--badge-required-bg);
+  color: var(--schema-require-label);
+  background: rgba(179, 31, 36, 0.08);
   padding: 1px 4px;
   border-radius: 2px;
 }
 
 .def-type-badge {
   font-size: 11px;
+  font-family: var(--font-mono);
   background: var(--badge-schema-bg);
   color: var(--badge-schema);
   padding: 1px 5px;
@@ -1250,6 +1254,29 @@ watch(() => schemaStore.selectedItemKey, (key) => {
   background: var(--bg-secondary);
 }
 
+.def-mini-bullet {
+  display: inline-flex;
+  align-items: center;
+  color: var(--schema-lines);
+  flex-shrink: 0;
+}
+
+.def-mini-bullet::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 1px;
+  background: var(--schema-lines);
+}
+
+.def-mini-bullet::after {
+  content: '';
+  display: inline-block;
+  width: 1px;
+  height: 5px;
+  background: var(--schema-lines);
+}
+
 .def-mini-name {
   font-weight: 500;
   color: var(--text-primary);
@@ -1278,7 +1305,7 @@ watch(() => schemaStore.selectedItemKey, (key) => {
 .def-mini-type.mini-type-array { background: var(--type-array-bg); color: var(--type-array); }
 
 .def-mini-req {
-  color: var(--badge-required);
+  color: var(--schema-require-label);
   font-weight: 700;
   font-size: 10px;
   flex-shrink: 0;

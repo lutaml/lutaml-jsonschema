@@ -97,6 +97,15 @@
   --type-null: #A8A29E;
   --type-null-bg: rgba(168, 162, 158, 0.1);
 
+  /* Schema theme — Redoc-inspired */
+  --schema-lines: rgba(91, 156, 212, 0.3);
+  --schema-nested-bg: #fafafa;
+  --schema-type-name: #57534E;
+  --schema-require-label: #b31f24;
+  --schema-labels-size: 0.9em;
+  --schema-arrow-size: 1.1em;
+  --schema-arrow-color: #57534E;
+
   --panel-dark-bg: #263238;
   --panel-dark-text: #e8edf4;
   --panel-dark-muted: #8b9db5;
@@ -152,6 +161,12 @@
   --type-array-bg: rgba(167, 139, 250, 0.15);
   --type-null: #6b7a8f;
   --type-null-bg: rgba(107, 122, 143, 0.15);
+
+  --schema-lines: rgba(91, 156, 212, 0.25);
+  --schema-nested-bg: #232736;
+  --schema-type-name: #a8b4c8;
+  --schema-require-label: #e55a5a;
+  --schema-arrow-color: #a8b4c8;
 
   --panel-dark-bg: #1e2a35;
   --panel-dark-text: #dce4f0;
