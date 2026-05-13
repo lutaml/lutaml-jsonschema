@@ -686,6 +686,20 @@ function handleExampleKey(event: KeyboardEvent) {
   font-weight: 600;
   margin-bottom: var(--space-3);
   color: var(--text-primary);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--border-light);
+  position: relative;
+}
+
+.detail-heading::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 32px;
+  height: 2px;
+  background: var(--color-primary);
+  border-radius: 1px;
 }
 
 .detail-meta {
@@ -1019,6 +1033,16 @@ function handleExampleKey(event: KeyboardEvent) {
 
 .example-generated {
   border-color: var(--color-primary-alpha);
+  position: relative;
+}
+
+.example-group:has(.example-generated) .example-label::after {
+  content: ' auto-generated';
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--text-muted);
+  text-transform: none;
+  font-style: italic;
 }
 
 .example-collapsible {
