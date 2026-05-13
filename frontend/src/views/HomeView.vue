@@ -63,7 +63,7 @@
           </div>
           <details v-if="schemaStore.selectedSchema.examples?.length" class="schema-examples-details">
             <summary class="examples-summary text-muted">Examples ({{ schemaStore.selectedSchema.examples.length }})</summary>
-            <pre class="examples-pre"><code>{{ formatJson(schemaStore.selectedSchema.examples) }}</code></pre>
+            <pre class="examples-pre jv-examples-pre" v-html="renderExamplesJson(schemaStore.selectedSchema.examples)"></pre>
           </details>
         </div>
       </div>
@@ -169,7 +169,7 @@
               <div v-if="def.description" class="def-body-desc text-secondary" v-html="renderInlineMarkdown(def.description)"></div>
               <details v-if="def.examples?.length" class="def-card-examples def-body-examples">
                 <summary class="text-muted">Examples ({{ def.examples.length }})</summary>
-                <pre class="def-examples-pre"><code>{{ formatJson(def.examples) }}</code></pre>
+                <pre class="def-examples-pre jv-examples-pre" v-html="renderExamplesJson(def.examples)"></pre>
               </details>
               <SchemaBuilder
                 :properties="def.properties"
@@ -494,6 +494,15 @@ const hasSourceJson = computed(() =>
 
 function formatJson(value: unknown): string {
   return JSON.stringify(value, null, 2)
+}
+
+function renderExamplesJson(examples: string[]): string {
+  try {
+    const parsed = examples.map(e => { try { return JSON.parse(e) } catch { return e } })
+    return jsonToCollapsibleHtml(parsed.length === 1 ? parsed[0] : parsed, 2)
+  } catch {
+    return formatJson(examples)
+  }
 }
 
 function isUrl(str: string): boolean {
@@ -843,6 +852,88 @@ watch(() => schemaStore.selectedItemKey, (key) => {
 .examples-pre code {
   font-family: var(--font-mono);
   color: var(--text-primary);
+}
+
+/* Collapsible JSON viewer in examples blocks */
+.jv-examples-pre :deep(ul) {
+  list-style: none;
+  padding-left: var(--space-4);
+  margin: 0;
+}
+
+.jv-examples-pre :deep(li) {
+  margin: 0;
+}
+
+.jv-examples-pre :deep(.jv-toggle) {
+  background: none;
+  border: 1px solid var(--border-medium);
+  border-radius: 2px;
+  cursor: pointer;
+  width: 14px;
+  height: 14px;
+  font-size: 9px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  padding: 0;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+.jv-examples-pre :deep(.jv-toggle:hover) {
+  background: var(--bg-hover);
+}
+
+.jv-examples-pre :deep(.jv-toggle[aria-label="expand"])::after { content: '+'; }
+.jv-examples-pre :deep(.jv-toggle[aria-label="collapse"])::after { content: '−'; }
+
+.jv-examples-pre :deep(.jv-ellipsis) {
+  display: none;
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  font-style: italic;
+  margin-left: 4px;
+}
+
+.jv-examples-pre :deep(.jv-children.jv-collapsed) {
+  display: none;
+}
+
+.jv-examples-pre :deep(.jv-children.jv-collapsed + .jv-ellipsis) {
+  display: inline;
+}
+
+.jv-examples-pre :deep(.jv-key) {
+  color: var(--color-primary);
+}
+
+.jv-examples-pre :deep(.jv-punct) {
+  color: var(--text-muted);
+}
+
+.jv-examples-pre :deep(.jv-string) {
+  color: var(--color-green);
+}
+
+.jv-examples-pre :deep(.jv-number) {
+  color: var(--color-orange);
+}
+
+.jv-examples-pre :deep(.jv-boolean) {
+  color: var(--color-primary);
+}
+
+.jv-examples-pre :deep(.jv-null) {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.jv-examples-pre :deep(.jv-link) {
+  color: var(--color-primary);
+  text-decoration: underline;
 }
 
 .schema-section {
