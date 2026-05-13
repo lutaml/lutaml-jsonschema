@@ -1312,8 +1312,8 @@ watch(() => schemaStore.selectedItemKey, (key) => {
 }
 
 .def-mini-dep {
-  color: var(--badge-deprecated);
-  background: var(--badge-deprecated-bg);
+  color: #c27a00;
+  background: rgba(255, 165, 0, 0.12);
   padding: 1px 4px;
   border-radius: 2px;
   font-size: 9px;
