@@ -106,8 +106,9 @@
                 @click.stop="selectProperty(schema.name, prop.name)"
               >
                 <span class="badge badge-property-sm">P</span>
+                <span class="tree-bullet" aria-hidden="true"></span>
                 <span class="tree-item-name">{{ prop.name }}</span>
-                <span class="tree-item-type">{{ prop.type || 'any' }}</span>
+                <span class="tree-item-type" :class="treeTypeClass(prop.type)">{{ prop.type || 'any' }}</span>
               </div>
               <div v-if="schema.properties.length > 10" class="tree-more text-muted">
                 +{{ schema.properties.length - 10 }} more
@@ -120,6 +121,7 @@
                 @click.stop="selectDefinition(schema.name, def.name)"
               >
                 <span class="badge badge-definition-sm">D</span>
+                <span class="tree-bullet" aria-hidden="true"></span>
                 <span class="tree-item-name">{{ def.title || def.name }}</span>
                 <span class="tree-item-count">{{ def.properties.length }}</span>
               </div>
@@ -301,6 +303,19 @@ function selectProperty(schemaName: string, propName: string) {
   schemaStore.selectSchema(schemaName)
   schemaStore.selectProperty(propName)
   uiStore.openDetailPanel()
+}
+
+function treeTypeClass(type?: string): string {
+  const t = (type || 'any').split(',')[0].trim()
+  switch (t) {
+    case 'string': return 'ttype-string'
+    case 'number': return 'ttype-number'
+    case 'integer': return 'ttype-integer'
+    case 'boolean': return 'ttype-boolean'
+    case 'object': return 'ttype-object'
+    case 'array': return 'ttype-array'
+    default: return ''
+  }
 }
 
 function truncateDesc(desc: string): string {
@@ -487,15 +502,18 @@ function truncateDesc(desc: string): string {
 }
 
 .schema-badge-count {
-  font-size: var(--text-xs);
-  color: var(--text-muted);
-  background: var(--bg-primary);
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--color-primary);
+  background: var(--color-primary-alpha);
   padding: 1px 5px;
-  border-radius: var(--radius-sm);
+  border-radius: 10px;
 }
 
 .schema-children {
   margin-left: var(--space-4);
+  padding-left: var(--space-2);
+  border-left: 1px solid var(--schema-lines);
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -534,19 +552,35 @@ function truncateDesc(desc: string): string {
 
 .tree-item-count {
   font-size: 10px;
-  color: var(--text-muted);
-  background: var(--bg-primary);
+  font-weight: 500;
+  color: var(--color-primary);
+  background: var(--color-primary-alpha);
   padding: 0px 4px;
-  border-radius: 2px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.tree-bullet {
+  display: inline-block;
+  width: 6px;
+  height: 1px;
+  background: var(--schema-lines);
   flex-shrink: 0;
 }
 
 .tree-item-type {
   font-size: 9px;
-  color: var(--text-muted);
   font-family: var(--font-mono);
   flex-shrink: 0;
+  color: var(--text-muted);
 }
+
+.tree-item-type.ttype-string { color: var(--type-string); }
+.tree-item-type.ttype-number { color: var(--type-number); }
+.tree-item-type.ttype-integer { color: var(--type-integer); }
+.tree-item-type.ttype-boolean { color: var(--type-boolean); }
+.tree-item-type.ttype-object { color: var(--type-object); }
+.tree-item-type.ttype-array { color: var(--type-array); }
 
 .tree-more {
   font-size: 10px;
