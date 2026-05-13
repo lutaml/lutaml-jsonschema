@@ -296,11 +296,16 @@
         </div>
       </div>
     </div>
+    <button v-if="showBackToTop" class="back-to-top" aria-label="Back to top" @click="scrollToTop">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path d="M8 13V3M8 3L3 8M8 3l5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, watch, nextTick } from 'vue'
+import { ref, reactive, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useSchemaStore } from '../stores/schemaStore'
 import { useUiStore } from '../stores/uiStore'
 import SchemaBuilder from '../components/SchemaBuilder.vue'
@@ -575,6 +580,24 @@ async function copyCurrentLink() {
   linkCopied.value = true
   setTimeout(() => { linkCopied.value = false }, 2000)
 }
+
+const showBackToTop = ref(false)
+
+function handlePageScroll() {
+  showBackToTop.value = window.scrollY > 400
+}
+
+function scrollToTop() {
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
+onMounted(() => {
+  window.addEventListener('scroll', handlePageScroll, { passive: true })
+})
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', handlePageScroll)
+})
 
 watch(() => schemaStore.selectedDefinitionName, (name) => {
   if (!name) return
@@ -1599,6 +1622,20 @@ watch(() => schemaStore.selectedItemKey, (key) => {
   font-size: var(--text-base);
   font-weight: 600;
   margin-bottom: var(--space-1);
+  padding-bottom: var(--space-1);
+  border-bottom: 1px solid var(--border-light);
+  position: relative;
+}
+
+.def-body-title::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 32px;
+  height: 2px;
+  background: var(--color-primary);
+  border-radius: 1px;
 }
 
 .def-body-meta {
@@ -1914,5 +1951,32 @@ watch(() => schemaStore.selectedItemKey, (key) => {
   .schema-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* Back to top */
+.back-to-top {
+  position: fixed;
+  bottom: var(--space-6);
+  right: var(--space-6);
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-medium);
+  border-radius: 50%;
+  box-shadow: var(--shadow-md);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  z-index: 50;
+}
+
+.back-to-top:hover {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: white;
+  box-shadow: var(--shadow-lg);
 }
 </style>
