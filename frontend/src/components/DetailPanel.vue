@@ -168,7 +168,8 @@
                     <td class="constraint-key">Enum</td>
                     <td>
                       <div class="enum-values-list">
-                        <span v-for="e in propertyItem.enum" :key="e" class="enum-value-chip">{{ e }}</span>
+                        <span v-for="e in visibleEnumValues(propertyItem.name, propertyItem.enum)" :key="e" class="enum-value-chip">{{ e }}</span>
+                        <button v-if="propertyItem.enum.length > 8 && !detailEnumExpanded.has(propertyItem.name)" class="enum-more-btn" @click="toggleDetailEnum(propertyItem.name)">+{{ propertyItem.enum.length - 8 }} more</button>
                       </div>
                     </td>
                   </tr>
@@ -260,12 +261,15 @@
               <div v-if="examples.length" class="example-group">
                 <h4 class="example-label">Provided Examples</h4>
                 <div v-for="(ex, idx) in examples" :key="idx" class="example-block">
-                  <pre class="example-pre"><code>{{ formatExample(ex) }}</code></pre>
+                  <div v-if="isComplexExample(ex)" class="example-collapsible" @click="toggleExampleCollapse($event)" @keydown="handleExampleKey($event)">
+                    <pre class="example-pre" v-html="renderExampleHtml(ex)"></pre>
+                  </div>
+                  <pre v-else class="example-pre"><code>{{ formatExample(ex) }}</code></pre>
                 </div>
               </div>
               <div v-if="generatedExample" class="example-group">
                 <h4 class="example-label">Generated Example</h4>
-                <pre class="example-pre example-generated"><code>{{ generatedExample }}</code></pre>
+                <pre class="example-pre example-generated" v-html="renderExampleHtml(generatedExample)"></pre>
               </div>
               <p v-if="!examples.length && !generatedExample" class="text-muted">No examples available.</p>
             </div>
@@ -281,10 +285,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted, onUnmounted } from 'vue'
+import { computed, ref, reactive, onMounted, onUnmounted } from 'vue'
 import { useSchemaStore, type SelectedItem } from '../stores/schemaStore'
 import { useUiStore } from '../stores/uiStore'
 import { renderInlineMarkdown } from '../composables/useMarkdownLite'
+import { jsonToCollapsibleHtml } from '../composables/useJsonViewer'
 import type { SpaProperty } from '../types'
 
 const schemaStore = useSchemaStore()
@@ -292,6 +297,17 @@ const uiStore = useUiStore()
 
 const panelRef = ref<HTMLElement | null>(null)
 const closeBtnRef = ref<HTMLButtonElement | null>(null)
+const detailEnumExpanded = reactive(new Set<string>())
+
+function visibleEnumValues(name: string, enums: string[]): string[] {
+  if (detailEnumExpanded.has(name) || enums.length <= 8) return enums
+  return enums.slice(0, 8)
+}
+
+function toggleDetailEnum(name: string) {
+  if (detailEnumExpanded.has(name)) detailEnumExpanded.delete(name)
+  else detailEnumExpanded.add(name)
+}
 
 onMounted(() => {
   closeBtnRef.value?.focus()
@@ -513,6 +529,56 @@ function refName(ref: string): string {
 function navigateToProperty(name: string) {
   uiStore.closeDetailPanel()
   schemaStore.selectProperty(name)
+}
+
+function isComplexExample(value: unknown): boolean {
+  if (typeof value === 'string') {
+    try { return typeof JSON.parse(value) === 'object' } catch { return false }
+  }
+  return typeof value === 'object' && value !== null
+}
+
+function renderExampleHtml(value: unknown): string {
+  let parsed: unknown
+  if (typeof value === 'string') {
+    try { parsed = JSON.parse(value) } catch { return escapeHtml(value) }
+  } else {
+    parsed = value
+  }
+  try {
+    return jsonToCollapsibleHtml(parsed, 3)
+  } catch {
+    return escapeHtml(typeof parsed === 'string' ? parsed : JSON.stringify(parsed, null, 2))
+  }
+}
+
+function escapeHtml(t: string): string {
+  return t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+}
+
+function toggleExampleCollapse(event: MouseEvent) {
+  const target = event.target as HTMLElement
+  if (!target.classList.contains('jv-toggle')) return
+  const parent = target.parentElement
+  if (!parent) return
+  const children = parent.querySelector('.jv-children')
+  if (!children) return
+  const isCollapsed = children.classList.contains('jv-collapsed')
+  if (isCollapsed) {
+    children.classList.remove('jv-collapsed')
+    target.setAttribute('aria-label', 'collapse')
+  } else {
+    children.classList.add('jv-collapsed')
+    target.setAttribute('aria-label', 'expand')
+  }
+}
+
+function handleExampleKey(event: KeyboardEvent) {
+  if (event.key !== 'Enter' && event.key !== ' ') return
+  const target = event.target as HTMLElement
+  if (!target.classList.contains('jv-toggle')) return
+  event.preventDefault()
+  toggleExampleCollapse(event as unknown as MouseEvent)
 }
 </script>
 
@@ -820,6 +886,20 @@ function navigateToProperty(name: string) {
   color: var(--text-primary);
 }
 
+.enum-more-btn {
+  font-size: 11px;
+  color: var(--color-primary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 1px 4px;
+  font-family: var(--font-mono);
+}
+
+.enum-more-btn:hover {
+  text-decoration: underline;
+}
+
 .constraint-table td:first-child {
   font-weight: 500;
   color: var(--text-secondary);
@@ -896,6 +976,103 @@ function navigateToProperty(name: string) {
   border-color: var(--color-primary-alpha);
 }
 
+.example-collapsible {
+  cursor: default;
+}
+
+.example-pre :deep(ul) {
+  list-style: none;
+  padding-left: var(--space-4);
+  margin: 0;
+}
+
+.example-pre :deep(li) {
+  margin: 0;
+}
+
+.example-pre :deep(.jv-toggle) {
+  background: none;
+  border: 1px solid var(--border-medium);
+  border-radius: 2px;
+  cursor: pointer;
+  width: 14px;
+  height: 14px;
+  font-size: 9px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  padding: 0;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+.example-pre :deep(.jv-toggle:hover) {
+  background: var(--bg-hover);
+}
+
+.example-pre :deep(.jv-toggle[aria-label="expand"])::after { content: '+'; }
+.example-pre :deep(.jv-toggle[aria-label="collapse"])::after { content: '−'; }
+
+.example-pre :deep(.jv-ellipsis) {
+  display: none;
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  font-style: italic;
+  margin-left: 4px;
+}
+
+.example-pre :deep(.jv-children.jv-collapsed) {
+  display: none;
+}
+
+.example-pre :deep(.jv-children.jv-collapsed + .jv-ellipsis) {
+  display: inline;
+}
+
+.example-pre :deep(.jv-key) {
+  color: var(--color-primary-dark);
+  font-weight: 500;
+}
+
+.example-pre :deep(.jv-punct) {
+  color: var(--text-muted);
+}
+
+.example-pre :deep(.jv-string) {
+  color: var(--color-green);
+}
+
+.example-pre :deep(.jv-number) {
+  color: var(--color-orange);
+}
+
+.example-pre :deep(.jv-boolean) {
+  color: var(--color-accent);
+}
+
+.example-pre :deep(.jv-null) {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.example-pre :deep(.jv-link) {
+  color: var(--color-green);
+  text-decoration: underline;
+}
+
+.example-pre :deep(.jv-row:hover) {
+  background: var(--bg-hover);
+  border-radius: 2px;
+}
+
+:root[data-theme="dark"] .example-pre :deep(.jv-key) { color: var(--color-primary-light); }
+:root[data-theme="dark"] .example-pre :deep(.jv-string) { color: var(--color-teal); }
+:root[data-theme="dark"] .example-pre :deep(.jv-number) { color: var(--color-accent-light); }
+:root[data-theme="dark"] .example-pre :deep(.jv-boolean) { color: var(--color-primary-light); }
+:root[data-theme="dark"] .example-pre :deep(.jv-toggle) { border-color: rgba(255, 255, 255, 0.2); }
+
 .panel-content :deep(.md-code) {
   font-family: var(--font-mono);
   font-size: inherit;
@@ -912,6 +1089,37 @@ function navigateToProperty(name: string) {
 
 .panel-content :deep(.md-link:hover) {
   text-decoration: underline;
+}
+
+.panel-content :deep(.md-heading) {
+  font-weight: 600;
+  margin: var(--space-2) 0 var(--space-1);
+  color: var(--text-primary);
+}
+
+.panel-content :deep(.md-list) {
+  margin: var(--space-1) 0;
+  padding-left: var(--space-5);
+  font-size: inherit;
+}
+
+.panel-content :deep(.md-list li) {
+  margin-bottom: 2px;
+}
+
+.panel-content :deep(.md-pre) {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2);
+  margin: var(--space-2) 0;
+  overflow-x: auto;
+  font-size: var(--text-sm);
+}
+
+.panel-content :deep(.md-pre code) {
+  font-family: var(--font-mono);
+  font-size: inherit;
 }
 
 /* Dark mode overrides */

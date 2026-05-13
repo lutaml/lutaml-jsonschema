@@ -187,15 +187,18 @@
       <div v-if="viewMode === 'source'" class="schema-section">
         <div v-if="schemaStore.selectedSchema.sourceJson" class="source-viewer">
           <div class="source-toolbar">
-            <span class="text-muted">{{ sourceLineCount }} lines</span>
-            <button class="btn btn-ghost btn-sm copy-btn-wrap" @click="copySource">
-              Copy
-              <span v-if="sourceCopied" class="copy-tooltip">Copied!</span>
-            </button>
+            <span class="text-muted">Source JSON Schema</span>
+            <div class="source-toolbar-actions">
+              <button class="btn btn-ghost btn-sm copy-btn-wrap" @click="copySource">
+                Copy
+                <span v-if="sourceCopied" class="copy-tooltip">Copied!</span>
+              </button>
+              <button class="btn btn-ghost btn-sm" @click="expandSourceAll">Expand all</button>
+              <button class="btn btn-ghost btn-sm" @click="collapseSourceAll">Collapse all</button>
+            </div>
           </div>
           <div class="source-code-wrapper">
-            <div class="source-lines" aria-hidden="true"><span v-for="n in sourceLineCount" :key="n" :class="{ 'source-line-active': n === activeSourceLine }" @click="activeSourceLine = n">{{ n }}</span></div>
-            <pre class="source-pre" @dblclick="selectSourceBlock"><code v-html="highlightedSource"></code></pre>
+            <pre ref="sourcePreRef" class="source-pre" @click="handleSourceClick" @keydown="handleSourceKey" @dblclick="selectSourceBlock"><code v-html="highlightedSource"></code></pre>
           </div>
         </div>
         <div v-else class="source-empty">
@@ -208,7 +211,10 @@
     <div v-else class="landing-page">
       <div class="landing-header">
         <div>
-          <h1>{{ schemaStore.metadata?.title || 'JSON Schema Documentation' }}</h1>
+          <div class="landing-title-row">
+            <h1>{{ schemaStore.metadata?.title || 'JSON Schema Documentation' }}</h1>
+            <span v-if="schemaStore.metadata?.version" class="version-badge">v{{ schemaStore.metadata.version }}</span>
+          </div>
           <p v-if="schemaStore.metadata?.description" class="landing-description">{{ schemaStore.metadata.description }}</p>
           <div class="landing-subtitle">
             <span>{{ schemaStore.schemaCounts.schemas }} schemas</span>
@@ -216,6 +222,10 @@
             <span>{{ schemaStore.schemaCounts.properties }} properties</span>
             <span class="separator">&middot;</span>
             <span>{{ schemaStore.schemaCounts.definitions }} definitions</span>
+            <template v-if="schemaStore.metadata?.baseUrl">
+              <span class="separator">&middot;</span>
+              <a :href="schemaStore.metadata.baseUrl" target="_blank" rel="noopener" class="landing-base-url">{{ schemaStore.metadata.baseUrl }}</a>
+            </template>
           </div>
           <div v-if="schemaStore.schemas.length > 3" class="landing-search">
             <input
@@ -294,6 +304,7 @@ import { useUiStore } from '../stores/uiStore'
 import SchemaBuilder from '../components/SchemaBuilder.vue'
 import { downloadFile } from '../composables/useDownload'
 import { renderInlineMarkdown } from '../composables/useMarkdownLite'
+import { jsonToCollapsibleHtml } from '../composables/useJsonViewer'
 import { copyToClipboard } from '../composables/useClipboard'
 import type { SpaSchema, SpaProperty } from '../types'
 
@@ -305,6 +316,7 @@ const sourceCopied = ref(false)
 const activeSourceLine = ref(-1)
 const landingSearch = ref('')
 const linkCopied = ref(false)
+const sourcePreRef = ref<HTMLElement | null>(null)
 
 const selectedDefinitionTitle = computed(() => {
   const name = schemaStore.selectedDefinitionName
@@ -348,7 +360,11 @@ function collapseAllDefs() {
 const highlightedSource = computed(() => {
   const src = schemaStore.selectedSchema?.sourceJson
   if (!src) return ''
-  return syntaxHighlight(src)
+  try {
+    return jsonToCollapsibleHtml(JSON.parse(src), 2)
+  } catch {
+    return syntaxHighlight(src)
+  }
 })
 
 const sourceLineCount = computed(() => {
@@ -392,7 +408,7 @@ function syntaxHighlight(json: string): string {
 }
 
 function selectSourceBlock() {
-  const el = document.querySelector('.source-pre') as HTMLElement | null
+  const el = sourcePreRef.value
   if (!el) return
   const range = document.createRange()
   range.selectNodeContents(el)
@@ -401,6 +417,57 @@ function selectSourceBlock() {
     selection.removeAllRanges()
     selection.addRange(range)
   }
+}
+
+function handleSourceClick(event: MouseEvent) {
+  const target = event.target as HTMLElement
+  if (!target.classList.contains('jv-toggle')) return
+  toggleSourceNode(target)
+}
+
+function handleSourceKey(event: KeyboardEvent) {
+  const target = event.target as HTMLElement
+  if (!target.classList.contains('jv-toggle')) return
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault()
+    toggleSourceNode(target)
+  }
+}
+
+function toggleSourceNode(target: HTMLElement) {
+  const parent = target.parentElement
+  if (!parent) return
+  const children = parent.querySelector('.jv-children')
+  if (!children) return
+  const isCollapsed = children.classList.contains('jv-collapsed')
+  if (isCollapsed) {
+    children.classList.remove('jv-collapsed')
+    target.setAttribute('aria-label', 'collapse')
+  } else {
+    children.classList.add('jv-collapsed')
+    target.setAttribute('aria-label', 'expand')
+  }
+}
+
+function expandSourceAll() {
+  const container = sourcePreRef.value
+  if (!container) return
+  container.querySelectorAll('.jv-collapsed').forEach(el => el.classList.remove('jv-collapsed'))
+  container.querySelectorAll('.jv-toggle').forEach(btn => btn.setAttribute('aria-label', 'collapse'))
+}
+
+function collapseSourceAll() {
+  const container = sourcePreRef.value
+  if (!container) return
+  const children = container.querySelectorAll('.jv-children')
+  children.forEach((el, i) => {
+    if (i === 0) return
+    el.classList.add('jv-collapsed')
+  })
+  container.querySelectorAll('.jv-toggle').forEach((btn, i) => {
+    if (i === 0) return
+    btn.setAttribute('aria-label', 'expand')
+  })
 }
 
 function selectSchema(name: string) {
@@ -814,6 +881,11 @@ watch(() => schemaStore.selectedItemKey, (key) => {
   font-size: var(--text-xs);
 }
 
+.source-toolbar-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
 /* Copy button tooltip */
 .copy-btn-wrap {
   position: relative;
@@ -852,41 +924,8 @@ watch(() => schemaStore.selectedItemKey, (key) => {
 }
 
 .source-code-wrapper {
-  display: flex;
   max-height: 70vh;
   overflow: auto;
-}
-
-.source-lines {
-  display: flex;
-  flex-direction: column;
-  padding: var(--space-4) var(--space-2) var(--space-4) var(--space-3);
-  text-align: right;
-  user-select: none;
-  flex-shrink: 0;
-  background: var(--bg-secondary);
-  border-right: 1px solid var(--border-light);
-}
-
-.source-lines span {
-  font-family: var(--font-mono);
-  font-size: var(--text-sm);
-  line-height: var(--leading-relaxed);
-  color: var(--text-muted);
-  display: block;
-  padding: 0 4px;
-}
-
-.source-lines span:hover {
-  background: var(--bg-hover);
-  border-radius: 2px;
-}
-
-.source-lines span.source-line-active {
-  background: var(--color-primary-alpha);
-  color: var(--color-primary);
-  border-radius: 2px;
-  font-weight: 600;
 }
 
 .source-pre :deep(.json-key) { color: var(--color-primary-dark); }
@@ -904,28 +943,112 @@ watch(() => schemaStore.selectedItemKey, (key) => {
   text-decoration-style: solid;
 }
 
+/* Collapsible JSON in source viewer */
+.source-pre :deep(ul) {
+  list-style: none;
+  padding-left: var(--space-4);
+  margin: 0;
+}
+
+.source-pre :deep(li) {
+  margin: 0;
+}
+
+.source-pre :deep(.jv-toggle) {
+  background: none;
+  border: 1px solid var(--border-medium);
+  border-radius: 2px;
+  cursor: pointer;
+  width: 14px;
+  height: 14px;
+  font-size: 9px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  padding: 0;
+  margin-right: 4px;
+  vertical-align: middle;
+  transition: background var(--transition-fast);
+}
+
+.source-pre :deep(.jv-toggle:hover) {
+  background: var(--bg-hover);
+}
+
+.source-pre :deep(.jv-toggle[aria-label="expand"])::after { content: '+'; }
+.source-pre :deep(.jv-toggle[aria-label="collapse"])::after { content: '−'; }
+
+.source-pre :deep(.jv-ellipsis) {
+  display: none;
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  font-style: italic;
+  margin-left: 4px;
+}
+
+.source-pre :deep(.jv-children.jv-collapsed) {
+  display: none;
+}
+
+.source-pre :deep(.jv-children.jv-collapsed + .jv-ellipsis) {
+  display: inline;
+}
+
+.source-pre :deep(.jv-key) {
+  color: var(--color-primary-dark);
+  font-weight: 500;
+}
+
+.source-pre :deep(.jv-punct) {
+  color: var(--text-muted);
+}
+
+.source-pre :deep(.jv-string) {
+  color: var(--color-green);
+}
+
+.source-pre :deep(.jv-number) {
+  color: var(--color-orange);
+}
+
+.source-pre :deep(.jv-boolean) {
+  color: var(--color-accent);
+}
+
+.source-pre :deep(.jv-null) {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.source-pre :deep(.jv-link) {
+  color: var(--color-green);
+  text-decoration: underline;
+}
+
+.source-pre :deep(.jv-row:hover) {
+  background: var(--bg-hover);
+  border-radius: 2px;
+}
+
 :root[data-theme="dark"] .source-pre :deep(.json-key) { color: var(--color-primary-light); }
 :root[data-theme="dark"] .source-pre :deep(.json-string) { color: var(--color-teal); }
 :root[data-theme="dark"] .source-pre :deep(.json-number) { color: var(--color-accent-light); }
 :root[data-theme="dark"] .source-pre :deep(.json-boolean) { color: var(--color-primary-light); }
 :root[data-theme="dark"] .source-pre :deep(.json-null) { color: var(--text-muted); }
 
+:root[data-theme="dark"] .source-pre :deep(.jv-key) { color: var(--color-primary-light); }
+:root[data-theme="dark"] .source-pre :deep(.jv-string) { color: var(--color-teal); }
+:root[data-theme="dark"] .source-pre :deep(.jv-number) { color: var(--color-accent-light); }
+:root[data-theme="dark"] .source-pre :deep(.jv-boolean) { color: var(--color-primary-light); }
+:root[data-theme="dark"] .source-pre :deep(.jv-null) { color: var(--text-muted); }
+:root[data-theme="dark"] .source-pre :deep(.jv-toggle) { border-color: rgba(255, 255, 255, 0.2); }
+:root[data-theme="dark"] .source-pre :deep(.jv-punct) { color: var(--panel-dark-muted); }
+:root[data-theme="dark"] .source-pre :deep(.jv-row:hover) { background: rgba(255, 255, 255, 0.06); }
+
 :root[data-theme="dark"] .source-code-wrapper {
   background: var(--panel-dark-bg);
-}
-:root[data-theme="dark"] .source-lines {
-  background: rgba(0, 0, 0, 0.15);
-  border-right-color: rgba(255, 255, 255, 0.08);
-}
-:root[data-theme="dark"] .source-lines span {
-  color: var(--panel-dark-muted);
-}
-:root[data-theme="dark"] .source-lines span:hover {
-  background: rgba(255, 255, 255, 0.06);
-}
-:root[data-theme="dark"] .source-lines span.source-line-active {
-  background: rgba(91, 156, 212, 0.2);
-  color: var(--color-primary-light);
 }
 :root[data-theme="dark"] .source-pre {
   color: var(--panel-dark-text);
@@ -1037,6 +1160,48 @@ watch(() => schemaStore.selectedItemKey, (key) => {
 .def-body-desc :deep(.md-link:hover),
 .schema-desc :deep(.md-link:hover) {
   text-decoration: underline;
+}
+
+.def-card-desc :deep(.md-heading),
+.def-body-desc :deep(.md-heading),
+.schema-desc :deep(.md-heading) {
+  font-weight: 600;
+  margin: var(--space-2) 0 var(--space-1);
+  color: var(--text-primary);
+  font-size: inherit;
+}
+
+.def-card-desc :deep(.md-list),
+.def-body-desc :deep(.md-list),
+.schema-desc :deep(.md-list) {
+  margin: var(--space-1) 0;
+  padding-left: var(--space-5);
+  font-size: inherit;
+}
+
+.def-card-desc :deep(.md-list li),
+.def-body-desc :deep(.md-list li),
+.schema-desc :deep(.md-list li) {
+  margin-bottom: 2px;
+}
+
+.def-card-desc :deep(.md-pre),
+.def-body-desc :deep(.md-pre),
+.schema-desc :deep(.md-pre) {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2);
+  margin: var(--space-2) 0;
+  overflow-x: auto;
+  font-size: var(--text-xs);
+}
+
+.def-card-desc :deep(.md-pre code),
+.def-body-desc :deep(.md-pre code),
+.schema-desc :deep(.md-pre code) {
+  font-family: var(--font-mono);
+  font-size: inherit;
 }
 
 .def-card-info {
@@ -1349,6 +1514,27 @@ watch(() => schemaStore.selectedItemKey, (key) => {
   margin-bottom: var(--space-2);
 }
 
+.landing-title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.landing-title-row h1 {
+  margin-bottom: 0;
+}
+
+.version-badge {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--text-muted);
+  background: var(--bg-secondary);
+  padding: 2px 8px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+  font-family: var(--font-mono);
+}
+
 .landing-description {
   font-size: var(--text-base);
   color: var(--text-secondary);
@@ -1409,6 +1595,17 @@ watch(() => schemaStore.selectedItemKey, (key) => {
 
 .separator {
   margin: 0 var(--space-1);
+}
+
+.landing-base-url {
+  color: var(--color-primary);
+  text-decoration: none;
+  font-size: var(--text-sm);
+  font-family: var(--font-mono);
+}
+
+.landing-base-url:hover {
+  text-decoration: underline;
 }
 
 .schema-grid {
@@ -1482,6 +1679,16 @@ watch(() => schemaStore.selectedItemKey, (key) => {
 
 .schema-card-desc :deep(.md-link:hover) {
   text-decoration: underline;
+}
+
+.schema-card-desc :deep(.md-list) {
+  margin: var(--space-1) 0;
+  padding-left: var(--space-5);
+  font-size: inherit;
+}
+
+.schema-card-desc :deep(.md-pre) {
+  display: none;
 }
 
 .schema-card-meta {
