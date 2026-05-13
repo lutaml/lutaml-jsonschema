@@ -109,8 +109,7 @@
               </template>
               <span v-else-if="def.required?.length" class="text-muted">{{ def.required.length }} req</span>
               <span v-if="def.examples?.length" class="text-muted">&middot; {{ def.examples.length }} example{{ def.examples.length > 1 ? 's' : '' }}</span>
-              <span v-if="def.minProperties != null" class="text-muted">&middot; min {{ def.minProperties }}</span>
-              <span v-if="def.maxProperties != null" class="text-muted">&middot; max {{ def.maxProperties }}</span>
+              <span v-if="defPropsRange(def)" class="badge badge-range">{{ defPropsRange(def) }}</span>
               <span v-if="def.additionalProperties === false" class="badge badge-locked">no additional</span>
               <span v-if="def.hasAllOf" class="badge badge-composition">allOf</span>
               <span v-if="def.hasAnyOf" class="badge badge-composition">anyOf</span>
@@ -307,7 +306,7 @@ import { downloadFile } from '../composables/useDownload'
 import { renderInlineMarkdown } from '../composables/useMarkdownLite'
 import { jsonToCollapsibleHtml } from '../composables/useJsonViewer'
 import { copyToClipboard } from '../composables/useClipboard'
-import type { SpaSchema, SpaProperty } from '../types'
+import type { SpaSchema, SpaProperty, SpaDefinition } from '../types'
 
 const schemaStore = useSchemaStore()
 const uiStore = useUiStore()
@@ -336,6 +335,15 @@ const schemaPropsRange = computed(() => {
   if (max != null) return `<= ${max} properties`
   return ''
 })
+
+function defPropsRange(def: SpaDefinition): string {
+  const min = def.minProperties
+  const max = def.maxProperties
+  if (min != null && max != null) return `[ ${min} .. ${max} ]`
+  if (min != null) return `>= ${min} props`
+  if (max != null) return `<= ${max} props`
+  return ''
+}
 
 const filteredSchemas = computed(() => {
   const q = landingSearch.value.trim().toLowerCase()
