@@ -104,13 +104,9 @@
               <span class="def-card-title">{{ def.title || def.name }}</span>
               <span v-if="def.title && def.title !== def.name" class="def-card-name font-mono text-muted">{{ def.name }}</span>
               <span v-if="def.type" class="def-type-badge">{{ def.type }}</span>
-              <span class="text-muted">{{ def.properties.length }} props</span>
-              <span v-if="def.required?.length" class="text-muted">&middot;</span>
-              <template v-if="def.required?.length && def.required.length <= 3">
-                <span v-for="r in def.required" :key="r" class="def-header-req">{{ r }}</span>
-              </template>
-              <span v-else-if="def.required?.length" class="text-muted">{{ def.required.length }} req</span>
-              <span v-if="def.examples?.length" class="text-muted">&middot; {{ def.examples.length }} example{{ def.examples.length > 1 ? 's' : '' }}</span>
+              <span class="def-header-pill">{{ def.properties.length }} props</span>
+              <span v-if="def.required?.length" class="def-header-pill def-header-pill-req">{{ def.required.length }} req</span>
+              <span v-if="def.examples?.length" class="def-header-pill">{{ def.examples.length }} ex</span>
               <span v-if="defPropsRange(def)" class="badge badge-range">{{ defPropsRange(def) }}</span>
               <span v-if="def.additionalProperties === false" class="badge badge-locked">no additional</span>
               <span v-if="def.hasAllOf" class="badge badge-composition">allOf</span>
@@ -279,14 +275,15 @@
               <span v-if="schema.hasAllOf" class="badge badge-comp-sm">allOf</span>
               <span v-if="schema.hasAnyOf" class="badge badge-comp-sm">anyOf</span>
               <span v-if="schema.hasOneOf" class="badge badge-comp-sm">oneOf</span>
+              <span v-if="schema.additionalProperties === false" class="badge badge-locked-sm">closed</span>
             </div>
             <div class="schema-card-stats">
-              <span>{{ schema.properties.length }} props</span>
-              <span>{{ schema.definitions.length }} defs</span>
-              <span v-if="schema.required.length">{{ schema.required.length }} required</span>
-              <span v-if="schema.examples?.length">{{ schema.examples.length }} examples</span>
-              <span v-if="schema.minProperties != null">{{ schema.minProperties }} min</span>
-              <span v-if="schema.maxProperties != null">{{ schema.maxProperties }} max</span>
+              <span class="stat-pill">{{ schema.properties.length }} props</span>
+              <span class="stat-pill">{{ schema.definitions.length }} defs</span>
+              <span v-if="schema.required.length" class="stat-pill stat-required">{{ schema.required.length }} required</span>
+              <span v-if="schema.examples?.length" class="stat-pill">{{ schema.examples.length }} examples</span>
+              <span v-if="schema.minProperties != null" class="stat-pill">{{ schema.minProperties }} min</span>
+              <span v-if="schema.maxProperties != null" class="stat-pill">{{ schema.maxProperties }} max</span>
             </div>
           </div>
         </div>
@@ -1277,6 +1274,21 @@ watch(() => schemaStore.selectedItemKey, (key) => {
   border-radius: 2px;
 }
 
+.def-header-pill {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: var(--bg-secondary);
+  padding: 1px 6px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.def-header-pill-req {
+  color: var(--schema-require-label);
+  background: rgba(179, 31, 36, 0.08);
+}
+
 .def-type-badge {
   font-size: 11px;
   font-family: var(--font-mono);
@@ -1700,6 +1712,15 @@ watch(() => schemaStore.selectedItemKey, (key) => {
   font-family: var(--font-mono);
 }
 
+.badge-locked-sm {
+  font-size: 10px;
+  color: var(--color-orange);
+  background: var(--color-orange-alpha);
+  padding: 1px 5px;
+  border-radius: var(--radius-sm);
+  font-weight: 500;
+}
+
 /* Landing page */
 .landing-page {
   padding: var(--space-6);
@@ -1903,9 +1924,23 @@ watch(() => schemaStore.selectedItemKey, (key) => {
 
 .schema-card-stats {
   display: flex;
-  gap: var(--space-3);
+  gap: var(--space-2);
   font-size: var(--text-xs);
+  flex-wrap: wrap;
+}
+
+.stat-pill {
   color: var(--text-muted);
+  background: var(--bg-secondary);
+  padding: 1px 6px;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 10px;
+}
+
+.stat-required {
+  color: var(--schema-require-label);
+  background: rgba(179, 31, 36, 0.08);
 }
 
 .empty-state {
