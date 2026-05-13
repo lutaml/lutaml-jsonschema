@@ -211,7 +211,10 @@
     <div v-else class="landing-page">
       <div class="landing-header">
         <div>
-          <h1>{{ schemaStore.metadata?.title || 'JSON Schema Documentation' }}</h1>
+          <div class="landing-title-row">
+            <h1>{{ schemaStore.metadata?.title || 'JSON Schema Documentation' }}</h1>
+            <span v-if="schemaStore.metadata?.version" class="version-badge">v{{ schemaStore.metadata.version }}</span>
+          </div>
           <p v-if="schemaStore.metadata?.description" class="landing-description">{{ schemaStore.metadata.description }}</p>
           <div class="landing-subtitle">
             <span>{{ schemaStore.schemaCounts.schemas }} schemas</span>
@@ -219,6 +222,10 @@
             <span>{{ schemaStore.schemaCounts.properties }} properties</span>
             <span class="separator">&middot;</span>
             <span>{{ schemaStore.schemaCounts.definitions }} definitions</span>
+            <template v-if="schemaStore.metadata?.baseUrl">
+              <span class="separator">&middot;</span>
+              <a :href="schemaStore.metadata.baseUrl" target="_blank" rel="noopener" class="landing-base-url">{{ schemaStore.metadata.baseUrl }}</a>
+            </template>
           </div>
           <div v-if="schemaStore.schemas.length > 3" class="landing-search">
             <input
@@ -1507,6 +1514,27 @@ watch(() => schemaStore.selectedItemKey, (key) => {
   margin-bottom: var(--space-2);
 }
 
+.landing-title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.landing-title-row h1 {
+  margin-bottom: 0;
+}
+
+.version-badge {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--text-muted);
+  background: var(--bg-secondary);
+  padding: 2px 8px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+  font-family: var(--font-mono);
+}
+
 .landing-description {
   font-size: var(--text-base);
   color: var(--text-secondary);
@@ -1567,6 +1595,17 @@ watch(() => schemaStore.selectedItemKey, (key) => {
 
 .separator {
   margin: 0 var(--space-1);
+}
+
+.landing-base-url {
+  color: var(--color-primary);
+  text-decoration: none;
+  font-size: var(--text-sm);
+  font-family: var(--font-mono);
+}
+
+.landing-base-url:hover {
+  text-decoration: underline;
 }
 
 .schema-grid {
