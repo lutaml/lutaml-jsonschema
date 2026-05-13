@@ -33,7 +33,9 @@
             </div>
           </div>
           <span v-if="schemaStore.selectedSchema.title && schemaStore.selectedSchema.title !== schemaStore.selectedSchema.name" class="schema-name-hint font-mono text-muted">{{ schemaStore.selectedSchema.name }}</span>
-          <p v-if="schemaStore.selectedSchema.description" class="schema-desc text-secondary" v-html="renderInlineMarkdown(schemaStore.selectedSchema.description)"></p>
+          <SeeMore v-if="schemaStore.selectedSchema.description" max-height="4.8em">
+            <p class="schema-desc text-secondary" v-html="renderInlineMarkdown(schemaStore.selectedSchema.description)"></p>
+          </SeeMore>
           <div class="schema-meta-row">
             <span class="badge badge-type">{{ schemaStore.selectedSchema.type || 'any' }}</span>
             <span class="meta-count">{{ schemaStore.selectedSchema.properties.length }} properties</span>
@@ -122,7 +124,7 @@
               </div>
               <details v-if="def.examples?.length" class="def-card-examples">
                 <summary class="text-muted">Examples</summary>
-                <pre class="def-examples-pre"><code>{{ formatJson(def.examples) }}</code></pre>
+                <pre class="def-examples-pre jv-examples-pre" v-html="renderExamplesJson(def.examples)"></pre>
               </details>
               <div v-if="!expandedDefs.has(def.name) && def.properties.length" class="def-mini-table">
                 <div v-for="prop in miniTableProps(def.properties)" :key="prop.name" class="def-mini-row def-mini-row-clickable" :title="prop.description ? truncateMiniDesc(prop.description) : undefined" @click.stop="openPropertyDetail(prop.name)">
@@ -302,6 +304,7 @@ import { ref, reactive, computed, watch, nextTick } from 'vue'
 import { useSchemaStore } from '../stores/schemaStore'
 import { useUiStore } from '../stores/uiStore'
 import SchemaBuilder from '../components/SchemaBuilder.vue'
+import SeeMore from '../components/SeeMore.vue'
 import { downloadFile } from '../composables/useDownload'
 import { renderInlineMarkdown } from '../composables/useMarkdownLite'
 import { jsonToCollapsibleHtml } from '../composables/useJsonViewer'
@@ -608,6 +611,8 @@ watch(() => schemaStore.selectedItemKey, (key) => {
 
 .schema-header {
   margin-bottom: var(--space-6);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--border-light);
 }
 
 .schema-breadcrumb {
@@ -953,6 +958,20 @@ watch(() => schemaStore.selectedItemKey, (key) => {
   font-weight: 600;
   margin-bottom: var(--space-4);
   color: var(--text-primary);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--border-light);
+  position: relative;
+}
+
+.section-heading::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 40px;
+  height: 2px;
+  background: var(--color-primary);
+  border-radius: 1px;
 }
 
 .section-heading-row {
@@ -960,6 +979,20 @@ watch(() => schemaStore.selectedItemKey, (key) => {
   align-items: center;
   justify-content: space-between;
   margin-bottom: var(--space-4);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--border-light);
+  position: relative;
+}
+
+.section-heading-row::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 40px;
+  height: 2px;
+  background: var(--color-primary);
+  border-radius: 1px;
 }
 
 .section-actions {
