@@ -1,7 +1,7 @@
 <template>
   <div class="builder-layout">
     <div class="builder-fields">
-      <div v-if="properties.length > 4" class="builder-toolbar">
+      <div class="builder-toolbar" :class="{ 'toolbar-with-filter': properties.length > 8 }">
         <div v-if="properties.length > 8" class="builder-filter">
           <input
             v-model="filterQuery"
@@ -16,14 +16,27 @@
             </svg>
           </button>
         </div>
-        <button class="sort-toggle" :class="{ active: sortAlpha }" :title="sortAlpha ? 'Sorted A-Z' : 'Sorted by required first'" @click="sortAlpha = !sortAlpha">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <path d="M3 2v10M3 12l-2-2M3 12l2-2M11 2v10M11 12l-2-2M11 12l2-2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          {{ sortAlpha ? 'A-Z' : 'Req' }}
-        </button>
+        <div class="toolbar-actions">
+          <button class="toolbar-btn" :class="{ active: sortAlpha }" :title="sortAlpha ? 'Sorted A-Z' : 'Sorted by required first'" @click="sortAlpha = !sortAlpha">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M3 2v10M3 12l-2-2M3 12l2-2M11 2v10M11 12l-2-2M11 12l2-2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            {{ sortAlpha ? 'A-Z' : 'Req' }}
+          </button>
+          <button v-if="hasExpandableFields" class="toolbar-btn" title="Expand all nested objects" @click="expandAllFields">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M2 6h8M6 2v8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+            </svg>
+          </button>
+          <button v-if="hasExpandedFields" class="toolbar-btn" title="Collapse all nested objects" @click="collapseAllFields">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M2 6h8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+            </svg>
+          </button>
+          <span class="toolbar-field-count text-muted">{{ includedCount }}/{{ fields.length }}</span>
+        </div>
       </div>
-      <div v-for="(field, idx) in sortedFields" :key="field.prop.name" :id="`prop-${field.prop.name}`" class="field-row" :class="{ 'field-row-alt': idx % 2 === 1, [`depth-${depth % 3}`]: depth > 0 }">
+      <div v-for="(field, idx) in sortedFields" :key="field.prop.name" :id="`prop-${field.prop.name}`" class="field-row" :class="{ 'field-row-alt': idx % 2 === 1, 'field-row-last': idx === sortedFields.length - 1, [`depth-${depth % 3}`]: depth > 0 }">
         <div class="field-main">
           <input
             type="checkbox"
@@ -383,6 +396,22 @@ function toggleField(field: BuilderField, checked: boolean) {
   if (!checked) field.expanded = false
 }
 
+const hasExpandableFields = computed(() => fields.value.some(f => f.resolvedDef && f.included && !f.expanded))
+const hasExpandedFields = computed(() => fields.value.some(f => f.expanded))
+const includedCount = computed(() => fields.value.filter(f => f.included).length)
+
+function expandAllFields() {
+  for (const f of fields.value) {
+    if (f.resolvedDef && f.included) f.expanded = true
+  }
+}
+
+function collapseAllFields() {
+  for (const f of fields.value) {
+    f.expanded = false
+  }
+}
+
 const outputJson = computed(() => {
   const obj: Record<string, unknown> = {}
   for (const field of fields.value) {
@@ -558,11 +587,22 @@ async function copyJson() {
 .builder-toolbar {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: var(--space-2);
   margin-bottom: var(--space-2);
 }
 
-.sort-toggle {
+.builder-toolbar:not(.toolbar-with-filter) {
+  justify-content: flex-end;
+}
+
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.toolbar-btn {
   display: flex;
   align-items: center;
   gap: 3px;
@@ -579,15 +619,24 @@ async function copyJson() {
   transition: all var(--transition-fast);
 }
 
-.sort-toggle:hover {
+.toolbar-btn:hover {
   color: var(--text-primary);
   border-color: var(--border-medium);
 }
 
-.sort-toggle.active {
+.toolbar-btn.active {
   color: var(--color-primary);
   background: var(--color-primary-alpha);
   border-color: var(--color-primary);
+}
+
+.toolbar-field-count {
+  font-size: 10px;
+  font-weight: 500;
+  padding: 2px 6px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
 }
 
 .builder-filter {
@@ -636,10 +685,13 @@ async function copyJson() {
 .field-row {
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
+  border-left: 2px solid transparent;
+  transition: all var(--transition-fast);
 }
 
 .field-row:hover {
   background: var(--bg-hover);
+  border-left-color: var(--schema-lines);
 }
 
 .field-row-alt {
@@ -648,6 +700,12 @@ async function copyJson() {
 
 .field-row-alt:hover {
   background: var(--bg-hover);
+  border-left-color: var(--schema-lines);
+}
+
+.field-row-last {
+  border-bottom: 1px solid var(--border-light);
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
 }
 
 .field-main {
@@ -1205,6 +1263,20 @@ async function copyJson() {
   background: var(--color-primary-alpha);
   border-color: var(--color-primary);
   font-weight: 500;
+}
+
+.btn-see-more {
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  font-size: 10px;
+  cursor: pointer;
+  padding: 0 2px;
+  text-decoration: underline;
+}
+
+.btn-see-more:hover {
+  opacity: 0.8;
 }
 
 .nested-section {
