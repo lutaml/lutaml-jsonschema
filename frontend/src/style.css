@@ -271,12 +271,19 @@ button { font-family: inherit; font-size: inherit; cursor: pointer; border: none
   .view-toggle, .schema-actions,
   .ctrl-expand, .field-check,
   .source-toolbar, .copy-btn-wrap,
-  .section-actions { display: none !important; }
+  .section-actions,
+  .back-to-top, .detail-panel-overlay,
+  .search-modal, .builder-toolbar,
+  .toolbar-actions, .heading-anchor { display: none !important; }
   .app-layout { grid-template-columns: 1fr !important; }
-  .app-main { padding: 0 !important; max-width: 100% !important; }
+  .app-main, .main-content { padding: 0 !important; max-width: 100% !important; }
+  .content-area { overflow: visible !important; }
   .card, .def-card { break-inside: avoid; box-shadow: none; border: 1px solid #ccc; }
   .field-row { break-inside: avoid; }
   body { color: #000; background: #fff; }
+  .builder-layout { grid-template-columns: 1fr !important; }
+  .builder-preview { position: static !important; }
+  a { color: #000 !important; text-decoration: underline !important; }
 }
 
 /* Markdown fenced code blocks in descriptions */

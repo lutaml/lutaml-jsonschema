@@ -47,6 +47,7 @@
             aria-label="Filter schemas and definitions"
             @keydown="handleSearchKey"
           />
+          <kbd v-if="!searchQuery" class="search-kbd" aria-hidden="true">/</kbd>
           <button v-if="searchQuery" class="search-clear" aria-label="Clear search" @click="searchQuery = ''">
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
               <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
@@ -669,6 +670,22 @@ function truncateDesc(desc: string): string {
 
 .search-clear:hover {
   color: var(--text-primary);
+}
+
+.search-kbd {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: 3px;
+  padding: 1px 5px;
+  pointer-events: none;
+  line-height: 1.4;
 }
 
 .search-results {

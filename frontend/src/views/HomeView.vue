@@ -10,7 +10,12 @@
         </div>
         <div class="schema-header-info">
           <div class="schema-title-row">
-            <h1>{{ schemaStore.selectedSchema.title || schemaStore.selectedSchema.name }}</h1>
+            <h1 class="heading-with-anchor" @mouseenter="hoveredHeading = 'schema'" @mouseleave="hoveredHeading = ''">
+              {{ schemaStore.selectedSchema.title || schemaStore.selectedSchema.name }}
+              <button v-show="hoveredHeading === 'schema'" class="heading-anchor" @click.stop="copyCurrentLink" title="Copy link to this schema" aria-label="Copy link">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+            </h1>
             <div class="schema-actions">
               <div class="view-toggle">
                 <button class="toggle-btn" :class="{ active: viewMode === 'builder' }" @click="viewMode = 'builder'">Builder</button>
@@ -101,12 +106,12 @@
           >
             <div class="def-card-header" role="button" tabindex="0" @click="toggleDef(def.name)" @keydown.enter="toggleDef(def.name)" @keydown.space.prevent="toggleDef(def.name)">
               <span class="def-chevron" :class="{ expanded: expandedDefs.has(def.name) }">&#9654;</span>
-              <span class="def-card-title">{{ def.title || def.name }}</span>
+              <span class="def-card-title heading-with-anchor" @mouseenter="hoveredHeading = `def-${def.name}`" @mouseleave="hoveredHeading = ''">{{ def.title || def.name }}<button v-show="hoveredHeading === `def-${def.name}`" class="heading-anchor" @click.stop="copyDefLink(def.name)" title="Copy link" aria-label="Copy link to definition"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></span>
               <span v-if="def.title && def.title !== def.name" class="def-card-name font-mono text-muted">{{ def.name }}</span>
               <span v-if="def.type" class="def-type-badge">{{ def.type }}</span>
               <span class="def-header-pill">{{ def.properties.length }} props</span>
               <span v-if="def.required?.length" class="def-header-pill def-header-pill-req">{{ def.required.length }} req</span>
-              <span v-if="def.examples?.length" class="def-header-pill">{{ def.examples.length }} ex</span>
+              <span v-if="def.examples?.length" class="def-header-pill">{{ def.examples.length }} examples</span>
               <span v-if="defPropsRange(def)" class="badge badge-range">{{ defPropsRange(def) }}</span>
               <span v-if="def.additionalProperties === false" class="badge badge-locked">no additional</span>
               <span v-if="def.hasAllOf" class="badge badge-composition">allOf</span>
@@ -163,7 +168,9 @@
                   <span v-for="r in def.required" :key="r" class="required-tag-sm">{{ r }}</span>
                 </div>
               </div>
-              <div v-if="def.description" class="def-body-desc text-secondary" v-html="renderInlineMarkdown(def.description)"></div>
+              <SeeMore v-if="def.description" max-height="4.8em">
+                <div class="def-body-desc text-secondary" v-html="renderInlineMarkdown(def.description)"></div>
+              </SeeMore>
               <details v-if="def.examples?.length" class="def-card-examples def-body-examples">
                 <summary class="text-muted">Examples ({{ def.examples.length }})</summary>
                 <pre class="def-examples-pre jv-examples-pre" v-html="renderExamplesJson(def.examples)"></pre>
@@ -316,6 +323,7 @@ const sourceCopied = ref(false)
 const activeSourceLine = ref(-1)
 const landingSearch = ref('')
 const linkCopied = ref(false)
+const hoveredHeading = ref('')
 const sourcePreRef = ref<HTMLElement | null>(null)
 
 const selectedDefinitionTitle = computed(() => {
@@ -573,6 +581,13 @@ async function copyCurrentLink() {
   setTimeout(() => { linkCopied.value = false }, 2000)
 }
 
+async function copyDefLink(defName: string) {
+  const url = `${window.location.origin}${window.location.pathname}#${encodeURIComponent(schemaStore.selectedSchema?.name || '')}/${encodeURIComponent(`def-${defName}`)}`
+  await copyToClipboard(url)
+  linkCopied.value = true
+  setTimeout(() => { linkCopied.value = false }, 2000)
+}
+
 watch(() => schemaStore.selectedDefinitionName, (name) => {
   if (!name) return
   expandedDefs.add(name)
@@ -658,6 +673,35 @@ watch(() => schemaStore.selectedItemKey, (key) => {
 .schema-title-row h1 {
   font-size: var(--text-2xl);
   margin: 0;
+}
+
+/* Redoc ShareLink pattern — hover-reveal anchor on headings */
+.heading-with-anchor {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.heading-anchor {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px;
+  display: inline-flex;
+  align-items: center;
+  opacity: 0.5;
+  transition: opacity var(--transition-fast);
+}
+
+.heading-anchor:hover {
+  opacity: 1;
+  color: var(--color-primary);
+}
+
+.def-card-title .heading-anchor {
+  vertical-align: middle;
 }
 
 .schema-actions {
