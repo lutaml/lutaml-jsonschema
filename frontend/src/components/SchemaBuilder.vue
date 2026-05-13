@@ -875,15 +875,11 @@ async function copyJson() {
   font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
-  color: #c27a00;
-  background: rgba(255, 165, 0, 0.12);
+  color: var(--color-orange);
+  background: var(--color-orange-alpha);
   padding: 1px 5px;
   border-radius: 2px;
   flex-shrink: 0;
-}
-
-:root[data-theme="dark"] .deprecated-badge {
-  color: #ffa500;
 }
 
 .readonly-badge,
@@ -1153,15 +1149,9 @@ async function copyJson() {
 
 .constraint-chip.chip-pattern {
   font-family: var(--font-mono);
-  color: #0e7c86;
-  background: rgba(14, 124, 134, 0.08);
+  color: var(--color-teal);
+  background: var(--color-teal-alpha);
   border: 1px solid rgba(14, 124, 134, 0.15);
-}
-
-:root[data-theme="dark"] .constraint-chip.chip-pattern {
-  color: #4dd0e1;
-  background: rgba(77, 208, 225, 0.1);
-  border-color: rgba(77, 208, 225, 0.2);
 }
 
 .btn-toggle-pattern {
