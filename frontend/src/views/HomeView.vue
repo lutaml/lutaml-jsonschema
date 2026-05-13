@@ -995,6 +995,18 @@ watch(() => schemaStore.selectedItemKey, (key) => {
   text-decoration: underline;
 }
 
+.jv-examples-pre :deep(.jv-row:hover) {
+  background: var(--bg-hover);
+  border-radius: 2px;
+}
+
+:root[data-theme="dark"] .jv-examples-pre :deep(.jv-key) { color: var(--color-primary-light); }
+:root[data-theme="dark"] .jv-examples-pre :deep(.jv-string) { color: var(--color-teal); }
+:root[data-theme="dark"] .jv-examples-pre :deep(.jv-number) { color: var(--color-accent-light); }
+:root[data-theme="dark"] .jv-examples-pre :deep(.jv-boolean) { color: var(--color-primary-light); }
+:root[data-theme="dark"] .jv-examples-pre :deep(.jv-toggle) { border-color: rgba(255, 255, 255, 0.2); }
+:root[data-theme="dark"] .jv-examples-pre :deep(.jv-row:hover) { background: rgba(255, 255, 255, 0.06); }
+
 .schema-section {
   margin-bottom: var(--space-6);
 }

@@ -853,16 +853,12 @@ function handleExampleKey(event: KeyboardEvent) {
 }
 
 .badge-deprecated {
-  background: rgba(255, 165, 0, 0.12);
-  color: #c27a00;
+  background: var(--color-orange-alpha);
+  color: var(--color-orange);
   font-size: var(--text-xs);
   padding: 2px 6px;
   border-radius: var(--radius-sm);
   font-weight: 500;
-}
-
-:root[data-theme="dark"] .badge-deprecated {
-  color: #ffa500;
 }
 
 .badge-required-sm {
@@ -978,8 +974,8 @@ function handleExampleKey(event: KeyboardEvent) {
 
 .constraint-pattern {
   word-break: break-all;
-  color: #0e7c86;
-  background: rgba(14, 124, 134, 0.08);
+  color: var(--color-teal);
+  background: var(--color-teal-alpha);
   padding: 1px 4px;
   border-radius: var(--radius-sm);
 }
@@ -1196,11 +1192,6 @@ function handleExampleKey(event: KeyboardEvent) {
 /* Dark mode overrides */
 :root[data-theme="dark"] .detail-panel {
   border-left: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-:root[data-theme="dark"] .constraint-pattern {
-  color: #4dd0e1;
-  background: rgba(77, 208, 225, 0.1);
 }
 
 :root[data-theme="dark"] .enum-value-chip {
