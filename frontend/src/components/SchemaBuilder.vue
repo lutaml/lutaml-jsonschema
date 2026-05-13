@@ -33,6 +33,7 @@
             :aria-label="`Include ${field.prop.name}`"
             @change="toggleField(field, ($event.target as HTMLInputElement).checked)"
           />
+          <span class="field-bullet" aria-hidden="true"></span>
           <button class="field-name" :class="{ dimmed: !field.included, deprecated: field.prop.deprecated, expandable: !!field.resolvedDef }" :aria-label="field.resolvedDef ? `${field.expanded ? 'Collapse' : 'Expand'} ${field.prop.name}` : `View details for ${field.prop.name}`" @click="field.resolvedDef && field.included ? (field.expanded = !field.expanded) : openPropertyDetail(field.prop)">
             <span v-if="field.prop.title && field.prop.title !== field.prop.name" class="field-human-title">{{ field.prop.title }}</span>
             <span class="font-mono">{{ field.prop.name }}</span>
@@ -640,6 +641,23 @@ async function copyJson() {
 
 .field-check:disabled {
   cursor: default;
+}
+
+.field-bullet {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--border-medium);
+  flex-shrink: 0;
+  margin-left: -2px;
+}
+
+.field-bullet + .field-name.dimmed {
+  opacity: 0.35;
+}
+
+.field-bullet + .field-name.dimmed + .field-bullet {
+  opacity: 0.35;
 }
 
 .field-name {
