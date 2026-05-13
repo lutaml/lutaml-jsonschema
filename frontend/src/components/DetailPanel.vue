@@ -228,7 +228,7 @@
                     <td>
                       <span v-if="prop.ref" class="prop-ref-link" role="button" tabindex="0" @click.stop="navigateToRef(prop.ref)">{{ prop.type || 'object' }} → {{ refName(prop.ref) }}</span>
                       <template v-else>
-                        <span class="prop-type">{{ prop.type || 'any' }}</span>
+                        <span class="prop-type-badge" :class="propTypeClass(prop.type)">{{ prop.type || 'any' }}</span>
                         <span v-if="prop.format" class="prop-format">&lt;{{ prop.format }}&gt;</span>
                         <span v-if="prop.itemsType" class="prop-format">[{{ prop.itemsType }}]</span>
                       </template>
@@ -552,6 +552,20 @@ function renderExampleHtml(value: unknown): string {
   }
 }
 
+function propTypeClass(type?: string): string {
+  const t = (type || 'any').split(',')[0].trim()
+  switch (t) {
+    case 'string': return 'ptype-string'
+    case 'number': return 'ptype-number'
+    case 'integer': return 'ptype-integer'
+    case 'boolean': return 'ptype-boolean'
+    case 'object': return 'ptype-object'
+    case 'array': return 'ptype-array'
+    case 'null': return 'ptype-null'
+    default: return ''
+  }
+}
+
 function escapeHtml(t: string): string {
   return t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }
@@ -700,10 +714,23 @@ function handleExampleKey(event: KeyboardEvent) {
   gap: var(--space-1);
 }
 
-.prop-type {
-  color: var(--color-primary);
+.prop-type-badge {
+  font-size: 11px;
   font-weight: 500;
+  font-family: var(--font-mono);
+  padding: 1px 5px;
+  border-radius: var(--radius-sm);
+  background: var(--badge-schema-bg);
+  color: var(--badge-schema);
 }
+
+.prop-type-badge.ptype-string { background: var(--type-string-bg); color: var(--type-string); }
+.prop-type-badge.ptype-number { background: var(--type-number-bg); color: var(--type-number); }
+.prop-type-badge.ptype-integer { background: var(--type-integer-bg); color: var(--type-integer); }
+.prop-type-badge.ptype-boolean { background: var(--type-boolean-bg); color: var(--type-boolean); }
+.prop-type-badge.ptype-object { background: var(--type-object-bg); color: var(--type-object); }
+.prop-type-badge.ptype-array { background: var(--type-array-bg); color: var(--type-array); }
+.prop-type-badge.ptype-null { background: var(--type-null-bg); color: var(--type-null); }
 
 .prop-format {
   font-size: var(--text-xs);
@@ -774,10 +801,17 @@ function handleExampleKey(event: KeyboardEvent) {
 .prop-example-chip {
   font-size: 10px;
   font-family: var(--font-mono);
-  background: var(--bg-secondary);
-  padding: 1px 4px;
+  background: rgba(28, 25, 23, 0.05);
+  padding: 1px 5px;
   border-radius: 2px;
+  border: 1px solid rgba(28, 25, 23, 0.1);
   color: var(--text-secondary);
+  word-break: break-word;
+}
+
+:root[data-theme="dark"] .prop-example-chip {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 .badge-type {
@@ -803,8 +837,16 @@ function handleExampleKey(event: KeyboardEvent) {
 }
 
 .badge-deprecated {
-  background: var(--badge-deprecated-bg);
-  color: var(--badge-deprecated);
+  background: rgba(255, 165, 0, 0.12);
+  color: #c27a00;
+  font-size: var(--text-xs);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-weight: 500;
+}
+
+:root[data-theme="dark"] .badge-deprecated {
+  color: #ffa500;
 }
 
 .badge-required-sm {
@@ -881,11 +923,12 @@ function handleExampleKey(event: KeyboardEvent) {
 .enum-value-chip {
   font-size: 11px;
   font-family: var(--font-mono);
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-light);
-  padding: 1px 6px;
-  border-radius: var(--radius-sm);
+  background: rgba(28, 25, 23, 0.05);
+  border: 1px solid rgba(28, 25, 23, 0.1);
+  padding: 1px 5px;
+  border-radius: 2px;
   color: var(--text-primary);
+  word-break: break-word;
 }
 
 .enum-more-btn {

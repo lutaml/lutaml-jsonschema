@@ -822,11 +822,15 @@ async function copyJson() {
   font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
-  color: var(--badge-deprecated);
-  background: var(--badge-deprecated-bg);
+  color: #c27a00;
+  background: rgba(255, 165, 0, 0.12);
   padding: 1px 5px;
   border-radius: 2px;
   flex-shrink: 0;
+}
+
+:root[data-theme="dark"] .deprecated-badge {
+  color: #ffa500;
 }
 
 .readonly-badge,
