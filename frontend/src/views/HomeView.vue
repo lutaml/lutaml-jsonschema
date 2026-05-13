@@ -79,6 +79,10 @@
       <template v-if="viewMode === 'builder'">
       <!-- Properties -->
       <div class="schema-section">
+        <div class="section-heading">
+          Properties
+          <span class="toolbar-field-count text-muted">{{ schemaStore.selectedSchema.properties.length }}</span>
+        </div>
         <SchemaBuilder
           :properties="schemaStore.selectedSchema.properties"
           :required="schemaStore.selectedSchema.required"
@@ -90,7 +94,7 @@
       <!-- Definitions -->
       <div v-if="schemaStore.selectedSchema.definitions.length" class="schema-section">
         <div class="section-heading-row">
-          <h2 class="section-heading">Definitions</h2>
+          <h2 class="section-heading">Definitions <span class="toolbar-field-count text-muted">{{ schemaStore.selectedSchema.definitions.length }}</span></h2>
           <div class="section-actions">
             <button class="btn btn-ghost btn-sm" @click="expandAllDefs">Expand All</button>
             <button class="btn btn-ghost btn-sm" @click="collapseAllDefs">Collapse All</button>
@@ -193,6 +197,7 @@
         <div v-if="schemaStore.selectedSchema.sourceJson" class="source-viewer">
           <div class="source-toolbar">
             <span class="text-muted">Source JSON Schema</span>
+            <span class="toolbar-field-count text-muted">{{ sourceLineCount }} lines</span>
             <div class="source-toolbar-actions">
               <button class="btn btn-ghost btn-sm copy-btn-wrap" @click="copySource">
                 Copy
@@ -1051,7 +1056,7 @@ watch(() => schemaStore.selectedItemKey, (key) => {
 .source-toolbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: var(--space-2);
   padding: var(--space-2) var(--space-3);
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border-light);
@@ -1874,6 +1879,7 @@ watch(() => schemaStore.selectedItemKey, (key) => {
 .schema-card:hover {
   border-color: var(--color-primary);
   box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
 }
 
 .schema-card-icon {
@@ -1970,9 +1976,12 @@ watch(() => schemaStore.selectedItemKey, (key) => {
 }
 
 /* Definition card expand transition */
-.def-expand-enter-active,
+.def-expand-enter-active {
+  transition: max-height 0.35s ease-out, opacity 0.25s ease-out;
+  overflow: hidden;
+}
 .def-expand-leave-active {
-  transition: all var(--transition-slow);
+  transition: max-height 0.25s ease-in, opacity 0.15s ease-in;
   overflow: hidden;
 }
 .def-expand-enter-from,
@@ -1985,7 +1994,7 @@ watch(() => schemaStore.selectedItemKey, (key) => {
 .def-expand-enter-to,
 .def-expand-leave-from {
   opacity: 1;
-  max-height: 2000px;
+  max-height: 5000px;
 }
 
 /* Schema card focus-visible */

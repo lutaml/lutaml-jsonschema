@@ -631,11 +631,6 @@ async function copyJson() {
 }
 
 .toolbar-field-count {
-  font-size: 10px;
-  font-weight: 500;
-  padding: 2px 6px;
-  background: var(--bg-secondary);
-  border-radius: var(--radius-sm);
   flex-shrink: 0;
 }
 
