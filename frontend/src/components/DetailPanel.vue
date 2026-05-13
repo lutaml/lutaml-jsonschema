@@ -783,6 +783,8 @@ function handleExampleKey(event: KeyboardEvent) {
 .badge-type {
   background: var(--badge-schema-bg);
   color: var(--badge-schema);
+  font-family: var(--font-mono);
+  font-size: var(--schema-labels-size);
 }
 
 .badge-format {
@@ -791,8 +793,8 @@ function handleExampleKey(event: KeyboardEvent) {
 }
 
 .badge-required {
-  background: var(--badge-required-bg);
-  color: var(--badge-required);
+  background: rgba(179, 31, 36, 0.08);
+  color: var(--schema-require-label);
 }
 
 .badge-optional {
@@ -806,8 +808,8 @@ function handleExampleKey(event: KeyboardEvent) {
 }
 
 .badge-required-sm {
-  background: var(--badge-required-bg);
-  color: var(--badge-required);
+  background: rgba(179, 31, 36, 0.08);
+  color: var(--schema-require-label);
   font-size: 10px;
   padding: 1px 4px;
   border-radius: 2px;

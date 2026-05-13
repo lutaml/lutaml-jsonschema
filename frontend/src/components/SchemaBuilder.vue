@@ -42,6 +42,7 @@
           <span class="field-type-badge" :class="typeBadgeClass(field.prop)">{{ displayType(field.prop, field.resolvedDef?.title || field.resolvedDef?.name) }}</span>
           <span v-if="field.prop.title && field.prop.title !== field.prop.name" class="field-title-badge">{{ field.prop.title }}</span>
           <span v-if="field.prop.format" class="field-format-badge">&lt;{{ field.prop.format }}&gt;</span>
+          <span v-if="isArrayWithArrayConstraints(field.prop)" class="array-item-constraints">[ items <template v-for="(chip, i) in arrayItemChips(field.prop)" :key="i"><span class="constraint-chip" :class="chip.class">{{ chip.label }}</span> </template>]</span>
           <span v-if="field.prop.contentMediaType" class="field-format-badge">content-type: {{ field.prop.contentMediaType }}</span>
           <span v-if="field.prop.contentEncoding" class="field-format-badge">encoding: {{ field.prop.contentEncoding }}</span>
           <span v-if="field.prop.const != null" class="const-badge font-mono">const: {{ field.prop.const }}</span>
@@ -495,6 +496,29 @@ function isNullableType(type?: string): boolean {
   return (type || '').split(',').map(s => s.trim()).includes('null')
 }
 
+function isArrayWithArrayConstraints(prop: SpaProperty): boolean {
+  if (primaryType(prop.type) !== 'array') return false
+  return !!(prop.minItems != null || prop.maxItems != null || prop.uniqueItems)
+}
+
+interface ArrayItemChip {
+  label: string
+  class?: string
+}
+
+function arrayItemChips(prop: SpaProperty): ArrayItemChip[] {
+  const chips: ArrayItemChip[] = []
+  if (prop.minItems != null && prop.maxItems != null) {
+    chips.push({ label: `[ ${prop.minItems} .. ${prop.maxItems} ]` })
+  } else if (prop.minItems != null) {
+    chips.push({ label: `>= ${prop.minItems}` })
+  } else if (prop.maxItems != null) {
+    chips.push({ label: `<= ${prop.maxItems}` })
+  }
+  if (prop.uniqueItems) chips.push({ label: 'unique', class: 'chip-unique' })
+  return chips
+}
+
 function truncatedPattern(pattern: string): { text: string; truncated: boolean } {
   if (pattern.length <= MAX_PATTERN_LEN) return { text: pattern, truncated: false }
   if (expandedPatterns.value.has(pattern)) return { text: pattern, truncated: true }
@@ -644,12 +668,30 @@ async function copyJson() {
 }
 
 .field-bullet {
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: var(--border-medium);
+  color: var(--schema-lines);
+  font-family: var(--font-mono);
+  margin-right: 6px;
   flex-shrink: 0;
-  margin-left: -2px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.field-bullet::before {
+  content: '';
+  display: inline-block;
+  vertical-align: middle;
+  width: 10px;
+  height: 1px;
+  background: var(--schema-lines);
+}
+
+.field-bullet::after {
+  content: '';
+  display: inline-block;
+  vertical-align: middle;
+  width: 1px;
+  background: var(--schema-lines);
+  height: 7px;
 }
 
 .field-bullet + .field-name.dimmed {
@@ -662,19 +704,23 @@ async function copyJson() {
 
 .field-name {
   font-weight: 600;
-  font-size: var(--text-sm);
+  font-size: 13px;
+  font-family: var(--font-mono);
   min-width: 100px;
   display: flex;
   flex-direction: column;
   gap: 0;
-  line-height: 1.3;
+  line-height: 20px;
   text-align: left;
   cursor: pointer;
   padding: 0;
   border: none;
   background: none;
-  color: inherit;
-  font-family: inherit;
+  color: var(--text-primary);
+}
+
+.field-name:focus .font-mono {
+  font-weight: 700;
 }
 
 .field-name:hover .font-mono {
@@ -703,8 +749,8 @@ async function copyJson() {
 }
 
 .field-expand-icon {
-  font-size: 8px;
-  color: var(--text-muted);
+  font-size: var(--schema-arrow-size);
+  color: var(--schema-arrow-color);
   transition: transform var(--transition-fast);
   margin-left: 2px;
 }
@@ -734,14 +780,15 @@ async function copyJson() {
 .field-type-badge.type-composition { background: var(--color-teal-alpha); color: var(--color-teal); font-family: var(--font-mono); font-size: 10px; }
 
 .req-badge {
-  font-size: 10px;
+  font-size: var(--schema-labels-size);
   font-weight: 600;
   text-transform: uppercase;
-  color: var(--badge-required);
-  background: var(--badge-required-bg);
+  color: var(--schema-require-label);
+  background: rgba(179, 31, 36, 0.08);
   padding: 1px 5px;
   border-radius: 2px;
   flex-shrink: 0;
+  margin-left: 20px;
 }
 
 .field-format-badge {
@@ -752,6 +799,16 @@ async function copyJson() {
   border-radius: var(--radius-sm);
   font-family: var(--font-mono);
   font-weight: 500;
+}
+
+/* Array item constraints (Redoc ArrayItemDetails pattern) */
+.array-item-constraints {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--schema-type-name);
+  margin: 0 5px;
+  vertical-align: text-top;
+  line-height: 20px;
 }
 
 .field-title-badge {
@@ -1026,11 +1083,15 @@ async function copyJson() {
 
 .constraint-chip {
   font-size: 11px;
+  font-family: var(--font-mono);
   color: var(--color-primary);
-  background: var(--color-primary-alpha);
+  background: rgba(91, 156, 212, 0.05);
   padding: 1px 5px;
-  border-radius: var(--radius-sm);
-  border: 1px solid rgba(91, 156, 212, 0.2);
+  border-radius: 2px;
+  border: 1px solid rgba(91, 156, 212, 0.1);
+  margin: 0 2px;
+  vertical-align: middle;
+  line-height: 20px;
 }
 
 .constraint-chip.chip-pattern {
@@ -1148,7 +1209,7 @@ async function copyJson() {
   padding: var(--space-3);
   border: 1px solid var(--border-light);
   border-radius: var(--radius-md);
-  background: var(--bg-secondary);
+  background: var(--schema-nested-bg);
   position: relative;
 }
 
@@ -1160,10 +1221,9 @@ async function copyJson() {
   top: 0;
   bottom: 0;
   width: 1px;
-  background: var(--border-medium);
+  background: var(--schema-lines);
 }
 
-/* Tree line connector: horizontal branch into nested section */
 .nested-section::after {
   content: '';
   position: absolute;
@@ -1171,16 +1231,16 @@ async function copyJson() {
   top: 14px;
   width: 10px;
   height: 1px;
-  background: var(--border-medium);
+  background: var(--schema-lines);
 }
 
-/* Depth-aware alternating backgrounds */
-:root[data-theme="light"] .depth-0 { background: var(--bg-secondary); }
-:root[data-theme="light"] .depth-1 { background: var(--bg-primary); }
-:root[data-theme="light"] .depth-2 { background: var(--bg-secondary); }
-:root[data-theme="dark"] .depth-0 { background: var(--bg-secondary); }
-:root[data-theme="dark"] .depth-1 { background: var(--bg-primary); }
-:root[data-theme="dark"] .depth-2 { background: var(--bg-secondary); }
+/* Depth-aware alternating backgrounds (Redoc pattern: alternate every 2 levels) */
+:root[data-theme="light"] .depth-0,
+:root[data-theme="light"] .depth-1 { background: var(--schema-nested-bg); }
+:root[data-theme="light"] .depth-2 { background: transparent; }
+:root[data-theme="dark"] .depth-0,
+:root[data-theme="dark"] .depth-1 { background: var(--schema-nested-bg); }
+:root[data-theme="dark"] .depth-2 { background: transparent; }
 
 .nested-header {
   display: flex;
