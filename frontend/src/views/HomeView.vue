@@ -795,8 +795,8 @@ watch(() => schemaStore.selectedItemKey, (key) => {
 .required-tag {
   font-size: 11px;
   font-family: var(--font-mono);
-  background: var(--badge-required-bg);
-  color: var(--badge-required);
+  background: rgba(179, 31, 36, 0.08);
+  color: var(--schema-require-label);
   padding: 2px 6px;
   border-radius: var(--radius-sm);
   font-weight: 500;
@@ -805,10 +805,11 @@ watch(() => schemaStore.selectedItemKey, (key) => {
 .required-tag-sm {
   font-size: 10px;
   font-family: var(--font-mono);
-  background: var(--bg-secondary);
-  color: var(--text-muted);
+  background: rgba(179, 31, 36, 0.08);
+  color: var(--schema-require-label);
   padding: 1px 4px;
   border-radius: 2px;
+  font-weight: 500;
 }
 
 .schema-examples-details {
@@ -1473,6 +1474,15 @@ watch(() => schemaStore.selectedItemKey, (key) => {
   align-items: center;
   gap: var(--space-2);
   flex-wrap: wrap;
+}
+
+.def-body-meta .text-muted {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-primary);
+  background: var(--color-primary-alpha);
+  padding: 1px 6px;
+  border-radius: 10px;
 }
 
 .def-body-required {
