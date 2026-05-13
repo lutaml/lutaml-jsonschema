@@ -33,9 +33,10 @@
             :aria-label="`Include ${field.prop.name}`"
             @change="toggleField(field, ($event.target as HTMLInputElement).checked)"
           />
-          <button class="field-name" :class="{ dimmed: !field.included, deprecated: field.prop.deprecated }" :aria-label="`View details for ${field.prop.name}`" @click="openPropertyDetail(field.prop)">
+          <button class="field-name" :class="{ dimmed: !field.included, deprecated: field.prop.deprecated, expandable: !!field.resolvedDef }" :aria-label="field.resolvedDef ? `${field.expanded ? 'Collapse' : 'Expand'} ${field.prop.name}` : `View details for ${field.prop.name}`" @click="field.resolvedDef && field.included ? (field.expanded = !field.expanded) : openPropertyDetail(field.prop)">
             <span v-if="field.prop.title && field.prop.title !== field.prop.name" class="field-human-title">{{ field.prop.title }}</span>
             <span class="font-mono">{{ field.prop.name }}</span>
+            <span v-if="field.resolvedDef" class="field-expand-icon" :class="{ expanded: field.expanded }">&#9654;</span>
           </button>
           <span class="field-type-badge" :class="typeBadgeClass(field.prop)">{{ displayType(field.prop, field.resolvedDef?.title || field.resolvedDef?.name) }}</span>
           <span v-if="field.prop.title && field.prop.title !== field.prop.name" class="field-title-badge">{{ field.prop.title }}</span>
@@ -247,7 +248,7 @@
             </button>
           </div>
         </div>
-        <pre ref="jsonBlockRef" class="json-block" @click="handleJsonClick" @dblclick="selectJsonBlock" v-html="highlightedJson"></pre>
+        <pre ref="jsonBlockRef" class="json-block" @click="handleJsonClick" @keydown="handleJsonKey" @dblclick="selectJsonBlock" v-html="highlightedJson"></pre>
         <div v-if="!hasIncludedFields" class="json-empty-hint">
           <span class="text-muted">Check fields to build JSON</span>
         </div>
@@ -433,6 +434,19 @@ function collapseAllJson() {
 function handleJsonClick(event: MouseEvent) {
   const target = event.target as HTMLElement
   if (!target.classList.contains('jv-toggle')) return
+  toggleJsonNode(target)
+}
+
+function handleJsonKey(event: KeyboardEvent) {
+  const target = event.target as HTMLElement
+  if (!target.classList.contains('jv-toggle')) return
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault()
+    toggleJsonNode(target)
+  }
+}
+
+function toggleJsonNode(target: HTMLElement) {
   const parent = target.parentElement
   if (!parent) return
   const children = parent.querySelector('.jv-children')
@@ -664,6 +678,21 @@ async function copyJson() {
 .field-name.deprecated {
   text-decoration: line-through;
   opacity: 0.7;
+}
+
+.field-name.expandable .font-mono:hover {
+  color: var(--color-primary);
+}
+
+.field-expand-icon {
+  font-size: 8px;
+  color: var(--text-muted);
+  transition: transform var(--transition-fast);
+  margin-left: 2px;
+}
+
+.field-expand-icon.expanded {
+  transform: rotate(90deg);
 }
 
 .field-type-badge {
@@ -935,6 +964,38 @@ async function copyJson() {
 
 .field-desc :deep(.md-link:hover) {
   text-decoration: underline;
+}
+
+.field-desc :deep(.md-heading) {
+  font-weight: 600;
+  margin: var(--space-2) 0 var(--space-1);
+  color: var(--text-primary);
+  font-size: inherit;
+}
+
+.field-desc :deep(.md-list) {
+  margin: var(--space-1) 0;
+  padding-left: var(--space-5);
+  font-size: inherit;
+}
+
+.field-desc :deep(.md-list li) {
+  margin-bottom: 2px;
+}
+
+.field-desc :deep(.md-pre) {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2);
+  margin: var(--space-2) 0;
+  overflow-x: auto;
+  font-size: var(--text-xs);
+}
+
+.field-desc :deep(.md-pre code) {
+  font-family: var(--font-mono);
+  font-size: inherit;
 }
 
 .field-constraints {

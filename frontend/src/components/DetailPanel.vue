@@ -914,6 +914,37 @@ function navigateToProperty(name: string) {
   text-decoration: underline;
 }
 
+.panel-content :deep(.md-heading) {
+  font-weight: 600;
+  margin: var(--space-2) 0 var(--space-1);
+  color: var(--text-primary);
+}
+
+.panel-content :deep(.md-list) {
+  margin: var(--space-1) 0;
+  padding-left: var(--space-5);
+  font-size: inherit;
+}
+
+.panel-content :deep(.md-list li) {
+  margin-bottom: 2px;
+}
+
+.panel-content :deep(.md-pre) {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2);
+  margin: var(--space-2) 0;
+  overflow-x: auto;
+  font-size: var(--text-sm);
+}
+
+.panel-content :deep(.md-pre code) {
+  font-family: var(--font-mono);
+  font-size: inherit;
+}
+
 /* Dark mode overrides */
 :root[data-theme="dark"] .detail-panel {
   border-left: 1px solid rgba(255, 255, 255, 0.08);
