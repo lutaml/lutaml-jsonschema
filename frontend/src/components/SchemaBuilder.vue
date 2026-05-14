@@ -1615,9 +1615,12 @@ async function copyJson() {
 }
 
 /* Expand/collapse transition */
-.expand-enter-active,
+.expand-enter-active {
+  transition: max-height 0.3s ease-out, opacity 0.2s ease-out;
+  overflow: hidden;
+}
 .expand-leave-active {
-  transition: all var(--transition-slow);
+  transition: max-height 0.2s ease-in, opacity 0.15s ease-in;
   overflow: hidden;
 }
 .expand-enter-from,
@@ -1632,6 +1635,6 @@ async function copyJson() {
 .expand-enter-to,
 .expand-leave-from {
   opacity: 1;
-  max-height: 2000px;
+  max-height: 5000px;
 }
 </style>
