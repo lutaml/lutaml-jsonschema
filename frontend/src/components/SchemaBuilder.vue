@@ -1138,10 +1138,10 @@ async function copyJson() {
   font-size: 11px;
   font-family: var(--font-mono);
   color: var(--color-primary);
-  background: rgba(91, 156, 212, 0.05);
+  background: var(--color-primary-alpha);
   padding: 1px 5px;
   border-radius: 2px;
-  border: 1px solid rgba(91, 156, 212, 0.1);
+  border: 1px solid var(--border-light);
   margin: 0 2px;
   vertical-align: middle;
   line-height: 20px;
@@ -1194,7 +1194,7 @@ async function copyJson() {
 .constraint-chip.chip-const {
   color: var(--color-primary);
   background: var(--color-primary-alpha);
-  border-color: rgba(91, 156, 212, 0.2);
+  border-color: var(--color-primary-alpha);
 }
 
 .constraint-chip.chip-unique {
