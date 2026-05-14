@@ -191,7 +191,7 @@ export interface ConstraintChip {
   class?: string
 }
 
-function numberRange(prop: SpaProperty): string | undefined {
+export function numberRange(prop: SpaProperty): string | undefined {
   const hasMin = prop.minimum != null
   const hasMax = prop.maximum != null
   const hasExcMin = prop.exclusiveMinimum != null
@@ -218,7 +218,7 @@ function numberRange(prop: SpaProperty): string | undefined {
   return undefined
 }
 
-function stringRange(prop: SpaProperty): string | undefined {
+export function stringRange(prop: SpaProperty): string | undefined {
   if (prop.minLength != null && prop.maxLength != null) {
     if (prop.minLength === prop.maxLength) return `= ${prop.minLength} characters`
     return `[ ${prop.minLength} .. ${prop.maxLength} ] characters`
@@ -231,7 +231,7 @@ function stringRange(prop: SpaProperty): string | undefined {
   return undefined
 }
 
-function itemsRange(prop: SpaProperty): string | undefined {
+export function itemsRange(prop: SpaProperty): string | undefined {
   if (prop.minItems != null && prop.maxItems != null) {
     if (prop.minItems === prop.maxItems) return `= ${prop.minItems} items`
     return `[ ${prop.minItems} .. ${prop.maxItems} ] items`

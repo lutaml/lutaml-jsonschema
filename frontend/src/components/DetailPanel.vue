@@ -290,6 +290,7 @@ import { useSchemaStore, type SelectedItem } from '../stores/schemaStore'
 import { useUiStore } from '../stores/uiStore'
 import { renderInlineMarkdown } from '../composables/useMarkdownLite'
 import { jsonToCollapsibleHtml } from '../composables/useJsonViewer'
+import { numberRange, stringRange, itemsRange } from '../composables/useSchemaTypes'
 import type { SpaProperty } from '../types'
 
 const schemaStore = useSchemaStore()
@@ -394,44 +395,17 @@ const hasConstraints = computed(() => {
 
 const numberRangeLabel = computed(() => {
   const p = propertyItem.value
-  if (!p) return ''
-  const hasMin = p.minimum != null
-  const hasMax = p.maximum != null
-  const excMin = p.exclusiveMinimum != null
-  const excMax = p.exclusiveMaximum != null
-  if (hasMin && hasMax) {
-    return `${excMin ? '( ' : '[ '}${p.minimum} .. ${p.maximum}${excMax ? ' )' : ' ]'}`
-  }
-  if (excMin && excMax) return `( ${p.exclusiveMinimum} .. ${p.exclusiveMaximum} )`
-  if (hasMin) return `${excMin ? '> ' : '>= '}${p.minimum}`
-  if (hasMax) return `${excMax ? '< ' : '<= '}${p.maximum}`
-  if (excMin) return `> ${p.exclusiveMinimum}`
-  if (excMax) return `< ${p.exclusiveMaximum}`
-  return ''
+  return p ? numberRange(p) ?? '' : ''
 })
 
 const stringRangeLabel = computed(() => {
   const p = propertyItem.value
-  if (!p) return ''
-  if (p.minLength != null && p.maxLength != null) {
-    if (p.minLength === p.maxLength) return `= ${p.minLength} characters`
-    return `[ ${p.minLength} .. ${p.maxLength} ] characters`
-  }
-  if (p.minLength != null) return p.minLength === 1 ? 'non-empty' : `>= ${p.minLength} characters`
-  if (p.maxLength != null) return `<= ${p.maxLength} characters`
-  return ''
+  return p ? stringRange(p) ?? '' : ''
 })
 
 const itemsRangeLabel = computed(() => {
   const p = propertyItem.value
-  if (!p) return ''
-  if (p.minItems != null && p.maxItems != null) {
-    if (p.minItems === p.maxItems) return `= ${p.minItems} items`
-    return `[ ${p.minItems} .. ${p.maxItems} ] items`
-  }
-  if (p.minItems != null) return p.minItems === 1 ? 'non-empty' : `>= ${p.minItems} items`
-  if (p.maxItems != null) return `<= ${p.maxItems} items`
-  return ''
+  return p ? itemsRange(p) ?? '' : ''
 })
 
 type TabId = 'overview' | 'properties' | 'examples'
