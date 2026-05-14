@@ -2,13 +2,30 @@ import { ref, computed, watch } from 'vue'
 import { useSchemaStore } from '../stores/schemaStore'
 import { useUiStore } from '../stores/uiStore'
 
-interface SearchResult {
+export interface SearchResult {
   id: string
   type: 'schema' | 'property' | 'definition'
   name: string
   rawName: string
   schemaName: string
   description?: string
+  score: number
+}
+
+export function scoreResult(entry: SearchResult, q: string): number {
+  const nameLower = entry.name.toLowerCase()
+  const rawLower = entry.rawName.toLowerCase()
+  const schemaLower = entry.schemaName.toLowerCase()
+  const descLower = (entry.description || '').toLowerCase()
+
+  if (rawLower === q || nameLower === q) return 100
+  if (rawLower.startsWith(q) || nameLower.startsWith(q)) return 80
+  if (schemaLower === q) return 70
+  if (rawLower.includes(q) || nameLower.includes(q)) return 60
+  if (schemaLower.startsWith(q)) return 50
+  if (schemaLower.includes(q)) return 40
+  if (descLower.includes(q)) return 20
+  return 0
 }
 
 export function useSearch() {
@@ -28,6 +45,7 @@ export function useSearch() {
       rawName: entry.name,
       schemaName: entry.schemaName,
       description: entry.description,
+      score: 0,
     }))
   }
 
@@ -41,11 +59,11 @@ export function useSearch() {
     const q = query.value.toLowerCase().trim()
     const entries = buildSearchEntries()
 
-    results.value = entries.filter(e =>
-      e.name.toLowerCase().includes(q) ||
-      e.schemaName.toLowerCase().includes(q) ||
-      (e.description && e.description.toLowerCase().includes(q))
-    ).slice(0, 50)
+    results.value = entries
+      .map(e => ({ ...e, score: scoreResult(e, q) }))
+      .filter(e => e.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 50)
 
     isSearching.value = false
   }
