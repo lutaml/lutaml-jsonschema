@@ -59,6 +59,30 @@ describe('displayType', () => {
   it('shows plain type when no format', () => {
     expect(displayType(prop({ type: 'integer' }))).toBe('integer')
   })
+
+  it('shows nullable suffix for union with null', () => {
+    expect(displayType(prop({ type: 'string,null' }))).toBe('string | null')
+  })
+
+  it('shows composition type as-is', () => {
+    expect(displayType(prop({ type: 'anyOf:string' }))).toBe('anyOf:string')
+  })
+
+  it('shows array with range constraints', () => {
+    expect(displayType(prop({ type: 'array', itemsType: 'integer', minItems: 1, maxItems: 10 }))).toBe('array of integer [ 1 .. 10 ]')
+  })
+
+  it('shows array with only minItems', () => {
+    expect(displayType(prop({ type: 'array', itemsType: 'string', minItems: 1 }))).toBe('array of string >= 1')
+  })
+
+  it('shows array with only maxItems', () => {
+    expect(displayType(prop({ type: 'array', itemsType: 'string', maxItems: 5 }))).toBe('array of string <= 5')
+  })
+
+  it('shows array without itemsType', () => {
+    expect(displayType(prop({ type: 'array' }))).toBe('array')
+  })
 })
 
 describe('formatInputType', () => {
