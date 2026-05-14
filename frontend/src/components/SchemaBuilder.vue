@@ -837,7 +837,7 @@ async function copyJson() {
   font-weight: 600;
   text-transform: uppercase;
   color: var(--schema-require-label);
-  background: rgba(179, 31, 36, 0.08);
+  background: var(--schema-require-bg);
   padding: 1px 5px;
   border-radius: 2px;
   flex-shrink: 0;

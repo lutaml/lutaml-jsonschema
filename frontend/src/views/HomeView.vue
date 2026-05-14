@@ -834,7 +834,7 @@ watch(() => schemaStore.selectedItemKey, (key) => {
 
 .meta-count-req {
   color: var(--schema-require-label);
-  background: rgba(179, 31, 36, 0.08);
+  background: var(--schema-require-bg);
   font-weight: 500;
   border-radius: 12px;
 }
@@ -863,7 +863,7 @@ watch(() => schemaStore.selectedItemKey, (key) => {
 .required-tag {
   font-size: 11px;
   font-family: var(--font-mono);
-  background: rgba(179, 31, 36, 0.08);
+  background: var(--schema-require-bg);
   color: var(--schema-require-label);
   padding: 2px 6px;
   border-radius: var(--radius-sm);
@@ -873,7 +873,7 @@ watch(() => schemaStore.selectedItemKey, (key) => {
 .required-tag-sm {
   font-size: 10px;
   font-family: var(--font-mono);
-  background: rgba(179, 31, 36, 0.08);
+  background: var(--schema-require-bg);
   color: var(--schema-require-label);
   padding: 1px 4px;
   border-radius: 2px;
@@ -1109,7 +1109,7 @@ watch(() => schemaStore.selectedItemKey, (key) => {
   font-size: 9px;
   font-family: var(--font-mono);
   color: var(--schema-require-label);
-  background: rgba(179, 31, 36, 0.08);
+  background: var(--schema-require-bg);
   padding: 1px 4px;
   border-radius: 2px;
 }
@@ -1126,7 +1126,7 @@ watch(() => schemaStore.selectedItemKey, (key) => {
 
 .def-header-pill-req {
   color: var(--schema-require-label);
-  background: rgba(179, 31, 36, 0.08);
+  background: var(--schema-require-bg);
 }
 
 .def-type-badge {
@@ -1691,7 +1691,7 @@ watch(() => schemaStore.selectedItemKey, (key) => {
 
 .stat-required {
   color: var(--schema-require-label);
-  background: rgba(179, 31, 36, 0.08);
+  background: var(--schema-require-bg);
 }
 
 .empty-state {
