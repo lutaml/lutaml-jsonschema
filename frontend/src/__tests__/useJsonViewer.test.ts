@@ -112,4 +112,37 @@ describe('jsonToCollapsibleHtml', () => {
     expect(html).toContain('30')
     expect(html).toContain('25')
   })
+
+  it('truncates large object preview to 5 keys', () => {
+    const data = { obj: { a: 1, b: 2, c: 3, d: 4, e: 5, f: 6, g: 7 } }
+    const html = jsonToCollapsibleHtml(data, 0)
+    const match = html.match(/jv-ellipsis[^>]*>([^<]*)/)
+    expect(match).toBeTruthy()
+    const preview = match![1]
+    expect(preview).toContain('a')
+    expect(preview).toContain('+2')
+  })
+
+  it('shows all keys when object has ≤5 keys', () => {
+    const data = { obj: { a: 1, b: 2, c: 3 } }
+    const html = jsonToCollapsibleHtml(data, 0)
+    const match = html.match(/jv-ellipsis[^>]*>([^<]*)/)
+    expect(match).toBeTruthy()
+    expect(match![1]).toContain('a, b, c')
+  })
+
+  it('includes commas between array items', () => {
+    const html = jsonToCollapsibleHtml([1, 2, 3], 3)
+    expect(html).toContain('jv-punct')
+  })
+
+  it('renders expand toggle button with aria-label', () => {
+    const html = jsonToCollapsibleHtml({ a: 1 }, 0)
+    expect(html).toContain('aria-label="expand"')
+  })
+
+  it('renders collapse toggle button for shallow depth', () => {
+    const html = jsonToCollapsibleHtml({ a: 1 }, 3)
+    expect(html).toContain('aria-label="collapse"')
+  })
 })
