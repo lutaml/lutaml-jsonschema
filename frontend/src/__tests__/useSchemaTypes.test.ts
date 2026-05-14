@@ -9,6 +9,7 @@ import {
   arrayDefaultValue,
   parseArrayItem,
   isObjectProperty,
+  isNullableType,
   hasConstraints,
   parsePropertyValue,
   humanizeConstraints,
@@ -176,6 +177,24 @@ describe('isObjectProperty', () => {
 
   it('returns false for string', () => {
     expect(isObjectProperty(prop({ type: 'string' }))).toBe(false)
+  })
+})
+
+describe('isNullableType', () => {
+  it('returns true for type with null', () => {
+    expect(isNullableType('string,null')).toBe(true)
+  })
+
+  it('returns true for type that is just null', () => {
+    expect(isNullableType('null')).toBe(true)
+  })
+
+  it('returns false for non-null type', () => {
+    expect(isNullableType('string')).toBe(false)
+  })
+
+  it('returns false for undefined', () => {
+    expect(isNullableType(undefined)).toBe(false)
   })
 })
 

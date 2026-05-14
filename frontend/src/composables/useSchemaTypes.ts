@@ -10,6 +10,11 @@ export function primaryType(type?: string): string {
   return t || 'any'
 }
 
+/** Whether the type string includes `null` (e.g. "string,null"). */
+export function isNullableType(type?: string): boolean {
+  return (type || '').split(',').map(s => s.trim()).includes('null')
+}
+
 /** Whether the type string is a composition indicator from the backend. */
 export function isCompositionType(type?: string): boolean {
   const t = type || ''
@@ -23,8 +28,7 @@ export function isCompositionType(type?: string): boolean {
  */
 export function displayType(prop: SpaProperty, resolvedTitle?: string): string {
   const t = primaryType(prop.type)
-  const isNullable = (prop.type || '').split(',').map(s => s.trim()).includes('null')
-  const suffix = isNullable ? ' | null' : ''
+  const suffix = isNullableType(prop.type) ? ' | null' : ''
   if (isCompositionType(t)) return t + suffix
   if (t === 'array') {
     let label = prop.itemsType ? `array of ${prop.itemsType}` : 'array'
