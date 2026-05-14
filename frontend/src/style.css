@@ -319,3 +319,56 @@ button { font-family: inherit; font-size: inherit; cursor: pointer; border: none
   padding: 2px 6px;
   border-radius: 8px;
 }
+
+/* Shared collapsible JSON viewer styles (used by source viewer, examples, builder) */
+.jv-viewer ul { list-style: none; padding-left: var(--space-4); margin: 0; }
+.jv-viewer li { margin: 0; }
+.jv-viewer .jv-toggle {
+  background: none; border: 1px solid var(--border-medium); border-radius: 2px;
+  cursor: pointer; width: 14px; height: 14px; font-size: 9px; line-height: 1;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--text-muted); padding: 0; margin-right: 4px; vertical-align: middle;
+  transition: background var(--transition-fast);
+}
+.jv-viewer .jv-toggle:hover { background: var(--bg-hover); }
+.jv-viewer .jv-toggle[aria-label="expand"]::after { content: '+'; }
+.jv-viewer .jv-toggle[aria-label="collapse"]::after { content: '−'; }
+.jv-viewer .jv-ellipsis { display: none; color: var(--text-muted); font-size: var(--text-xs); font-style: italic; margin-left: 4px; }
+.jv-viewer .jv-children.jv-collapsed { display: none; }
+.jv-viewer .jv-children.jv-collapsed + .jv-ellipsis { display: inline; }
+.jv-viewer .jv-key { color: var(--color-primary-dark); }
+.jv-viewer .jv-punct { color: var(--text-muted); }
+.jv-viewer .jv-string { color: var(--color-green); }
+.jv-viewer .jv-number { color: var(--color-orange); }
+.jv-viewer .jv-boolean { color: var(--color-accent); }
+.jv-viewer .jv-null { color: var(--text-muted); font-style: italic; }
+.jv-viewer .jv-link { color: var(--color-green); text-decoration: underline; text-decoration-style: dotted; }
+.jv-viewer .jv-link:hover { text-decoration-style: solid; }
+.jv-viewer .jv-row:hover { background: var(--bg-hover); border-radius: 2px; }
+
+:root[data-theme="dark"] .jv-viewer .jv-key { color: var(--color-primary-light); }
+:root[data-theme="dark"] .jv-viewer .jv-string { color: var(--color-teal); }
+:root[data-theme="dark"] .jv-viewer .jv-number { color: var(--color-accent-light); }
+:root[data-theme="dark"] .jv-viewer .jv-boolean { color: var(--color-primary-light); }
+:root[data-theme="dark"] .jv-viewer .jv-null { color: var(--text-muted); }
+:root[data-theme="dark"] .jv-viewer .jv-toggle { border-color: rgba(255, 255, 255, 0.2); }
+:root[data-theme="dark"] .jv-viewer .jv-punct { color: var(--panel-dark-muted); }
+:root[data-theme="dark"] .jv-viewer .jv-row:hover { background: rgba(255, 255, 255, 0.06); }
+
+/* Shared markdown content styles (used by schema desc, def card desc, def body desc) */
+.md-content .md-code {
+  font-family: var(--font-mono); font-size: inherit;
+  background: var(--bg-secondary); padding: 1px 4px; border-radius: 2px;
+  border: 1px solid var(--border-light);
+}
+.md-content .md-link { color: var(--color-primary); text-decoration: none; }
+.md-content .md-link:hover { text-decoration: underline; }
+.md-content .md-heading { font-weight: 600; margin: var(--space-2) 0 var(--space-1); color: var(--text-primary); font-size: inherit; }
+.md-content .md-list { margin: var(--space-1) 0; padding-left: var(--space-5); font-size: inherit; }
+.md-content .md-list li { margin-bottom: 2px; }
+.md-content .md-pre {
+  background: var(--bg-secondary); border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm); padding: var(--space-2); margin: var(--space-2) 0;
+  overflow-x: auto; font-size: var(--text-xs);
+}
+.md-content .md-pre code { font-family: var(--font-mono); font-size: inherit; }

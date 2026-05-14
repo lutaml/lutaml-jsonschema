@@ -39,7 +39,7 @@
           </div>
           <span v-if="schemaStore.selectedSchema.title && schemaStore.selectedSchema.title !== schemaStore.selectedSchema.name" class="schema-name-hint font-mono text-muted">{{ schemaStore.selectedSchema.name }}</span>
           <SeeMore v-if="schemaStore.selectedSchema.description" max-height="4.8em">
-            <p class="schema-desc text-secondary" v-html="renderInlineMarkdown(schemaStore.selectedSchema.description)"></p>
+            <p class="schema-desc text-secondary md-content" v-html="renderInlineMarkdown(schemaStore.selectedSchema.description)"></p>
           </SeeMore>
           <div class="schema-meta-row">
             <span class="badge badge-type">{{ schemaStore.selectedSchema.type || 'any' }}</span>
@@ -70,7 +70,7 @@
           </div>
           <details v-if="schemaStore.selectedSchema.examples?.length" class="schema-examples-details">
             <summary class="examples-summary text-muted">Examples ({{ schemaStore.selectedSchema.examples.length }})</summary>
-            <pre class="examples-pre jv-examples-pre" v-html="renderExamplesJson(schemaStore.selectedSchema.examples)"></pre>
+            <pre class="examples-pre jv-viewer" v-html="renderExamplesJson(schemaStore.selectedSchema.examples)"></pre>
           </details>
         </div>
       </div>
@@ -123,13 +123,13 @@
               <span v-if="def.hasOneOf" class="badge badge-composition">oneOf</span>
             </div>
             <div class="def-card-info">
-              <p v-if="def.description" class="def-card-desc text-secondary" :class="{ 'desc-truncated': !expandedDefs.has(def.name) }" v-html="renderInlineMarkdown(def.description)"></p>
+              <p v-if="def.description" class="def-card-desc text-secondary md-content" :class="{ 'desc-truncated': !expandedDefs.has(def.name) }" v-html="renderInlineMarkdown(def.description)"></p>
               <div v-if="def.required?.length" class="def-card-required">
                 <span v-for="r in def.required" :key="r" class="required-tag-sm">{{ r }}</span>
               </div>
               <details v-if="def.examples?.length" class="def-card-examples">
                 <summary class="text-muted">Examples</summary>
-                <pre class="def-examples-pre jv-examples-pre" v-html="renderExamplesJson(def.examples)"></pre>
+                <pre class="def-examples-pre jv-viewer" v-html="renderExamplesJson(def.examples)"></pre>
               </details>
               <div v-if="!expandedDefs.has(def.name) && def.properties.length" class="def-mini-table">
                 <div v-for="prop in miniTableProps(def.properties)" :key="prop.name" class="def-mini-row def-mini-row-clickable" :title="prop.description ? truncateMiniDesc(prop.description) : undefined" @click.stop="openPropertyDetail(prop.name)">
@@ -173,11 +173,11 @@
                 </div>
               </div>
               <SeeMore v-if="def.description" max-height="4.8em">
-                <div class="def-body-desc text-secondary" v-html="renderInlineMarkdown(def.description)"></div>
+                <div class="def-body-desc text-secondary md-content" v-html="renderInlineMarkdown(def.description)"></div>
               </SeeMore>
               <details v-if="def.examples?.length" class="def-card-examples def-body-examples">
                 <summary class="text-muted">Examples ({{ def.examples.length }})</summary>
-                <pre class="def-examples-pre jv-examples-pre" v-html="renderExamplesJson(def.examples)"></pre>
+                <pre class="def-examples-pre jv-viewer" v-html="renderExamplesJson(def.examples)"></pre>
               </details>
               <SchemaBuilder
                 :properties="def.properties"
@@ -208,7 +208,7 @@
             </div>
           </div>
           <div class="source-code-wrapper">
-            <pre ref="sourcePreRef" class="source-pre" @click="handleSourceClick" @keydown="handleSourceKey" @dblclick="selectSourceBlock"><code v-html="highlightedSource"></code></pre>
+            <pre ref="sourcePreRef" class="source-pre jv-viewer" @click="handleSourceClick" @keydown="handleSourceKey" @dblclick="selectSourceBlock"><code v-html="highlightedSource"></code></pre>
           </div>
         </div>
         <div v-else class="source-empty">
@@ -281,7 +281,7 @@
           <div class="schema-card-content">
             <h3>{{ schema.title || schema.name }}</h3>
             <span v-if="schema.title && schema.title !== schema.name" class="schema-card-name font-mono text-muted">{{ schema.name }}</span>
-            <p v-if="schema.description" class="schema-card-desc text-secondary" v-html="renderInlineMarkdown(schema.description)"></p>
+            <p v-if="schema.description" class="schema-card-desc text-secondary md-content" v-html="renderInlineMarkdown(schema.description)"></p>
             <div class="schema-card-meta">
               <span class="badge badge-type-sm">{{ schema.type || 'any' }}</span>
               <span v-if="schema.hasAllOf" class="badge badge-comp-sm">allOf</span>
@@ -913,100 +913,6 @@ watch(() => schemaStore.selectedItemKey, (key) => {
   color: var(--text-primary);
 }
 
-/* Collapsible JSON viewer in examples blocks */
-.jv-examples-pre :deep(ul) {
-  list-style: none;
-  padding-left: var(--space-4);
-  margin: 0;
-}
-
-.jv-examples-pre :deep(li) {
-  margin: 0;
-}
-
-.jv-examples-pre :deep(.jv-toggle) {
-  background: none;
-  border: 1px solid var(--border-medium);
-  border-radius: 2px;
-  cursor: pointer;
-  width: 14px;
-  height: 14px;
-  font-size: 9px;
-  line-height: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-muted);
-  padding: 0;
-  margin-right: 4px;
-  vertical-align: middle;
-}
-
-.jv-examples-pre :deep(.jv-toggle:hover) {
-  background: var(--bg-hover);
-}
-
-.jv-examples-pre :deep(.jv-toggle[aria-label="expand"])::after { content: '+'; }
-.jv-examples-pre :deep(.jv-toggle[aria-label="collapse"])::after { content: '−'; }
-
-.jv-examples-pre :deep(.jv-ellipsis) {
-  display: none;
-  color: var(--text-muted);
-  font-size: var(--text-xs);
-  font-style: italic;
-  margin-left: 4px;
-}
-
-.jv-examples-pre :deep(.jv-children.jv-collapsed) {
-  display: none;
-}
-
-.jv-examples-pre :deep(.jv-children.jv-collapsed + .jv-ellipsis) {
-  display: inline;
-}
-
-.jv-examples-pre :deep(.jv-key) {
-  color: var(--color-primary);
-}
-
-.jv-examples-pre :deep(.jv-punct) {
-  color: var(--text-muted);
-}
-
-.jv-examples-pre :deep(.jv-string) {
-  color: var(--color-green);
-}
-
-.jv-examples-pre :deep(.jv-number) {
-  color: var(--color-orange);
-}
-
-.jv-examples-pre :deep(.jv-boolean) {
-  color: var(--color-primary);
-}
-
-.jv-examples-pre :deep(.jv-null) {
-  color: var(--text-muted);
-  font-style: italic;
-}
-
-.jv-examples-pre :deep(.jv-link) {
-  color: var(--color-primary);
-  text-decoration: underline;
-}
-
-.jv-examples-pre :deep(.jv-row:hover) {
-  background: var(--bg-hover);
-  border-radius: 2px;
-}
-
-:root[data-theme="dark"] .jv-examples-pre :deep(.jv-key) { color: var(--color-primary-light); }
-:root[data-theme="dark"] .jv-examples-pre :deep(.jv-string) { color: var(--color-teal); }
-:root[data-theme="dark"] .jv-examples-pre :deep(.jv-number) { color: var(--color-accent-light); }
-:root[data-theme="dark"] .jv-examples-pre :deep(.jv-boolean) { color: var(--color-primary-light); }
-:root[data-theme="dark"] .jv-examples-pre :deep(.jv-toggle) { border-color: rgba(255, 255, 255, 0.2); }
-:root[data-theme="dark"] .jv-examples-pre :deep(.jv-row:hover) { background: rgba(255, 255, 255, 0.06); }
-
 .schema-section {
   margin-bottom: var(--space-6);
 }
@@ -1137,110 +1043,6 @@ watch(() => schemaStore.selectedItemKey, (key) => {
   text-decoration-style: solid;
 }
 
-/* Collapsible JSON in source viewer */
-.source-pre :deep(ul) {
-  list-style: none;
-  padding-left: var(--space-4);
-  margin: 0;
-}
-
-.source-pre :deep(li) {
-  margin: 0;
-}
-
-.source-pre :deep(.jv-toggle) {
-  background: none;
-  border: 1px solid var(--border-medium);
-  border-radius: 2px;
-  cursor: pointer;
-  width: 14px;
-  height: 14px;
-  font-size: 9px;
-  line-height: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-muted);
-  padding: 0;
-  margin-right: 4px;
-  vertical-align: middle;
-  transition: background var(--transition-fast);
-}
-
-.source-pre :deep(.jv-toggle:hover) {
-  background: var(--bg-hover);
-}
-
-.source-pre :deep(.jv-toggle[aria-label="expand"])::after { content: '+'; }
-.source-pre :deep(.jv-toggle[aria-label="collapse"])::after { content: '−'; }
-
-.source-pre :deep(.jv-ellipsis) {
-  display: none;
-  color: var(--text-muted);
-  font-size: var(--text-xs);
-  font-style: italic;
-  margin-left: 4px;
-}
-
-.source-pre :deep(.jv-children.jv-collapsed) {
-  display: none;
-}
-
-.source-pre :deep(.jv-children.jv-collapsed + .jv-ellipsis) {
-  display: inline;
-}
-
-.source-pre :deep(.jv-key) {
-  color: var(--color-primary-dark);
-  font-weight: 500;
-}
-
-.source-pre :deep(.jv-punct) {
-  color: var(--text-muted);
-}
-
-.source-pre :deep(.jv-string) {
-  color: var(--color-green);
-}
-
-.source-pre :deep(.jv-number) {
-  color: var(--color-orange);
-}
-
-.source-pre :deep(.jv-boolean) {
-  color: var(--color-accent);
-}
-
-.source-pre :deep(.jv-null) {
-  color: var(--text-muted);
-  font-style: italic;
-}
-
-.source-pre :deep(.jv-link) {
-  color: var(--color-green);
-  text-decoration: underline;
-}
-
-.source-pre :deep(.jv-row:hover) {
-  background: var(--bg-hover);
-  border-radius: 2px;
-}
-
-:root[data-theme="dark"] .source-pre :deep(.json-key) { color: var(--color-primary-light); }
-:root[data-theme="dark"] .source-pre :deep(.json-string) { color: var(--color-teal); }
-:root[data-theme="dark"] .source-pre :deep(.json-number) { color: var(--color-accent-light); }
-:root[data-theme="dark"] .source-pre :deep(.json-boolean) { color: var(--color-primary-light); }
-:root[data-theme="dark"] .source-pre :deep(.json-null) { color: var(--text-muted); }
-
-:root[data-theme="dark"] .source-pre :deep(.jv-key) { color: var(--color-primary-light); }
-:root[data-theme="dark"] .source-pre :deep(.jv-string) { color: var(--color-teal); }
-:root[data-theme="dark"] .source-pre :deep(.jv-number) { color: var(--color-accent-light); }
-:root[data-theme="dark"] .source-pre :deep(.jv-boolean) { color: var(--color-primary-light); }
-:root[data-theme="dark"] .source-pre :deep(.jv-null) { color: var(--text-muted); }
-:root[data-theme="dark"] .source-pre :deep(.jv-toggle) { border-color: rgba(255, 255, 255, 0.2); }
-:root[data-theme="dark"] .source-pre :deep(.jv-punct) { color: var(--panel-dark-muted); }
-:root[data-theme="dark"] .source-pre :deep(.jv-row:hover) { background: rgba(255, 255, 255, 0.06); }
-
 :root[data-theme="dark"] .source-code-wrapper {
   background: var(--panel-dark-bg);
 }
@@ -1348,72 +1150,6 @@ watch(() => schemaStore.selectedItemKey, (key) => {
   overflow: hidden;
 }
 
-.def-card-desc :deep(.md-code),
-.def-body-desc :deep(.md-code),
-.schema-desc :deep(.md-code) {
-  font-family: var(--font-mono);
-  font-size: inherit;
-  background: var(--bg-secondary);
-  padding: 1px 4px;
-  border-radius: 2px;
-  border: 1px solid var(--border-light);
-}
-
-.def-card-desc :deep(.md-link),
-.def-body-desc :deep(.md-link),
-.schema-desc :deep(.md-link) {
-  color: var(--color-primary);
-  text-decoration: none;
-}
-
-.def-card-desc :deep(.md-link:hover),
-.def-body-desc :deep(.md-link:hover),
-.schema-desc :deep(.md-link:hover) {
-  text-decoration: underline;
-}
-
-.def-card-desc :deep(.md-heading),
-.def-body-desc :deep(.md-heading),
-.schema-desc :deep(.md-heading) {
-  font-weight: 600;
-  margin: var(--space-2) 0 var(--space-1);
-  color: var(--text-primary);
-  font-size: inherit;
-}
-
-.def-card-desc :deep(.md-list),
-.def-body-desc :deep(.md-list),
-.schema-desc :deep(.md-list) {
-  margin: var(--space-1) 0;
-  padding-left: var(--space-5);
-  font-size: inherit;
-}
-
-.def-card-desc :deep(.md-list li),
-.def-body-desc :deep(.md-list li),
-.schema-desc :deep(.md-list li) {
-  margin-bottom: 2px;
-}
-
-.def-card-desc :deep(.md-pre),
-.def-body-desc :deep(.md-pre),
-.schema-desc :deep(.md-pre) {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-sm);
-  padding: var(--space-2);
-  margin: var(--space-2) 0;
-  overflow-x: auto;
-  font-size: var(--text-xs);
-}
-
-.def-card-desc :deep(.md-pre code),
-.def-body-desc :deep(.md-pre code),
-.schema-desc :deep(.md-pre code) {
-  font-family: var(--font-mono);
-  font-size: inherit;
-}
-
 .def-card-info {
   padding: 0 var(--space-4) var(--space-3);
   margin-top: calc(var(--space-1) * -1);
@@ -1518,8 +1254,8 @@ watch(() => schemaStore.selectedItemKey, (key) => {
 }
 
 .def-mini-dep {
-  color: #c27a00;
-  background: rgba(255, 165, 0, 0.12);
+  color: var(--color-orange);
+  background: var(--color-orange-alpha);
   padding: 1px 4px;
   border-radius: 2px;
   font-size: 9px;
@@ -1927,30 +1663,6 @@ watch(() => schemaStore.selectedItemKey, (key) => {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-}
-
-.schema-card-desc :deep(.md-code) {
-  font-family: var(--font-mono);
-  font-size: inherit;
-  background: var(--bg-secondary);
-  padding: 1px 4px;
-  border-radius: 2px;
-  border: 1px solid var(--border-light);
-}
-
-.schema-card-desc :deep(.md-link) {
-  color: var(--color-primary);
-  text-decoration: none;
-}
-
-.schema-card-desc :deep(.md-link:hover) {
-  text-decoration: underline;
-}
-
-.schema-card-desc :deep(.md-list) {
-  margin: var(--space-1) 0;
-  padding-left: var(--space-5);
-  font-size: inherit;
 }
 
 .schema-card-desc :deep(.md-pre) {
