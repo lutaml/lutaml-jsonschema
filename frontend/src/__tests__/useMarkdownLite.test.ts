@@ -38,4 +38,50 @@ describe('renderInlineMarkdown', () => {
     expect(result).toContain('<code class="md-code">method</code>')
     expect(result).toContain('<strong>special</strong>')
   })
+
+  it('renders fenced code blocks', () => {
+    const result = renderInlineMarkdown('```js\nconst x = 1\n```')
+    expect(result).toContain('<pre class="md-pre">')
+    expect(result).toContain('<code>const x = 1</code>')
+  })
+
+  it('renders bullet lists', () => {
+    const result = renderInlineMarkdown('- item1\n- item2')
+    expect(result).toContain('<ul class="md-list">')
+    expect(result).toContain('<li>item1</li>')
+    expect(result).toContain('<li>item2</li>')
+    expect(result).toContain('</ul>')
+  })
+
+  it('renders numbered lists', () => {
+    const result = renderInlineMarkdown('1. first\n2. second')
+    expect(result).toContain('<ol class="md-list">')
+    expect(result).toContain('<li>first</li>')
+    expect(result).toContain('<li>second</li>')
+    expect(result).toContain('</ol>')
+  })
+
+  it('renders headings', () => {
+    const result = renderInlineMarkdown('### Title')
+    expect(result).toContain('<h5 class="md-heading">Title</h5>')
+  })
+
+  it('converts line breaks to br', () => {
+    const result = renderInlineMarkdown('line1\nline2')
+    expect(result).toContain('line1<br>line2')
+  })
+
+  it('renders bold with __', () => {
+    expect(renderInlineMarkdown('__bold__')).toBe('<strong>bold</strong>')
+  })
+
+  it('renders italic with _', () => {
+    expect(renderInlineMarkdown('_italic_')).toBe('<em>italic</em>')
+  })
+
+  it('renders link target="_blank"', () => {
+    const result = renderInlineMarkdown('[docs](https://example.com)')
+    expect(result).toContain('target="_blank"')
+    expect(result).toContain('rel="noopener"')
+  })
 })
