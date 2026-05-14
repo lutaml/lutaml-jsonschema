@@ -14,6 +14,9 @@ import {
   parsePropertyValue,
   humanizeConstraints,
   validateFieldValue,
+  numberRange,
+  stringRange,
+  itemsRange,
 } from '../composables/useSchemaTypes'
 import type { SpaProperty } from '../types'
 
@@ -360,6 +363,84 @@ describe('humanizeConstraints', () => {
   it('returns contentMediaType and contentEncoding', () => {
     const chips = humanizeConstraints(prop({ contentMediaType: 'text/html', contentEncoding: 'base64' }))
     expect(chips.map(c => c.label)).toEqual(['content-type: text/html', 'encoding: base64'])
+  })
+})
+
+describe('numberRange', () => {
+  it('returns undefined when no range constraints', () => {
+    expect(numberRange(prop({ type: 'integer' }))).toBeUndefined()
+  })
+
+  it('returns inclusive range', () => {
+    expect(numberRange(prop({ type: 'integer', minimum: 0, maximum: 100 }))).toBe('[ 0 .. 100 ]')
+  })
+
+  it('returns exclusive range', () => {
+    expect(numberRange(prop({ type: 'number', exclusiveMinimum: 0, exclusiveMaximum: 100 }))).toBe('( 0 .. 100 )')
+  })
+
+  it('returns mixed inclusive-exclusive', () => {
+    expect(numberRange(prop({ type: 'integer', minimum: 0, maximum: 100, exclusiveMinimum: 0 }))).toBe('( 0 .. 100 ]')
+  })
+
+  it('returns only minimum', () => {
+    expect(numberRange(prop({ type: 'integer', minimum: 5 }))).toBe('>= 5')
+  })
+
+  it('returns exclusive minimum only', () => {
+    expect(numberRange(prop({ type: 'integer', exclusiveMinimum: 5 }))).toBe('> 5')
+  })
+
+  it('returns only maximum', () => {
+    expect(numberRange(prop({ type: 'integer', maximum: 100 }))).toBe('<= 100')
+  })
+
+  it('returns exclusive maximum only', () => {
+    expect(numberRange(prop({ type: 'integer', exclusiveMaximum: 100 }))).toBe('< 100')
+  })
+})
+
+describe('stringRange', () => {
+  it('returns undefined when no string constraints', () => {
+    expect(stringRange(prop({ type: 'string' }))).toBeUndefined()
+  })
+
+  it('returns range with characters suffix', () => {
+    expect(stringRange(prop({ type: 'string', minLength: 1, maxLength: 100 }))).toBe('[ 1 .. 100 ] characters')
+  })
+
+  it('returns equal when min equals max', () => {
+    expect(stringRange(prop({ type: 'string', minLength: 10, maxLength: 10 }))).toBe('= 10 characters')
+  })
+
+  it('returns non-empty for minLength 1', () => {
+    expect(stringRange(prop({ type: 'string', minLength: 1 }))).toBe('non-empty')
+  })
+
+  it('returns only maxLength', () => {
+    expect(stringRange(prop({ type: 'string', maxLength: 50 }))).toBe('<= 50 characters')
+  })
+})
+
+describe('itemsRange', () => {
+  it('returns undefined when no items constraints', () => {
+    expect(itemsRange(prop({ type: 'array' }))).toBeUndefined()
+  })
+
+  it('returns range with items suffix', () => {
+    expect(itemsRange(prop({ type: 'array', minItems: 1, maxItems: 10 }))).toBe('[ 1 .. 10 ] items')
+  })
+
+  it('returns equal when min equals max', () => {
+    expect(itemsRange(prop({ type: 'array', minItems: 3, maxItems: 3 }))).toBe('= 3 items')
+  })
+
+  it('returns non-empty for minItems 1', () => {
+    expect(itemsRange(prop({ type: 'array', minItems: 1 }))).toBe('non-empty')
+  })
+
+  it('returns only maxItems', () => {
+    expect(itemsRange(prop({ type: 'array', maxItems: 5 }))).toBe('<= 5 items')
   })
 })
 
