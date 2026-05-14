@@ -285,6 +285,7 @@ import {
   arrayDefaultValue,
   isObjectProperty,
   isCompositionType,
+  isNullableType,
   hasConstraints,
   humanizeConstraints,
   validateFieldValue,
@@ -519,10 +520,6 @@ function typeBadgeClass(prop: SpaProperty): string {
     case 'null': return 'type-null'
     default: return ''
   }
-}
-
-function isNullableType(type?: string): boolean {
-  return (type || '').split(',').map(s => s.trim()).includes('null')
 }
 
 function isArrayWithArrayConstraints(prop: SpaProperty): boolean {
