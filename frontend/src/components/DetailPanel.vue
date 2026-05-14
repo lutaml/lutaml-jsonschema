@@ -817,10 +817,10 @@ function handleExampleKey(event: KeyboardEvent) {
 .prop-example-chip {
   font-size: 10px;
   font-family: var(--font-mono);
-  background: rgba(28, 25, 23, 0.05);
+  background: var(--bg-hover);
   padding: 1px 5px;
   border-radius: 2px;
-  border: 1px solid rgba(28, 25, 23, 0.1);
+  border: 1px solid var(--border-light);
   color: var(--text-secondary);
   word-break: break-word;
 }
@@ -935,8 +935,8 @@ function handleExampleKey(event: KeyboardEvent) {
 .enum-value-chip {
   font-size: 11px;
   font-family: var(--font-mono);
-  background: rgba(28, 25, 23, 0.05);
-  border: 1px solid rgba(28, 25, 23, 0.1);
+  background: var(--bg-hover);
+  border: 1px solid var(--border-light);
   padding: 1px 5px;
   border-radius: 2px;
   color: var(--text-primary);
