@@ -196,24 +196,22 @@ function numberRange(prop: SpaProperty): string | undefined {
   const hasMax = prop.maximum != null
   const hasExcMin = prop.exclusiveMinimum != null
   const hasExcMax = prop.exclusiveMaximum != null
-  const excMin = prop.exclusiveMinimum != null
-  const excMax = prop.exclusiveMaximum != null
 
   if (hasMin && hasMax) {
-    const l = excMin ? '( ' : '[ '
-    const r = excMax ? ' )' : ' ]'
+    const l = hasExcMin ? '( ' : '[ '
+    const r = hasExcMax ? ' )' : ' ]'
     return `${l}${prop.minimum} .. ${prop.maximum}${r}`
   }
   if (hasMin && hasExcMax) {
-    const l = excMin ? '( ' : '[ '
+    const l = hasExcMin ? '( ' : '[ '
     return `${l}${prop.minimum} .. ${prop.exclusiveMaximum} )`
   }
   if (hasExcMin && hasMax) {
-    const r = excMax ? ' )' : ' ]'
+    const r = hasExcMax ? ' )' : ' ]'
     return `( ${prop.exclusiveMinimum} .. ${prop.maximum}${r}`
   }
-  if (hasMax) return `${excMax ? '< ' : '<= '}${prop.maximum}`
-  if (hasMin) return `${excMin ? '> ' : '>= '}${prop.minimum}`
+  if (hasMax) return `${hasExcMax ? '< ' : '<= '}${prop.maximum}`
+  if (hasMin) return `${hasExcMin ? '> ' : '>= '}${prop.minimum}`
   if (hasExcMin && hasExcMax) return `( ${prop.exclusiveMinimum} .. ${prop.exclusiveMaximum} )`
   if (hasExcMax) return `< ${prop.exclusiveMaximum}`
   if (hasExcMin) return `> ${prop.exclusiveMinimum}`
