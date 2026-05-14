@@ -984,7 +984,7 @@ async function copyJson() {
 }
 
 .ctrl-error:focus {
-  box-shadow: 0 0 0 2px rgba(179, 31, 36, 0.15);
+  box-shadow: 0 0 0 2px var(--color-red-alpha);
 }
 
 .field-error-hint {
@@ -1213,7 +1213,7 @@ async function copyJson() {
   font-size: 10px;
   font-family: var(--font-mono);
   color: var(--text-primary);
-  background: rgba(28, 25, 23, 0.04);
+  background: var(--bg-hover);
   padding: 1px 5px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-light);
