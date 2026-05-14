@@ -12,6 +12,7 @@ import {
   hasConstraints,
   parsePropertyValue,
   humanizeConstraints,
+  validateFieldValue,
 } from '../composables/useSchemaTypes'
 import type { SpaProperty } from '../types'
 
@@ -347,5 +348,91 @@ describe('parsePropertyValue', () => {
 
   it('returns raw string for string type', () => {
     expect(parsePropertyValue('hello', prop({ type: 'string' }))).toBe('hello')
+  })
+})
+
+describe('validateFieldValue', () => {
+  it('returns null for valid string', () => {
+    expect(validateFieldValue('hello', prop({ type: 'string' }))).toBeNull()
+  })
+
+  it('returns null for composition types', () => {
+    expect(validateFieldValue('x', prop({ type: 'anyOf:string' }))).toBeNull()
+  })
+
+  it('returns error for string too short', () => {
+    expect(validateFieldValue('ab', prop({ type: 'string', minLength: 5 }))).toBe('Min 5 characters')
+  })
+
+  it('returns error for string too long', () => {
+    expect(validateFieldValue('abcdef', prop({ type: 'string', maxLength: 3 }))).toBe('Max 3 characters')
+  })
+
+  it('returns null for empty string with minLength', () => {
+    expect(validateFieldValue('', prop({ type: 'string', minLength: 5 }))).toBeNull()
+  })
+
+  it('returns error for pattern mismatch', () => {
+    expect(validateFieldValue('abc', prop({ type: 'string', pattern: '^[0-9]+$' }))).toContain('Must match')
+  })
+
+  it('returns null for pattern match', () => {
+    expect(validateFieldValue('123', prop({ type: 'string', pattern: '^[0-9]+$' }))).toBeNull()
+  })
+
+  it('returns error for invalid integer', () => {
+    expect(validateFieldValue('abc', prop({ type: 'integer' }))).toBe('Invalid number')
+  })
+
+  it('returns error for integer below minimum', () => {
+    expect(validateFieldValue('3', prop({ type: 'integer', minimum: 5 }))).toBe('Must be >= 5')
+  })
+
+  it('returns error for integer above maximum', () => {
+    expect(validateFieldValue('15', prop({ type: 'integer', maximum: 10 }))).toBe('Must be <= 10')
+  })
+
+  it('returns error for integer below exclusiveMinimum', () => {
+    expect(validateFieldValue('5', prop({ type: 'integer', exclusiveMinimum: 5 }))).toBe('Must be > 5')
+  })
+
+  it('returns error for integer at exclusiveMaximum', () => {
+    expect(validateFieldValue('10', prop({ type: 'integer', exclusiveMaximum: 10 }))).toBe('Must be < 10')
+  })
+
+  it('returns error for non-multipleOf', () => {
+    expect(validateFieldValue('7', prop({ type: 'integer', multipleOf: 3 }))).toBe('Must be multiple of 3')
+  })
+
+  it('returns null for valid multipleOf', () => {
+    expect(validateFieldValue('9', prop({ type: 'integer', multipleOf: 3 }))).toBeNull()
+  })
+
+  it('returns error for number below minimum', () => {
+    expect(validateFieldValue('2.5', prop({ type: 'number', minimum: 5 }))).toBe('Must be >= 5')
+  })
+
+  it('returns null for valid number', () => {
+    expect(validateFieldValue('7.5', prop({ type: 'number', minimum: 5 }))).toBeNull()
+  })
+
+  it('returns error for array below minItems', () => {
+    expect(validateFieldValue('[1,2]', prop({ type: 'array', minItems: 3 }))).toBe('Min 3 items')
+  })
+
+  it('returns error for array above maxItems', () => {
+    expect(validateFieldValue('[1,2,3,4,5]', prop({ type: 'array', maxItems: 3 }))).toBe('Max 3 items')
+  })
+
+  it('returns error for non-unique array items', () => {
+    expect(validateFieldValue('[1,2,1]', prop({ type: 'array', uniqueItems: true }))).toBe('Items must be unique')
+  })
+
+  it('returns null for unique array items', () => {
+    expect(validateFieldValue('[1,2,3]', prop({ type: 'array', uniqueItems: true }))).toBeNull()
+  })
+
+  it('returns null for empty string with no constraints', () => {
+    expect(validateFieldValue('', prop({ type: 'integer' }))).toBeNull()
   })
 })
