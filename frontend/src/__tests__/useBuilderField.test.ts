@@ -67,6 +67,87 @@ describe('createField', () => {
     expect(field.arrayItems).toEqual([''])
   })
 
+  it('marks field as required when prop.required is true', () => {
+    const field = createField(prop({ name: 'x', required: true }), [], spaSchema())
+    expect(field.isRequired).toBe(true)
+    expect(field.included).toBe(true)
+  })
+
+  it('auto-expands definition with single property', () => {
+    const def = definition({ name: 'Wrap', properties: [prop({ name: 'value', type: 'string' })] })
+    const s = spaSchema({ definitions: [def] })
+    const field = createField(
+      prop({ name: 'wrap', type: 'object', ref: '#/definitions/Wrap' }),
+      [],
+      s,
+      undefined,
+      3, // deep nesting
+    )
+    expect(field.expanded).toBe(true)
+  })
+
+  it('auto-expands at depth 0 with ≤8 properties', () => {
+    const props = Array.from({ length: 8 }, (_, i) => prop({ name: `f${i}`, type: 'string' }))
+    const def = definition({ name: 'Small', properties: props })
+    const s = spaSchema({ definitions: [def] })
+    const field = createField(
+      prop({ name: 'obj', type: 'object', ref: '#/definitions/Small' }),
+      [],
+      s,
+    )
+    expect(field.expanded).toBe(true)
+  })
+
+  it('does not auto-expand at depth 0 with >8 properties', () => {
+    const props = Array.from({ length: 9 }, (_, i) => prop({ name: `f${i}`, type: 'string' }))
+    const def = definition({ name: 'Big', properties: props })
+    const s = spaSchema({ definitions: [def] })
+    const field = createField(
+      prop({ name: 'obj', type: 'object', ref: '#/definitions/Big' }),
+      [],
+      s,
+    )
+    expect(field.expanded).toBe(false)
+  })
+
+  it('does not auto-expand at depth >0 with multiple properties', () => {
+    const props = [prop({ name: 'a', type: 'string' }), prop({ name: 'b', type: 'string' })]
+    const def = definition({ name: 'Pair', properties: props })
+    const s = spaSchema({ definitions: [def] })
+    const field = createField(
+      prop({ name: 'pair', type: 'object', ref: '#/definitions/Pair' }),
+      [],
+      s,
+      undefined,
+      1,
+    )
+    expect(field.expanded).toBe(false)
+  })
+
+  it('initializes boolean field with false', () => {
+    const field = createField(prop({ name: 'flag', type: 'boolean' }), [], spaSchema())
+    expect(field.rawValue).toBe('false')
+  })
+
+  it('initializes integer field with 0', () => {
+    const field = createField(prop({ name: 'count', type: 'integer' }), [], spaSchema())
+    expect(field.rawValue).toBe('0')
+  })
+
+  it('builds nestedJson for resolved definition', () => {
+    const def = definition({
+      name: 'Addr',
+      properties: [prop({ name: 'city', type: 'string' })],
+    })
+    const s = spaSchema({ definitions: [def] })
+    const field = createField(
+      prop({ name: 'addr', type: 'object', ref: '#/definitions/Addr' }),
+      [],
+      s,
+    )
+    expect(field.nestedJson).toEqual({ city: 'string' })
+  })
+
   it('leaves array items empty for non-array type', () => {
     const field = createField(prop({ name: 'name', type: 'string' }), [], spaSchema())
     expect(field.arrayItems).toEqual([])
