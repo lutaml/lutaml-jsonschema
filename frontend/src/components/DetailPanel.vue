@@ -128,6 +128,20 @@
                     <span v-if="definitionItem.hasOneOf" class="badge badge-composition-detail">oneOf</span>
                   </div>
                 </div>
+                <div v-if="definitionItem?.compositionVariants?.length" class="meta-row">
+                  <span class="meta-label">Variants</span>
+                  <div class="meta-tags">
+                    <span v-for="v in definitionItem.compositionVariants" :key="v" class="badge badge-composition-detail">{{ v }}</span>
+                  </div>
+                </div>
+                <div v-if="definitionItem?.additionalPropertiesRef" class="meta-row">
+                  <span class="meta-label">Additional</span>
+                  <span class="ref-link font-mono" role="button" tabindex="0" @click="navigateToRef(definitionItem.additionalPropertiesRef)" @keydown.enter="navigateToRef(definitionItem.additionalPropertiesRef)">{{ refName(definitionItem.additionalPropertiesRef) }}</span>
+                </div>
+                <div v-else-if="definitionItem?.additionalPropertiesType" class="meta-row">
+                  <span class="meta-label">Additional</span>
+                  <span class="text-secondary">{{ definitionItem.additionalPropertiesType }}</span>
+                </div>
                 <div v-if="definitionItem && (definitionItem.minProperties != null || definitionItem.maxProperties != null)" class="meta-row">
                   <span class="meta-label">Properties</span>
                   <span class="text-secondary">
@@ -584,7 +598,8 @@ const definitionItem = computed(() => {
 
 function navigateToRef(ref: string | undefined) {
   if (!ref) return
-  const match = ref.match(/^#\/(?:definitions|\$defs)\/([^/]+)$/)
+  const match = ref.match(/^#\/(?:definitions|\$defs)\/([^/]+)$/) ||
+    ref.match(/^#([^/]+)$/)
   if (match) {
     uiStore.closeDetailPanel()
     schemaStore.selectDefinition(match[1])
@@ -592,7 +607,8 @@ function navigateToRef(ref: string | undefined) {
 }
 
 function refName(ref: string): string {
-  const match = ref.match(/^#\/(?:definitions|\$defs)\/([^/]+)$/)
+  const match = ref.match(/^#\/(?:definitions|\$defs)\/([^/]+)$/) ||
+    ref.match(/^#([^/]+)$/)
   return match ? match[1] : ref
 }
 

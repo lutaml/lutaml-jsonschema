@@ -69,9 +69,6 @@ module Lutaml
           )
         end
 
-        # Collects all properties with their composition source annotation.
-        # Returns an array of [PropertyEntry, source] tuples where source is
-        # nil (own), "allOf", "anyOf", or "oneOf".
         def collect_all_properties_with_source(schema, context_schema = schema)
           inherited = []
           composition_schemas_with_source(schema).each do |s, source|
@@ -86,14 +83,12 @@ module Lutaml
         end
 
         def collect_all_properties(schema, context_schema = schema)
-          # Collect inherited properties first, then own properties override
           inherited = []
           composition_schemas(schema).each do |s|
             resolved = resolve_composition_schema(s, context_schema)
             inherited.concat(collect_all_properties(resolved, context_schema))
           end
           own = schema.property_entries.dup
-          # Merge: own properties override inherited ones with the same name
           deduplicated_merge(inherited, own)
         end
 
@@ -151,43 +146,107 @@ module Lutaml
           seen.values.sort.map { |i| all[i] }
         end
 
+        # Resolves a definition schema that may be a bare $ref, an
+        # allOf-merged $ref, a oneOf/anyOf union, or a plain schema.
+        def resolve_definition_schema(s, root_schema)
+          # Case 1: bare $ref (e.g. Abstract_DistributionUnion → #MD_Distribution)
+          if s.dollar_ref && !s.type && s.property_entries.empty? &&
+              s.one_of.empty? && s.all_of.empty? && s.any_of.empty?
+            resolved = @schema_set.resolve_ref(s.dollar_ref, root_schema)
+            return resolved if resolved
+          end
+
+          # Case 2: allOf with a single $ref and no own properties
+          if s.all_of.length == 1 && !s.type && s.property_entries.empty?
+            ref_schema = s.all_of.first
+            if ref_schema.dollar_ref
+              resolved = @schema_set.resolve_ref(ref_schema.dollar_ref,
+                                                 root_schema)
+              return resolved if resolved
+            end
+          end
+
+          # Otherwise return as-is
+          s
+        end
+
         def build_definitions_from_entries(entries, root_schema)
           entries.map do |entry|
             s = entry.schema
-            all_props = collect_all_properties(s)
-            all_required = collect_all_required(s)
+
+            # Resolve $ref-only or allOf-$ref definitions
+            resolved = resolve_definition_schema(s, root_schema)
+
+            all_props = collect_all_properties(resolved)
+            all_required = collect_all_required(resolved)
             properties = build_properties(all_props, root_schema, all_required)
+
+            # Resolve additionalProperties schema info
+            ap_info = resolve_additional_properties(resolved, root_schema)
+
+            # Resolve oneOf/anyOf variant labels
+            variants = resolve_composition_variants(resolved, root_schema)
 
             SpaDefinition.new(
               name: entry.name,
-              title: s.title,
-              description: s.description,
-              type: s.type,
-              format: s.format,
-              enum: s.enum,
-              const_value: s.const,
-              pattern: s.pattern,
-              default: s.default,
-              min_length: s.min_length,
-              max_length: s.max_length,
-              minimum: s.minimum,
-              maximum: s.maximum,
-              exclusive_minimum: s.exclusive_minimum,
-              exclusive_maximum: s.exclusive_maximum,
-              multiple_of: s.multiple_of,
-              content_type: s.content_type,
-              content_encoding: s.content_encoding,
+              title: resolved.title || s.title,
+              description: resolved.description || s.description,
+              type: resolved.type,
+              format: resolved.format,
+              enum: resolved.enum,
+              const_value: resolved.const,
+              pattern: resolved.pattern,
+              default: resolved.default,
+              min_length: resolved.min_length,
+              max_length: resolved.max_length,
+              minimum: resolved.minimum,
+              maximum: resolved.maximum,
+              exclusive_minimum: resolved.exclusive_minimum,
+              exclusive_maximum: resolved.exclusive_maximum,
+              multiple_of: resolved.multiple_of,
+              content_type: resolved.content_type,
+              content_encoding: resolved.content_encoding,
               properties: properties,
               required: all_required,
-              examples: s.examples,
-              min_properties: s.min_properties,
-              max_properties: s.max_properties,
-              additional_properties: s.additional_properties,
-              has_all_of: s.all_of.any?,
-              has_any_of: s.any_of.any?,
-              has_one_of: s.one_of.any?,
+              examples: resolved.examples,
+              min_properties: resolved.min_properties,
+              max_properties: resolved.max_properties,
+              additional_properties: resolved.additional_properties,
+              additional_properties_ref: ap_info[:ref],
+              additional_properties_type: ap_info[:type],
+              has_all_of: resolved.all_of.any? || s.all_of.any?,
+              has_any_of: resolved.any_of.any? || s.any_of.any?,
+              has_one_of: resolved.one_of.any? || s.one_of.any?,
+              composition_variants: variants,
             )
           end
+        end
+
+        def resolve_additional_properties(schema, root_schema)
+          ap_schema = schema.additional_properties_schema
+          return { ref: nil, type: nil } unless ap_schema
+
+          if ap_schema.dollar_ref
+            ref = ap_schema.dollar_ref
+            resolved = @schema_set.resolve_ref(ref, root_schema)
+            { ref: ref,
+              type: resolved&.type || resolved&.title }
+          else
+            { ref: nil, type: ap_schema.type }
+          end
+        end
+
+        def resolve_composition_variants(schema, root_schema)
+          variants = []
+          schema.one_of.each do |sub|
+            resolved = resolve_composition_schema(sub, root_schema)
+            variants << type_label(resolved)
+          end
+          schema.any_of.each do |sub|
+            resolved = resolve_composition_schema(sub, root_schema)
+            variants << type_label(resolved)
+          end
+          variants.compact
         end
 
         def build_properties(entries, root_schema,
@@ -203,10 +262,28 @@ module Lutaml
                                   composition_source = nil)
           resolved = resolve_property(entry, root_schema)
 
+          # Follow $ref chains: if resolved schema is itself a bare $ref,
+          # resolve it recursively (e.g. #MD_IdentificationUnion → #MD_DataIdentification)
+          resolved = resolve_ref_chain(resolved, root_schema)
+
+          # Try composition resolution on the original entry schema
           if !resolved.type && composition_schema?(entry.schema)
             resolved = resolve_composition_property(entry.schema,
                                                     root_schema) || resolved
           end
+
+          # Try composition resolution on the resolved schema
+          # (e.g. property $ref → oneOf definition like DateOrDateTime)
+          if !resolved.type && composition_schema?(resolved)
+            comp = resolve_composition_property(resolved, root_schema)
+            resolved = comp if comp
+          end
+
+          # Type inference for const-only schemas
+          resolved = infer_type_from_const(resolved) unless resolved.type
+
+          # Empty schemas {} accept any value
+          resolved = empty_schema_fallback(resolved) unless resolved.type
 
           prop_ref = resolve_prop_ref(entry.schema)
           items_info = resolve_items_info(resolved, root_schema)
@@ -246,6 +323,26 @@ module Lutaml
           )
         end
 
+        def infer_type_from_const(schema)
+          return schema unless schema.const && !schema.type
+
+          Schema.new(
+            type: "string",
+            title: schema.title,
+            description: schema.description,
+            const: schema.const,
+            format: schema.format,
+          )
+        end
+
+        def empty_schema_fallback(schema)
+          Schema.new(
+            type: "any",
+            title: schema.title,
+            description: schema.description,
+          )
+        end
+
         def resolve_items_info(resolved, root_schema)
           items = resolved.items
           return { type: nil, ref: nil } unless items
@@ -258,6 +355,14 @@ module Lutaml
             else
               { type: nil, ref: ref }
             end
+          elsif items.one_of.any?
+            # Handle items with oneOf (e.g. Interval items)
+            labels = items.one_of.filter_map do |sub|
+              r = resolve_composition_schema(sub, root_schema)
+              type_label(r)
+            end.compact
+            { type: labels.empty? ? nil : "oneOf: #{labels.join(' | ')}",
+              ref: nil }
           else
             { type: items.type, ref: nil }
           end
@@ -274,10 +379,27 @@ module Lutaml
         end
 
         def resolve_property(entry, root_schema)
-          return entry.schema unless entry.schema.dollar_ref
+          schema = entry.schema
+          return schema unless schema.dollar_ref
 
-          @schema_set.resolve_ref(entry.schema.dollar_ref,
-                                  root_schema) || entry.schema
+          resolved = @schema_set.resolve_ref(schema.dollar_ref, root_schema)
+          return resolved if resolved
+
+          schema
+        end
+
+        # Follow a chain of bare $ref schemas (A → B → C).
+        # Stops when the schema has a type, properties, or is not a bare $ref.
+        def resolve_ref_chain(schema, root_schema, depth = 0)
+          return schema if depth > 5
+          return schema unless schema.dollar_ref
+          return schema if schema.type || schema.property_entries.any?
+          return schema if schema.one_of.any? || schema.all_of.any? || schema.any_of.any?
+
+          resolved = @schema_set.resolve_ref(schema.dollar_ref, root_schema)
+          return schema unless resolved
+
+          resolve_ref_chain(resolved, root_schema, depth + 1)
         end
 
         def composition_schema?(schema)
@@ -285,8 +407,6 @@ module Lutaml
             schema.one_of.any? || schema.not_schema
         end
 
-        # Resolve a property-level composition (allOf/anyOf/oneOf/not)
-        # into a synthetic Schema with merged type and properties.
         def resolve_composition_property(schema, root_schema)
           if schema.all_of.any?
             resolve_all_of_property(schema, root_schema)

@@ -29,9 +29,12 @@ module Lutaml
         attribute :min_properties, :integer
         attribute :max_properties, :integer
         attribute :additional_properties, :boolean
+        attribute :additional_properties_ref, :string
+        attribute :additional_properties_type, :string
         attribute :has_all_of, :boolean
         attribute :has_any_of, :boolean
         attribute :has_one_of, :boolean
+        attribute :composition_variants, :string, collection: true
 
         json do
           map "name", to: :name
@@ -58,9 +61,12 @@ module Lutaml
           map "minProperties", to: :min_properties
           map "maxProperties", to: :max_properties
           map "additionalProperties", to: :additional_properties
+          map "additionalPropertiesRef", to: :additional_properties_ref
+          map "additionalPropertiesType", to: :additional_properties_type
           map "hasAllOf", to: :has_all_of
           map "hasAnyOf", to: :has_any_of
           map "hasOneOf", to: :has_one_of
+          map "compositionVariants", to: :composition_variants
         end
       end
     end

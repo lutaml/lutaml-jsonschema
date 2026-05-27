@@ -18,6 +18,12 @@ export function resolveSchemaRef(ref: string | undefined, schema: SpaSchema, all
     return schema.definitions.find(d => d.name === internalMatch[1]) ?? null
   }
 
+  // Pattern 2b: anchor ref (#NAME) — searches definitions by name
+  const anchorMatch = ref.match(/^#([^/]+)$/)
+  if (anchorMatch) {
+    return schema.definitions.find(d => d.name === anchorMatch[1]) ?? null
+  }
+
   // Pattern 3: cross-file ref (FILENAME#/$defs/NAME)
   const crossFileMatch = ref.match(/^(.+?)(?:\.json)?#\/\$defs\/([^/]+)$/)
   if (crossFileMatch && allSchemas) {

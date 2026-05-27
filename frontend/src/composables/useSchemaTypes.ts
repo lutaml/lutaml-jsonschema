@@ -91,6 +91,7 @@ export function initialValue(prop: SpaProperty): string {
   if (prop.examples?.length) return prop.examples[0]
   if (prop.default != null) return String(prop.default)
   if (prop.enum?.length) return prop.enum[0]
+  if (prop.const != null) return String(prop.const)
 
   const t = primaryType(prop.type)
   switch (t) {
