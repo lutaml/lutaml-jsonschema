@@ -8,6 +8,20 @@ module Lutaml
         attribute :title, :string
         attribute :description, :string
         attribute :type, :string
+        attribute :format, :string
+        attribute :enum, :string, collection: true
+        attribute :const_value, :string
+        attribute :pattern, :string
+        attribute :default, :string
+        attribute :min_length, :integer
+        attribute :max_length, :integer
+        attribute :minimum, :float
+        attribute :maximum, :float
+        attribute :exclusive_minimum, :float
+        attribute :exclusive_maximum, :float
+        attribute :multiple_of, :float
+        attribute :content_type, :string
+        attribute :content_encoding, :string
         attribute :properties, SpaProperty, collection: true,
                                             initialize_empty: true
         attribute :required, :string, collection: true
@@ -24,6 +38,20 @@ module Lutaml
           map "title", to: :title
           map "description", to: :description
           map "type", to: :type
+          map "format", to: :format
+          map "enum", to: :enum
+          map "const", to: :const_value
+          map "pattern", to: :pattern
+          map "default", to: :default
+          map "minLength", to: :min_length
+          map "maxLength", to: :max_length
+          map "minimum", to: :minimum
+          map "maximum", to: :maximum
+          map "exclusiveMinimum", to: :exclusive_minimum
+          map "exclusiveMaximum", to: :exclusive_maximum
+          map "multipleOf", to: :multiple_of
+          map "contentMediaType", to: :content_type
+          map "contentEncoding", to: :content_encoding
           map "properties", to: :properties
           map "required", to: :required
           map "examples", to: :examples
