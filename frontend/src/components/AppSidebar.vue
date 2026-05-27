@@ -4,13 +4,20 @@
       <!-- Branding -->
       <div class="sidebar-branding">
         <img
+          v-if="schemaStore.metadata?.appearance?.logos?.square"
+          :src="uiStore.isDark ? (schemaStore.metadata.appearance.logos.square.dark?.url || schemaStore.metadata.appearance.logos.square.dark?.path) : (schemaStore.metadata.appearance.logos.square.light?.url || schemaStore.metadata.appearance.logos.square.light?.path)"
+          alt="Package logo"
+          class="branding-logo"
+        />
+        <img
+          v-else
           :src="uiStore.isDark ? 'https://raw.githubusercontent.com/lutaml/branding/refs/heads/main/svg/lutaml-logo_logo-icon-dark.svg' : 'https://raw.githubusercontent.com/lutaml/branding/refs/heads/main/svg/lutaml-logo_logo-icon-light.svg'"
           alt="LutaML"
           class="branding-logo"
         />
         <div class="branding-text">
           <span class="branding-title">{{ schemaStore.metadata?.title || 'JSON Schema Docs' }}</span>
-          <span class="branding-subtitle">LutaML JSON Schema</span>
+          <span class="branding-subtitle">{{ schemaStore.metadata?.appearance?.subtitle || 'LutaML JSON Schema' }}</span>
         </div>
       </div>
 

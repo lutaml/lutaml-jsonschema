@@ -9,6 +9,7 @@ module Lutaml
         attribute :description, :string
         attribute :base_url, :string
         attribute :theme, :string, default: "light"
+        attribute :appearance, :hash
 
         json do
           map "title", to: :title
@@ -16,6 +17,7 @@ module Lutaml
           map "description", to: :description
           map "baseUrl", to: :base_url
           map "theme", to: :theme
+          map "appearance", to: :appearance
         end
       end
     end

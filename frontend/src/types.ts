@@ -4,6 +4,15 @@ export interface SpaMetadata {
   description?: string
   baseUrl?: string
   theme?: string
+  appearance?: {
+    logos?: {
+      square?: {
+        light: { path?: string; url?: string }
+        dark: { path?: string; url?: string }
+      }
+    }
+    subtitle?: string
+  }
 }
 
 export interface SpaProperty {
@@ -68,9 +77,12 @@ export interface SpaDefinition {
   minProperties?: number
   maxProperties?: number
   additionalProperties?: boolean
+  additionalPropertiesRef?: string
+  additionalPropertiesType?: string
   hasAllOf?: boolean
   hasAnyOf?: boolean
   hasOneOf?: boolean
+  compositionVariants?: string[]
 }
 
 export interface SpaSchema {
