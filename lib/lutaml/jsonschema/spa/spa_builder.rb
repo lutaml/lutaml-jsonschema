@@ -163,6 +163,20 @@ module Lutaml
               title: s.title,
               description: s.description,
               type: s.type,
+              format: s.format,
+              enum: s.enum,
+              const_value: s.const,
+              pattern: s.pattern,
+              default: s.default,
+              min_length: s.min_length,
+              max_length: s.max_length,
+              minimum: s.minimum,
+              maximum: s.maximum,
+              exclusive_minimum: s.exclusive_minimum,
+              exclusive_maximum: s.exclusive_maximum,
+              multiple_of: s.multiple_of,
+              content_type: s.content_type,
+              content_encoding: s.content_encoding,
               properties: properties,
               required: all_required,
               examples: s.examples,
@@ -195,6 +209,7 @@ module Lutaml
           end
 
           prop_ref = resolve_prop_ref(entry.schema)
+          items_info = resolve_items_info(resolved, root_schema)
 
           SpaProperty.new(
             name: entry.name,
@@ -211,7 +226,8 @@ module Lutaml
             max_length: resolved.max_length,
             minimum: resolved.minimum,
             maximum: resolved.maximum,
-            items_type: resolved.items&.type,
+            items_type: items_info[:type],
+            items_ref: items_info[:ref],
             deprecated: resolved.deprecated,
             read_only: resolved.read_only,
             write_only: resolved.write_only,
@@ -228,6 +244,23 @@ module Lutaml
             content_encoding: resolved.content_encoding,
             composition_source: composition_source,
           )
+        end
+
+        def resolve_items_info(resolved, root_schema)
+          items = resolved.items
+          return { type: nil, ref: nil } unless items
+
+          if items.dollar_ref
+            ref = items.dollar_ref
+            resolved_items = @schema_set.resolve_ref(ref, root_schema)
+            if resolved_items
+              { type: resolved_items.type || resolved_items.title, ref: ref }
+            else
+              { type: nil, ref: ref }
+            end
+          else
+            { type: items.type, ref: nil }
+          end
         end
 
         def resolve_prop_ref(schema)

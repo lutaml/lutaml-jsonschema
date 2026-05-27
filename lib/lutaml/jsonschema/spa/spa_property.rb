@@ -19,6 +19,7 @@ module Lutaml
         attribute :minimum, :float
         attribute :maximum, :float
         attribute :items_type, :string
+        attribute :items_ref, :string
         attribute :deprecated, :boolean
         attribute :read_only, :boolean
         attribute :write_only, :boolean
@@ -51,6 +52,7 @@ module Lutaml
           map "minimum", to: :minimum
           map "maximum", to: :maximum
           map "itemsType", to: :items_type
+          map "itemsRef", to: :items_ref
           map "deprecated", to: :deprecated
           map "readOnly", to: :read_only
           map "writeOnly", to: :write_only

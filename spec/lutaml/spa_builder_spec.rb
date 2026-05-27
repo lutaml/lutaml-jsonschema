@@ -129,6 +129,109 @@ RSpec.describe Lutaml::Jsonschema::Spa::SpaBuilder do
       end
     end
 
+    context "with complex_defs fixture (draft 2020-12, $defs, array items $ref)" do
+      let(:schema_set) do
+        Lutaml::Jsonschema::SchemaSet.load_from_files(
+          File.join(fixtures_dir, "complex_defs.json"),
+        )
+      end
+
+      it "resolves array items $ref to get items_ref and items_type" do
+        doc = described_class.new(schema_set).build
+        schema = doc.schemas.first
+        md_metadata = schema.definitions.find { |d| d.name == "MD_Metadata" }
+
+        identifiers = md_metadata.properties.find do |p|
+          p.name == "identifiers"
+        end
+        expect(identifiers.type).to eq("array")
+        expect(identifiers.items_ref).to eq("#/$defs/MD_Identifier")
+        expect(identifiers.items_type).to eq("object")
+      end
+
+      it "resolves array items $ref to definition title when items type is nil" do
+        doc = described_class.new(schema_set).build
+        schema = doc.schemas.first
+        md_metadata = schema.definitions.find { |d| d.name == "MD_Metadata" }
+
+        contacts = md_metadata.properties.find { |p| p.name == "contacts" }
+        expect(contacts.type).to eq("array")
+        expect(contacts.items_ref).to eq("#/$defs/CI_Contact")
+        expect(contacts.items_type).to eq("object")
+      end
+
+      it "captures minItems on array properties" do
+        doc = described_class.new(schema_set).build
+        schema = doc.schemas.first
+        md_metadata = schema.definitions.find { |d| d.name == "MD_Metadata" }
+
+        contacts = md_metadata.properties.find { |p| p.name == "contacts" }
+        expect(contacts.min_items).to eq(1)
+      end
+
+      it "captures enum values on pure-enum definitions" do
+        doc = described_class.new(schema_set).build
+        schema = doc.schemas.first
+
+        topic_cat = schema.definitions.find do |d|
+          d.name == "MD_TopicCategoryCode"
+        end
+        expect(topic_cat.type).to eq("string")
+        expect(topic_cat.enum).to eq(%w[farming biota boundaries climatology
+                                        economy elevation])
+      end
+
+      it "captures enum on obligation code definition" do
+        doc = described_class.new(schema_set).build
+        schema = doc.schemas.first
+
+        obligation = schema.definitions.find do |d|
+          d.name == "MD_ObligationCode"
+        end
+        expect(obligation.enum).to eq(%w[mandatory optional conditional])
+      end
+
+      it "captures format and pattern on definition" do
+        doc = described_class.new(schema_set).build
+        schema = doc.schemas.first
+
+        duration = schema.definitions.find { |d| d.name == "DurationType" }
+        expect(duration.format).to eq("duration")
+        expect(duration.pattern).to eq("^P.*$")
+      end
+
+      it "resolves $ref to enum definition and preserves enum on property" do
+        doc = described_class.new(schema_set).build
+        schema = doc.schemas.first
+        md_metadata = schema.definitions.find { |d| d.name == "MD_Metadata" }
+
+        topic = md_metadata.properties.find { |p| p.name == "topicCategory" }
+        expect(topic.ref).to eq("#/$defs/MD_TopicCategoryCode")
+        expect(topic.enum).to eq(%w[farming biota boundaries climatology
+                                    economy elevation])
+      end
+
+      it "handles nested array items $ref through definition chain" do
+        doc = described_class.new(schema_set).build
+        schema = doc.schemas.first
+        contact = schema.definitions.find { |d| d.name == "CI_Contact" }
+
+        phone = contact.properties.find { |p| p.name == "phone" }
+        expect(phone.type).to eq("array")
+        expect(phone.items_ref).to eq("#/$defs/CI_Telephone")
+      end
+
+      it "builds oneOf variant definition with has_one_of flag" do
+        doc = described_class.new(schema_set).build
+        schema = doc.schemas.first
+
+        constraint_union = schema.definitions.find do |d|
+          d.name == "Abstract_ConstraintUnion"
+        end
+        expect(constraint_union.has_one_of).to eq(true)
+      end
+    end
+
     context "with multiple schemas" do
       let(:schema_set) do
         Lutaml::Jsonschema::SchemaSet.load_from_files(
