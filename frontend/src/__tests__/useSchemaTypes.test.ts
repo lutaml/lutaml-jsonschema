@@ -17,6 +17,7 @@ import {
   numberRange,
   stringRange,
   itemsRange,
+  refLabel,
 } from '../composables/useSchemaTypes'
 import type { SpaProperty } from '../types'
 
@@ -85,6 +86,28 @@ describe('displayType', () => {
 
   it('shows array without itemsType', () => {
     expect(displayType(prop({ type: 'array' }))).toBe('array')
+  })
+
+  it('shows array with itemsRef when itemsType is missing', () => {
+    expect(displayType(prop({ type: 'array', itemsRef: '#/$defs/MD_Identifier' }))).toBe('array of MD_Identifier')
+  })
+
+  it('prefers itemsType over itemsRef when both present', () => {
+    expect(displayType(prop({ type: 'array', itemsType: 'string', itemsRef: '#/$defs/SomeDef' }))).toBe('array of string')
+  })
+})
+
+describe('refLabel', () => {
+  it('extracts last segment from $defs ref', () => {
+    expect(refLabel('#/$defs/MD_Identifier')).toBe('MD_Identifier')
+  })
+
+  it('extracts last segment from definitions ref', () => {
+    expect(refLabel('#/definitions/address')).toBe('address')
+  })
+
+  it('returns last segment for any path', () => {
+    expect(refLabel('#/a/b/c')).toBe('c')
   })
 })
 
