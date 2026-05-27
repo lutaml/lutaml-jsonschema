@@ -25,6 +25,7 @@ export interface SpaProperty {
   minimum?: number
   maximum?: number
   itemsType?: string
+  itemsRef?: string
   deprecated?: boolean
   readOnly?: boolean
   writeOnly?: boolean
@@ -47,6 +48,20 @@ export interface SpaDefinition {
   title?: string
   description?: string
   type?: string
+  format?: string
+  enum?: string[]
+  const?: string
+  pattern?: string
+  default?: string
+  minLength?: number
+  maxLength?: number
+  minimum?: number
+  maximum?: number
+  exclusiveMinimum?: number
+  exclusiveMaximum?: number
+  multipleOf?: number
+  contentMediaType?: string
+  contentEncoding?: string
   properties: SpaProperty[]
   required: string[]
   examples?: string[]

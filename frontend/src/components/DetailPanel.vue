@@ -140,6 +140,30 @@
                   <span class="meta-label">Additional</span>
                   <span class="badge badge-locked-detail">Denied</span>
                 </div>
+                <div v-if="definitionItem?.format" class="meta-row">
+                  <span class="meta-label">Format</span>
+                  <span class="badge badge-format">{{ definitionItem.format }}</span>
+                </div>
+                <div v-if="definitionItem?.pattern" class="meta-row">
+                  <span class="meta-label">Pattern</span>
+                  <span class="font-mono constraint-pattern">{{ definitionItem.pattern }}</span>
+                </div>
+                <div v-if="definitionItem?.default" class="meta-row">
+                  <span class="meta-label">Default</span>
+                  <span class="font-mono">{{ definitionItem.default }}</span>
+                </div>
+                <div v-if="definitionItem?.minLength != null || definitionItem?.maxLength != null" class="meta-row">
+                  <span class="meta-label">Length</span>
+                  <span class="text-secondary">{{ defStringRange }}</span>
+                </div>
+                <div v-if="definitionItem?.minimum != null || definitionItem?.maximum != null || definitionItem?.exclusiveMinimum != null || definitionItem?.exclusiveMaximum != null" class="meta-row">
+                  <span class="meta-label">Range</span>
+                  <span class="text-secondary">{{ defNumberRange }}</span>
+                </div>
+                <div v-if="definitionItem?.multipleOf != null" class="meta-row">
+                  <span class="meta-label">Multiple Of</span>
+                  <span class="text-secondary">{{ definitionItem.multipleOf }}</span>
+                </div>
               </div>
             </div>
 
@@ -173,9 +197,12 @@
                       </div>
                     </td>
                   </tr>
-                  <tr v-if="propertyItem.itemsType">
+                  <tr v-if="propertyItem.itemsType || propertyItem.itemsRef">
                     <td class="constraint-key">Items Type</td>
-                    <td class="constraint-value">{{ propertyItem.itemsType }}</td>
+                    <td class="constraint-value">
+                      {{ propertyItem.itemsType || 'object' }}
+                      <span v-if="propertyItem.itemsRef" class="prop-ref-link" role="button" tabindex="0" @click.stop="navigateToRef(propertyItem.itemsRef)" @keydown.enter="navigateToRef(propertyItem.itemsRef)"> → {{ refName(propertyItem.itemsRef) }}</span>
+                    </td>
                   </tr>
                   <tr v-if="propertyItem.uniqueItems">
                     <td class="constraint-key">Unique Items</td>
@@ -200,6 +227,52 @@
                   <tr v-if="propertyItem.additionalProperties === false">
                     <td class="constraint-key">Additional Props</td>
                     <td class="constraint-value"><span class="constraint-denied">Denied</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Constraints for definition (enum, pattern, etc.) -->
+            <div v-if="definitionItem && hasDefConstraints" class="detail-section">
+              <h3 class="detail-heading">Constraints</h3>
+              <table class="table constraint-table">
+                <tbody>
+                  <tr v-if="definitionItem.enum?.length">
+                    <td class="constraint-key">Enum</td>
+                    <td>
+                      <div class="enum-values-list">
+                        <span v-for="e in visibleEnumValues(definitionItem.name, definitionItem.enum)" :key="e" class="enum-value-chip">{{ e }}</span>
+                        <button v-if="definitionItem.enum.length > 8 && !detailEnumExpanded.has(definitionItem.name)" class="enum-more-btn" @click="toggleDetailEnum(definitionItem.name)">+{{ definitionItem.enum.length - 8 }} more</button>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr v-if="definitionItem.const">
+                    <td class="constraint-key">Const</td>
+                    <td class="constraint-value font-mono">{{ definitionItem.const }}</td>
+                  </tr>
+                  <tr v-if="definitionItem.pattern">
+                    <td class="constraint-key">Pattern</td>
+                    <td class="constraint-value font-mono constraint-pattern">{{ definitionItem.pattern }}</td>
+                  </tr>
+                  <tr v-if="definitionItem.minimum != null || definitionItem.maximum != null || definitionItem.exclusiveMinimum != null || definitionItem.exclusiveMaximum != null">
+                    <td class="constraint-key">Range</td>
+                    <td class="constraint-value">{{ defNumberRange }}</td>
+                  </tr>
+                  <tr v-if="definitionItem.minLength != null || definitionItem.maxLength != null">
+                    <td class="constraint-key">Length</td>
+                    <td class="constraint-value">{{ defStringRange }}</td>
+                  </tr>
+                  <tr v-if="definitionItem.multipleOf != null">
+                    <td class="constraint-key">Multiple Of</td>
+                    <td class="constraint-value">{{ definitionItem.multipleOf }}</td>
+                  </tr>
+                  <tr v-if="definitionItem.contentMediaType">
+                    <td class="constraint-key">Content Type</td>
+                    <td class="constraint-value">{{ definitionItem.contentMediaType }}</td>
+                  </tr>
+                  <tr v-if="definitionItem.contentEncoding">
+                    <td class="constraint-key">Content Encoding</td>
+                    <td class="constraint-value">{{ definitionItem.contentEncoding }}</td>
                   </tr>
                 </tbody>
               </table>
@@ -231,6 +304,7 @@
                         <span class="prop-type-badge" :class="propTypeClass(prop.type)">{{ prop.type || 'any' }}</span>
                         <span v-if="prop.format" class="prop-format">&lt;{{ prop.format }}&gt;</span>
                         <span v-if="prop.itemsType" class="prop-format">[{{ prop.itemsType }}]</span>
+                        <span v-if="prop.itemsRef" class="prop-format">[<span class="prop-ref-link" role="button" tabindex="0" @click.stop="navigateToRef(prop.itemsRef)" @keydown.enter="navigateToRef(prop.itemsRef)">{{ refName(prop.itemsRef) }}</span>]</span>
                       </template>
                       <span v-if="prop.default != null" class="prop-default">default: {{ prop.default }}</span>
                       <span v-if="prop.enum?.length" class="prop-enum">{{ prop.enum.length }} values</span>
@@ -385,12 +459,22 @@ const hasConstraints = computed(() => {
   if (!p) return false
   return p.minimum != null || p.maximum != null ||
     p.minLength != null || p.maxLength != null ||
-    p.pattern || p.enum?.length || p.itemsType ||
+    p.pattern || p.enum?.length || p.itemsType || p.itemsRef ||
     p.exclusiveMinimum != null || p.exclusiveMaximum != null ||
     p.minItems != null || p.maxItems != null || p.uniqueItems ||
     p.multipleOf != null || p.const != null ||
     p.contentMediaType || p.contentEncoding ||
     p.additionalProperties === false
+})
+
+const hasDefConstraints = computed(() => {
+  const d = definitionItem.value
+  if (!d) return false
+  return d.enum?.length > 0 || !!d.const || !!d.pattern ||
+    d.minimum != null || d.maximum != null ||
+    d.exclusiveMinimum != null || d.exclusiveMaximum != null ||
+    d.minLength != null || d.maxLength != null ||
+    d.multipleOf != null || !!d.contentMediaType || !!d.contentEncoding
 })
 
 const numberRangeLabel = computed(() => {
@@ -406,6 +490,18 @@ const stringRangeLabel = computed(() => {
 const itemsRangeLabel = computed(() => {
   const p = propertyItem.value
   return p ? itemsRange(p) ?? '' : ''
+})
+
+const defNumberRange = computed(() => {
+  const d = definitionItem.value
+  if (!d) return ''
+  return numberRange(d as any) ?? ''
+})
+
+const defStringRange = computed(() => {
+  const d = definitionItem.value
+  if (!d) return ''
+  return stringRange(d as any) ?? ''
 })
 
 type TabId = 'overview' | 'properties' | 'examples'

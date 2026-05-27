@@ -15,6 +15,12 @@ export function isNullableType(type?: string): boolean {
   return (type || '').split(',').map(s => s.trim()).includes('null')
 }
 
+/** Extract the definition name from a $ref string (e.g. "#/$defs/MD_Identifier" → "MD_Identifier"). */
+export function refLabel(ref: string): string {
+  const parts = ref.split('/')
+  return parts[parts.length - 1]
+}
+
 /** Whether the type string is a composition indicator from the backend. */
 export function isCompositionType(type?: string): boolean {
   const t = type || ''
@@ -31,7 +37,10 @@ export function displayType(prop: SpaProperty, resolvedTitle?: string): string {
   const suffix = isNullableType(prop.type) ? ' | null' : ''
   if (isCompositionType(t)) return t + suffix
   if (t === 'array') {
-    let label = prop.itemsType ? `array of ${prop.itemsType}` : 'array'
+    const itemType = (prop.itemsRef && (!prop.itemsType || prop.itemsType === 'object'))
+      ? refLabel(prop.itemsRef)
+      : prop.itemsType
+    let label = itemType ? `array of ${itemType}` : 'array'
     if (prop.minItems != null && prop.maxItems != null) label += ` [ ${prop.minItems} .. ${prop.maxItems} ]`
     else if (prop.minItems != null) label += ` >= ${prop.minItems}`
     else if (prop.maxItems != null) label += ` <= ${prop.maxItems}`
@@ -144,7 +153,7 @@ export function isObjectProperty(prop: SpaProperty): boolean {
  */
 export function hasConstraints(prop: SpaProperty): boolean {
   return !!(
-    (prop.enum?.length && isObjectProperty(prop)) ||
+    prop.enum?.length ||
     prop.pattern ||
     prop.minimum != null ||
     prop.maximum != null ||
@@ -160,7 +169,8 @@ export function hasConstraints(prop: SpaProperty): boolean {
     prop.exclusiveMinimum != null ||
     prop.exclusiveMaximum != null ||
     prop.contentMediaType ||
-    prop.contentEncoding
+    prop.contentEncoding ||
+    prop.itemsRef
   )
 }
 
