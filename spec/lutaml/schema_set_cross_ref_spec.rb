@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require "lutaml/jsonschema"
+require "spec_helper"
 
 RSpec.describe Lutaml::Jsonschema::SchemaSet,
                "cross-file and anchor resolution" do

@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require "spec_helper"
-require "lutaml/jsonschema/cli"
 require "tmpdir"
 
 RSpec.describe Lutaml::Jsonschema::Cli do

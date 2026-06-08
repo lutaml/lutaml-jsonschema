@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require "lutaml/jsonschema"
+require "spec_helper"
 require "json"
 require "tmpdir"
 
@@ -44,15 +44,20 @@ RSpec.describe Lutaml::Jsonschema::Spa::Generator do
     end
 
     it "accepts a custom output strategy" do
-      strategy = instance_double(Lutaml::Jsonschema::Spa::OutputStrategy)
-      allow(strategy).to receive(:write)
+      captured_json = nil
+      strategy = Lutaml::Jsonschema::Spa::OutputStrategy.new("/tmp/test")
+      strategy.define_singleton_method(:write) do |json_data|
+        captured_json = json_data
+      end
 
       metadata = Lutaml::Jsonschema::Spa::Metadata.new(title: "Custom")
       generator = described_class.new(schema_set, "/tmp/test",
                                       metadata: metadata, strategy: strategy)
       generator.generate
 
-      expect(strategy).to have_received(:write).with(String)
+      expect(captured_json).to be_a(String)
+      data = JSON.parse(captured_json)
+      expect(data["metadata"]["title"]).to eq("Custom")
     end
   end
 end

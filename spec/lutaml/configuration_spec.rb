@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require "spec_helper"
-require "lutaml/jsonschema/configuration"
+require "tmpdir"
 
 RSpec.describe Lutaml::Jsonschema::Configuration do
   describe ".new" do
@@ -47,6 +47,43 @@ RSpec.describe Lutaml::Jsonschema::Configuration do
       expect(metadata).to be_a(Lutaml::Jsonschema::Spa::Metadata)
       expect(metadata.title).to eq("Test")
       expect(metadata.version).to eq("2.0")
+    end
+  end
+
+  describe "#apply_appearance_overrides" do
+    it "sets logo for both light and dark themes" do
+      config = described_class.new
+      config.apply_appearance_overrides(logo: "https://example.com/logo.png",
+                                        subtitle: nil)
+      expect(config.appearance["logos"]["square"]["light"]["url"]).to eq("https://example.com/logo.png")
+      expect(config.appearance["logos"]["square"]["dark"]["url"]).to eq("https://example.com/logo.png")
+    end
+
+    it "sets subtitle" do
+      config = described_class.new
+      config.apply_appearance_overrides(logo: nil, subtitle: "My API Docs")
+      expect(config.appearance["subtitle"]).to eq("My API Docs")
+    end
+
+    it "sets both logo and subtitle" do
+      config = described_class.new
+      config.apply_appearance_overrides(logo: "logo.png", subtitle: "Sub")
+      expect(config.appearance["logos"]["square"]["light"]["url"]).to eq("logo.png")
+      expect(config.appearance["subtitle"]).to eq("Sub")
+    end
+
+    it "initializes appearance structure even without overrides" do
+      config = described_class.new
+      config.apply_appearance_overrides(logo: nil, subtitle: nil)
+      expect(config.appearance).to be_a(Hash)
+    end
+
+    it "merges with existing appearance" do
+      config = described_class.new
+      config.appearance = { "existing" => "value" }
+      config.apply_appearance_overrides(logo: "logo.png", subtitle: nil)
+      expect(config.appearance["existing"]).to eq("value")
+      expect(config.appearance["logos"]["square"]["light"]["url"]).to eq("logo.png")
     end
   end
 end

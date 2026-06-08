@@ -1,29 +1,37 @@
 # frozen_string_literal: true
 
-require_relative "jsonschema/version"
 require "lutaml/model"
+require "lutaml/store"
 
 module Lutaml
   module Jsonschema
     class Error < StandardError; end
+
+    autoload :VERSION, "lutaml/jsonschema/version"
+    autoload :Base, "lutaml/jsonschema/base"
+    autoload :Link, "lutaml/jsonschema/link"
+    autoload :PropertyEntry, "lutaml/jsonschema/property_entry"
+    autoload :Schema, "lutaml/jsonschema/schema"
+    autoload :ReferenceResolver, "lutaml/jsonschema/reference_resolver"
+    autoload :SchemaSet, "lutaml/jsonschema/schema_set"
+    autoload :SchemaStore, "lutaml/jsonschema/schema_store"
+    autoload :Combiner, "lutaml/jsonschema/combiner"
+    autoload :Configuration, "lutaml/jsonschema/configuration"
+    autoload :LjrPackageDefinition, "lutaml/jsonschema/ljr_package_definition"
+    autoload :Cli, "lutaml/jsonschema/cli"
+
+    module Spa
+      autoload :Metadata, "lutaml/jsonschema/spa/metadata"
+      autoload :SpaProperty, "lutaml/jsonschema/spa/spa_property"
+      autoload :SpaDefinition, "lutaml/jsonschema/spa/spa_definition"
+      autoload :SpaSchema, "lutaml/jsonschema/spa/spa_schema"
+      autoload :SpaSearchEntry, "lutaml/jsonschema/spa/spa_search_entry"
+      autoload :SpaLink, "lutaml/jsonschema/spa/spa_link"
+      autoload :SpaBuilder, "lutaml/jsonschema/spa/spa_builder"
+      autoload :SpaDocument, "lutaml/jsonschema/spa/spa_document"
+      autoload :OutputStrategy, "lutaml/jsonschema/spa/output_strategy"
+      autoload :VueInlinedStrategy, "lutaml/jsonschema/spa/vue_inlined_strategy"
+      autoload :Generator, "lutaml/jsonschema/spa/generator"
+    end
   end
 end
-
-require_relative "jsonschema/base"
-require_relative "jsonschema/link"
-require_relative "jsonschema/property_entry"
-require_relative "jsonschema/schema"
-require_relative "jsonschema/reference_resolver"
-require_relative "jsonschema/schema_set"
-require_relative "jsonschema/combiner"
-require_relative "jsonschema/spa/metadata"
-require_relative "jsonschema/spa/spa_property"
-require_relative "jsonschema/spa/spa_definition"
-require_relative "jsonschema/spa/spa_schema"
-require_relative "jsonschema/spa/spa_search_entry"
-require_relative "jsonschema/spa/spa_builder"
-require_relative "jsonschema/spa/spa_document"
-require_relative "jsonschema/spa/output_strategy"
-require_relative "jsonschema/spa/vue_inlined_strategy"
-require_relative "jsonschema/spa/generator"
-require_relative "jsonschema/configuration"

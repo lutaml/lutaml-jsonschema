@@ -40,13 +40,15 @@ module Lutaml
           all_defs = collect_all_definitions(schema)
           all_required = collect_all_required(schema)
 
-          # Build source map for composition tracking
           props_with_source = collect_all_properties_with_source(schema)
           source_map = props_with_source.to_h { |entry, src| [entry.name, src] }
 
           properties = build_properties(all_props, schema, all_required,
                                         source_map)
           definitions = build_definitions_from_entries(all_defs, schema)
+
+          if_info = resolve_if_schema(schema)
+          features = resolve_schema_features(schema, schema)
 
           SpaSchema.new(
             name: name,
@@ -66,6 +68,15 @@ module Lutaml
             has_all_of: schema.all_of.any?,
             has_any_of: schema.any_of.any?,
             has_one_of: schema.one_of.any?,
+            if_schema: if_info[:if_prop],
+            then_required: if_info[:then_required],
+            then_properties: if_info[:then_properties],
+            else_properties: if_info[:else_properties],
+            pattern_properties: features[:pattern_properties],
+            contains_type: features[:contains_type],
+            contains_ref: features[:contains_ref],
+            not_type: features[:not_type],
+            links: features[:links],
           )
         end
 
@@ -174,43 +185,23 @@ module Lutaml
           entries.map do |entry|
             s = entry.schema
 
-            # Resolve $ref-only or allOf-$ref definitions
             resolved = resolve_definition_schema(s, root_schema)
 
             all_props = collect_all_properties(resolved)
             all_required = collect_all_required(resolved)
             properties = build_properties(all_props, root_schema, all_required)
 
-            # Resolve additionalProperties schema info
             ap_info = resolve_additional_properties(resolved, root_schema)
-
-            # Resolve oneOf/anyOf variant labels
             variants = resolve_composition_variants(resolved, root_schema)
+            features = resolve_schema_features(resolved, root_schema)
 
             SpaDefinition.new(
+              **extract_schema_constraints(resolved),
               name: entry.name,
               title: resolved.title || s.title,
               description: resolved.description || s.description,
-              type: resolved.type,
-              format: resolved.format,
-              enum: resolved.enum,
-              const_value: resolved.const,
-              pattern: resolved.pattern,
-              default: resolved.default,
-              min_length: resolved.min_length,
-              max_length: resolved.max_length,
-              minimum: resolved.minimum,
-              maximum: resolved.maximum,
-              exclusive_minimum: resolved.exclusive_minimum,
-              exclusive_maximum: resolved.exclusive_maximum,
-              multiple_of: resolved.multiple_of,
-              content_type: resolved.content_type,
-              content_encoding: resolved.content_encoding,
               properties: properties,
               required: all_required,
-              examples: resolved.examples,
-              min_properties: resolved.min_properties,
-              max_properties: resolved.max_properties,
               additional_properties: resolved.additional_properties,
               additional_properties_ref: ap_info[:ref],
               additional_properties_type: ap_info[:type],
@@ -218,6 +209,19 @@ module Lutaml
               has_any_of: resolved.any_of.any? || s.any_of.any?,
               has_one_of: resolved.one_of.any? || s.one_of.any?,
               composition_variants: variants,
+              items_type: features[:items_info][:type],
+              items_ref: features[:items_info][:ref],
+              items_properties: features[:items_detail][:properties],
+              items_required: features[:items_detail][:required],
+              items_enum: features[:items_detail][:enum],
+              items_format: features[:items_detail][:format],
+              contains_type: features[:contains_type],
+              contains_ref: features[:contains_ref],
+              pattern_properties: features[:pattern_properties],
+              not_type: features[:not_type],
+              one_of_variants: build_variant_list(resolved.one_of, root_schema),
+              any_of_variants: build_variant_list(resolved.any_of, root_schema),
+              links: features[:links],
             )
           end
         end
@@ -236,6 +240,48 @@ module Lutaml
           end
         end
 
+        # Returns a hash of common constraint fields shared by SpaProperty and
+        # SpaDefinition, extracted from a resolved schema.
+        def extract_schema_constraints(resolved)
+          {
+            title: resolved.title,
+            description: resolved.description,
+            type: resolved.type,
+            format: resolved.format,
+            default: resolved.default,
+            pattern: resolved.pattern,
+            enum: resolved.enum,
+            min_length: resolved.min_length,
+            max_length: resolved.max_length,
+            minimum: resolved.minimum,
+            maximum: resolved.maximum,
+            exclusive_minimum: resolved.exclusive_minimum,
+            exclusive_maximum: resolved.exclusive_maximum,
+            multiple_of: resolved.multiple_of,
+            content_type: resolved.content_type,
+            content_encoding: resolved.content_encoding,
+            const_value: resolved.const,
+            examples: resolved.examples,
+            additional_properties: resolved.additional_properties,
+            min_properties: resolved.min_properties,
+            max_properties: resolved.max_properties,
+          }
+        end
+
+        # Bundles all schema feature resolutions (items, contains,
+        # patternProperties, not, links) into a single hash.
+        def resolve_schema_features(resolved, root_schema, depth = 0)
+          {
+            items_info: resolve_items_info(resolved, root_schema),
+            items_detail: build_items_detail(resolved, root_schema, depth),
+            contains_type: resolve_contains_type(resolved),
+            contains_ref: resolve_contains_ref(resolved),
+            pattern_properties: build_pattern_properties(resolved),
+            not_type: resolve_not_type(resolved),
+            links: build_links(resolved),
+          }
+        end
+
         def resolve_composition_variants(schema, root_schema)
           variants = []
           schema.one_of.each do |sub|
@@ -251,75 +297,95 @@ module Lutaml
 
         def build_properties(entries, root_schema,
                             all_required = root_schema.required,
-                            source_map = nil)
+                            source_map = nil, depth = 0)
           entries.map do |entry|
             source = source_map ? source_map[entry.name] : nil
-            build_single_property(entry, root_schema, all_required, source)
+            build_single_property(entry, root_schema, all_required, source,
+                                  depth)
           end
         end
 
         def build_single_property(entry, root_schema, all_required,
-                                  composition_source = nil)
+                                  composition_source = nil, depth = 0)
           resolved = resolve_property(entry, root_schema)
 
-          # Follow $ref chains: if resolved schema is itself a bare $ref,
-          # resolve it recursively (e.g. #MD_IdentificationUnion → #MD_DataIdentification)
           resolved = resolve_ref_chain(resolved, root_schema)
 
-          # Try composition resolution on the original entry schema
+          # Capture oneOf/anyOf from the pre-resolution schema for variant detail
+          pre_comp_one_of = resolved.one_of.any? ? resolved.one_of.dup : entry.schema.one_of.dup
+          pre_comp_any_of = resolved.any_of.any? ? resolved.any_of.dup : entry.schema.any_of.dup
+          original_not_type = [resolved.not_schema,
+                               entry.schema.not_schema].compact.first&.type
+
           if !resolved.type && composition_schema?(entry.schema)
             resolved = resolve_composition_property(entry.schema,
                                                     root_schema) || resolved
           end
 
-          # Try composition resolution on the resolved schema
-          # (e.g. property $ref → oneOf definition like DateOrDateTime)
           if !resolved.type && composition_schema?(resolved)
             comp = resolve_composition_property(resolved, root_schema)
             resolved = comp if comp
           end
 
-          # Type inference for const-only schemas
           resolved = infer_type_from_const(resolved) unless resolved.type
 
-          # Empty schemas {} accept any value
           resolved = empty_schema_fallback(resolved) unless resolved.type
 
           prop_ref = resolve_prop_ref(entry.schema)
-          items_info = resolve_items_info(resolved, root_schema)
+          features = resolve_schema_features(resolved, root_schema, depth)
+
+          nested = if depth < 3
+                     build_nested_properties(resolved,
+                                             root_schema)
+                   else
+                     []
+                   end
+          nested_required = depth < 3 ? collect_all_required(resolved) : []
+          nested_defs = if depth < 3
+                          build_nested_definitions(resolved,
+                                                   root_schema)
+                        else
+                          []
+                        end
 
           SpaProperty.new(
+            **extract_schema_constraints(resolved),
             name: entry.name,
-            title: resolved.title,
-            description: resolved.description,
-            type: resolved.type,
-            format: resolved.format,
             required: all_required.include?(entry.name),
-            default: resolved.default,
-            pattern: resolved.pattern,
-            enum: resolved.enum,
             ref: prop_ref,
-            min_length: resolved.min_length,
-            max_length: resolved.max_length,
-            minimum: resolved.minimum,
-            maximum: resolved.maximum,
-            items_type: items_info[:type],
-            items_ref: items_info[:ref],
             deprecated: resolved.deprecated,
             read_only: resolved.read_only,
             write_only: resolved.write_only,
-            examples: resolved.examples,
             min_items: resolved.min_items,
             max_items: resolved.max_items,
             unique_items: resolved.unique_items,
-            multiple_of: resolved.multiple_of,
-            const_value: resolved.const,
-            exclusive_minimum: resolved.exclusive_minimum,
-            exclusive_maximum: resolved.exclusive_maximum,
-            additional_properties: resolved.additional_properties,
-            content_type: resolved.content_type,
-            content_encoding: resolved.content_encoding,
             composition_source: composition_source,
+            properties: nested,
+            required_fields: nested_required,
+            definitions: nested_defs,
+            items_type: features[:items_info][:type],
+            items_ref: features[:items_info][:ref],
+            items_properties: features[:items_detail][:properties],
+            items_required: features[:items_detail][:required],
+            items_enum: features[:items_detail][:enum],
+            items_format: features[:items_detail][:format],
+            contains_type: features[:contains_type],
+            contains_ref: features[:contains_ref],
+            pattern_properties: features[:pattern_properties],
+            one_of_variants: if depth < 2
+                               build_variant_list(pre_comp_one_of,
+                                                  root_schema)
+                             else
+                               []
+                             end,
+            any_of_variants: if depth < 2
+                               build_variant_list(pre_comp_any_of,
+                                                  root_schema)
+                             else
+                               []
+                             end,
+            not_type: original_not_type,
+            links: features[:links],
           )
         end
 
@@ -355,13 +421,14 @@ module Lutaml
             else
               { type: nil, ref: ref }
             end
-          elsif items.one_of.any?
-            # Handle items with oneOf (e.g. Interval items)
-            labels = items.one_of.filter_map do |sub|
+          elsif items.one_of.any? || items.any_of.any?
+            subs = items.one_of.any? ? items.one_of : items.any_of
+            prefix = items.one_of.any? ? "oneOf" : "anyOf"
+            labels = subs.filter_map do |sub|
               r = resolve_composition_schema(sub, root_schema)
               type_label(r)
             end.compact
-            { type: labels.empty? ? nil : "oneOf: #{labels.join(' | ')}",
+            { type: labels.empty? ? nil : "#{prefix}: #{labels.join(' | ')}",
               ref: nil }
           else
             { type: items.type, ref: nil }
@@ -450,21 +517,17 @@ module Lutaml
         end
 
         def resolve_any_of_property(schema, root_schema)
-          variant_types = schema.any_of.filter_map do |sub|
-            resolved = resolve_composition_schema(sub, root_schema)
-            type_label(resolved)
-          end.compact
-
-          return nil if variant_types.empty?
-
-          Schema.new(
-            type: "anyOf: #{variant_types.join(' | ')}",
-            description: schema.description,
-          )
+          resolve_variant_property("anyOf", schema.any_of, root_schema,
+                                   schema.description)
         end
 
         def resolve_one_of_property(schema, root_schema)
-          variant_types = schema.one_of.filter_map do |sub|
+          resolve_variant_property("oneOf", schema.one_of, root_schema,
+                                   schema.description)
+        end
+
+        def resolve_variant_property(prefix, subs, root_schema, description)
+          variant_types = subs.filter_map do |sub|
             resolved = resolve_composition_schema(sub, root_schema)
             type_label(resolved)
           end.compact
@@ -472,8 +535,8 @@ module Lutaml
           return nil if variant_types.empty?
 
           Schema.new(
-            type: "oneOf: #{variant_types.join(' | ')}",
-            description: schema.description,
+            type: "#{prefix}: #{variant_types.join(' | ')}",
+            description: description,
           )
         end
 
@@ -496,10 +559,188 @@ module Lutaml
           end
         end
 
+        # ── Nested property building ──
+
+        def build_nested_properties(resolved, _root_schema, depth = 0)
+          return [] unless object_type?(resolved)
+
+          all_props = collect_all_properties(resolved)
+          all_required = collect_all_required(resolved)
+          build_properties(all_props, resolved, all_required, nil, depth)
+        end
+
+        def build_nested_definitions(resolved, _root_schema, _depth = 0)
+          return [] unless object_type?(resolved)
+
+          all_defs = collect_all_definitions(resolved)
+          build_definitions_from_entries(all_defs, resolved)
+        end
+
+        def object_type?(schema)
+          schema.type && schema.types.include?("object")
+        end
+
+        # ── Items detail ──
+
+        def build_items_detail(resolved, root_schema, depth = 0)
+          items = resolved.items
+          return {} unless items
+
+          items_resolved = if items.dollar_ref
+                             @schema_set.resolve_ref(items.dollar_ref,
+                                                     root_schema) || items
+                           else
+                             items
+                           end
+
+          result = {}
+          if object_type?(items_resolved) && depth < 3
+            all_props = collect_all_properties(items_resolved)
+            all_required = collect_all_required(items_resolved)
+            result[:properties] = build_properties(all_props, items_resolved,
+                                                   all_required, nil, depth + 1)
+            result[:required] = all_required
+          end
+          result[:enum] = items_resolved.enum if items_resolved.enum&.any?
+          result[:format] = items_resolved.format if items_resolved.format
+          result
+        end
+
+        # ── Composition variant schemas ──
+
+        def build_variant_list(sub_schemas, root_schema, depth = 0)
+          return [] if depth > 2
+
+          sub_schemas.filter_map do |sub|
+            resolved = resolve_composition_schema(sub, root_schema)
+            next unless resolved
+
+            nested = if depth < 2
+                       build_nested_properties(resolved,
+                                               root_schema)
+                     else
+                       []
+                     end
+            nested_required = depth < 2 ? collect_all_required(resolved) : []
+
+            SpaProperty.new(
+              title: resolved.title,
+              description: resolved.description,
+              type: resolved.type,
+              const_value: resolved.const,
+              enum: resolved.enum,
+              format: resolved.format,
+              properties: nested,
+              required_fields: nested_required,
+              minimum: resolved.minimum,
+              maximum: resolved.maximum,
+              pattern: resolved.pattern,
+            )
+          end
+        end
+
+        # ── Contains ──
+
+        def resolve_contains_type(schema)
+          return nil unless schema.contains
+
+          c = schema.contains
+          if c.dollar_ref
+            resolved = @schema_set.resolve_ref(c.dollar_ref, schema)
+            resolved&.type || c.type
+          else
+            c.type
+          end
+        end
+
+        def resolve_contains_ref(schema)
+          schema.contains&.dollar_ref
+        end
+
+        # ── patternProperties ──
+
+        def build_pattern_properties(schema)
+          return nil unless schema.pattern_property_entries&.any?
+
+          schema.pattern_property_entries.each_with_object({}) do |entry, hash|
+            hash[entry.name] = { "type" => entry.schema&.type }.compact
+          end
+        end
+
+        # ── not ──
+
+        def resolve_not_type(schema)
+          return nil unless schema.not_schema
+
+          schema.not_schema.type || "any"
+        end
+
+        # ── if/then/else ──
+
+        def resolve_if_schema(schema)
+          result = { if_prop: nil, then_required: [], then_properties: [],
+                     else_properties: [] }
+
+          return result unless schema.if_schema
+
+          # Build if condition as a property for display
+          if_schema = schema.if_schema
+          if_props = collect_all_properties(if_schema)
+          result[:if_prop] = SpaProperty.new(
+            title: "When condition is met",
+            properties: if if_props.any?
+                          build_properties(if_props, schema,
+                                           [])
+                        else
+                          []
+                        end,
+          )
+
+          if schema.then_schema
+            then_props = collect_all_properties(schema.then_schema)
+            then_required = collect_all_required(schema.then_schema)
+            result[:then_required] = then_required
+            result[:then_properties] = if then_props.any?
+                                         build_properties(then_props, schema,
+                                                          then_required)
+                                       else
+                                         then_required.map do |name|
+                                           SpaProperty.new(name: name,
+                                                           required: true)
+                                         end
+                                       end
+          end
+
+          if schema.else_schema
+            else_props = collect_all_properties(schema.else_schema)
+            result[:else_properties] = if else_props.any?
+                                         build_properties(else_props, schema, [])
+                                       else
+                                         []
+                                       end
+          end
+
+          result
+        end
+
+        # ── Links (hyper-schema) ──
+
+        def build_links(schema)
+          return [] unless schema.links&.any?
+
+          schema.links.map do |link|
+            SpaLink.new(
+              title: link.title,
+              description: link.description,
+              http_method: link.http_method,
+              href: link.href,
+              rel: link.rel,
+            )
+          end
+        end
+
         def build_search_index(schemas)
           schemas.flat_map do |spa_schema|
-            @schema_set.schemas[spa_schema.name]
-
             entries = [SpaSearchEntry.new(
               name: spa_schema.name,
               title: spa_schema.title,

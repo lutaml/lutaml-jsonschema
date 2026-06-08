@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require "lutaml/jsonschema"
+require "spec_helper"
 require "json"
 
 RSpec.describe Lutaml::Jsonschema::Spa::SpaBuilder do

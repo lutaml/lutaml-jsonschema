@@ -60,22 +60,7 @@ module Lutaml
       private
 
       def navigate_schema(schema, part)
-        case part
-        when "definitions", "$defs"
-          schema.definition_entries
-        when "properties"
-          schema.property_entries
-        when "patternProperties"
-          schema.pattern_property_entries
-        when "items"
-          schema.items
-        when "allOf" then schema.all_of
-        when "anyOf" then schema.any_of
-        when "oneOf" then schema.one_of
-        else
-          entries = schema.definition_entries || []
-          entries.find { |e| e.name == part }&.schema
-        end
+        schema.child_at(part)
       end
     end
   end

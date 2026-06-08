@@ -36,6 +36,36 @@ module Lutaml
         attribute :has_one_of, :boolean
         attribute :composition_variants, :string, collection: true
 
+        # Array items detail (when items is an object schema)
+        attribute :items_type, :string
+        attribute :items_ref, :string
+        attribute :items_properties, SpaProperty, collection: true,
+                                                  initialize_empty: true
+        attribute :items_required, :string, collection: true,
+                                            initialize_empty: true
+        attribute :items_enum, :string, collection: true
+        attribute :items_format, :string
+
+        # Contains (array must contain at least one item matching schema)
+        attribute :contains_type, :string
+        attribute :contains_ref, :string
+
+        # patternProperties
+        attribute :pattern_properties, :hash
+
+        # not constraint
+        attribute :not_type, :string
+
+        # oneOf/anyOf variant schemas
+        attribute :one_of_variants, SpaProperty, collection: true,
+                                                 initialize_empty: true
+        attribute :any_of_variants, SpaProperty, collection: true,
+                                                 initialize_empty: true
+
+        # Hyper-schema links
+        attribute :links, SpaLink, collection: true,
+                                   initialize_empty: true
+
         json do
           map "name", to: :name
           map "title", to: :title
@@ -67,6 +97,19 @@ module Lutaml
           map "hasAnyOf", to: :has_any_of
           map "hasOneOf", to: :has_one_of
           map "compositionVariants", to: :composition_variants
+          map "itemsType", to: :items_type
+          map "itemsRef", to: :items_ref
+          map "itemsProperties", to: :items_properties
+          map "itemsRequired", to: :items_required
+          map "itemsEnum", to: :items_enum
+          map "itemsFormat", to: :items_format
+          map "containsType", to: :contains_type
+          map "containsRef", to: :contains_ref
+          map "patternProperties", to: :pattern_properties
+          map "notType", to: :not_type
+          map "oneOfVariants", to: :one_of_variants
+          map "anyOfVariants", to: :any_of_variants
+          map "links", to: :links
         end
       end
     end

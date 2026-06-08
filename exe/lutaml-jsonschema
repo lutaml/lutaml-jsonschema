@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-require "lutaml/jsonschema/cli"
+require "lutaml/jsonschema"
 
 Lutaml::Jsonschema::Cli.start(ARGV)

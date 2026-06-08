@@ -31,25 +31,13 @@ module Lutaml
 
         schema.dollar_ref = localize_ref(schema.dollar_ref) if schema.dollar_ref&.start_with?("#/")
 
-        schema.property_entries.each { |e| rewrite_refs!(e.schema) }
-        schema.definition_entries.each { |e| rewrite_refs!(e.schema) }
-        schema.pattern_property_entries.each { |e| rewrite_refs!(e.schema) }
-        rewrite_refs!(schema.items)
-        rewrite_refs!(schema.not_schema)
-        rewrite_refs!(schema.if_schema)
-        rewrite_refs!(schema.then_schema)
-        rewrite_refs!(schema.else_schema)
-        schema.all_of.each { |s| rewrite_refs!(s) }
-        schema.any_of.each { |s| rewrite_refs!(s) }
-        schema.one_of.each { |s| rewrite_refs!(s) }
-        schema.links.each do |l|
-          rewrite_refs!(l.schema)
-          rewrite_refs!(l.target_schema)
+        schema.each_child do |child, _segment|
+          rewrite_refs!(child)
         end
       end
 
       def localize_ref(ref)
-        ref
+        ref.sub(%r{^#/definitions/}, "#/$defs/")
       end
     end
   end
