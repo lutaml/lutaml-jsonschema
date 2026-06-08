@@ -24,6 +24,28 @@ module Lutaml
         attribute :has_any_of, :boolean
         attribute :has_one_of, :boolean
 
+        # Conditional schemas
+        attribute :if_schema, SpaProperty
+        attribute :then_required, :string, collection: true
+        attribute :then_properties, SpaProperty, collection: true,
+                                                 initialize_empty: true
+        attribute :else_properties, SpaProperty, collection: true,
+                                                 initialize_empty: true
+
+        # patternProperties at schema level
+        attribute :pattern_properties, :hash
+
+        # Contains at schema level
+        attribute :contains_type, :string
+        attribute :contains_ref, :string
+
+        # not at schema level
+        attribute :not_type, :string
+
+        # Hyper-schema links
+        attribute :links, SpaLink, collection: true,
+                                   initialize_empty: true
+
         json do
           map "name", to: :name
           map "title", to: :title
@@ -42,6 +64,15 @@ module Lutaml
           map "hasAllOf", to: :has_all_of
           map "hasAnyOf", to: :has_any_of
           map "hasOneOf", to: :has_one_of
+          map "ifSchema", to: :if_schema
+          map "thenRequired", to: :then_required
+          map "thenProperties", to: :then_properties
+          map "elseProperties", to: :else_properties
+          map "patternProperties", to: :pattern_properties
+          map "containsType", to: :contains_type
+          map "containsRef", to: :contains_ref
+          map "notType", to: :not_type
+          map "links", to: :links
         end
       end
     end

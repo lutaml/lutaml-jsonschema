@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "spec_helper"
+
 RSpec.describe Lutaml::Jsonschema do
   it "has a version number" do
     expect(Lutaml::Jsonschema::VERSION).not_to be nil
@@ -283,6 +285,39 @@ RSpec.describe Lutaml::Jsonschema::Schema do
   end
 end
 
+RSpec.describe Lutaml::Jsonschema::PropertyEntry do
+  let(:schema) do
+    Lutaml::Jsonschema::Schema.from_json(JSON.generate({
+                                                         "type" => "object",
+                                                         "properties" => {
+                                                           "name" => { "type" => "string" },
+                                                           "count" => {
+                                                             "type" => "integer", "minimum" => 0
+                                                           },
+                                                         },
+                                                       }))
+  end
+
+  it "creates PropertyEntry for each property" do
+    expect(schema.property_entries.length).to eq(2)
+    names = schema.property_entries.map(&:name)
+    expect(names).to contain_exactly("name", "count")
+  end
+
+  it "wraps each property in a Schema" do
+    entry = schema.property_entries.find { |e| e.name == "count" }
+    expect(entry.schema.type).to eq("integer")
+    expect(entry.schema.minimum).to eq(0.0)
+  end
+
+  it "preserves name and schema through JSON serialization" do
+    entry = schema.property_entries.find { |e| e.name == "name" }
+    parsed = JSON.parse(entry.to_json)
+    expect(parsed["name"]).to eq("name")
+    expect(parsed["schema"]["type"]).to eq("string")
+  end
+end
+
 RSpec.describe Lutaml::Jsonschema::Link do
   it "parses a hyper-schema link" do
     json = JSON.generate({
@@ -399,7 +434,7 @@ RSpec.describe Lutaml::Jsonschema::Combiner do
   it "creates $ref entries for each schema" do
     combined = described_class.new.combine(schema_set)
     person_ref = combined.property_entries.find { |e| e.name == "person" }
-    expect(person_ref.schema.dollar_ref).to eq("#/definitions/person")
+    expect(person_ref.schema.dollar_ref).to eq("#/$defs/person")
   end
 
   it "round-trips combined schema to JSON" do
@@ -409,8 +444,8 @@ RSpec.describe Lutaml::Jsonschema::Combiner do
     expected = JSON.generate({
                                "title" => "Person",
                                "properties" => {
-                                 "person" => { "$ref" => "#/definitions/person" },
-                                 "user" => { "$ref" => "#/definitions/user" },
+                                 "person" => { "$ref" => "#/$defs/person" },
+                                 "user" => { "$ref" => "#/$defs/user" },
                                },
                                "$defs" => { "address" => address_def },
                              })

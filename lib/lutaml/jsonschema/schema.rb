@@ -130,7 +130,7 @@ module Lutaml
         map "$defs", to: :definition_entries,
                      child_mappings: { name: :key, schema: :value }
         map "definitions", to: :definition_entries,
-                           with: { from: :parse_legacy_definitions, to: :noop_serializer }
+                           with: { from: :parse_legacy_definitions, to: :suppress_output }
         map "links", to: :links
       end
 
@@ -188,7 +188,51 @@ module Lutaml
         result
       end
 
-      def noop_serializer(_instance, _hash); end
+      def child_at(segment)
+        case segment
+        when "definitions", "$defs" then definition_entries
+        when "properties" then property_entries
+        when "patternProperties" then pattern_property_entries
+        when "items" then items
+        when "allOf" then all_of
+        when "anyOf" then any_of
+        when "oneOf" then one_of
+        when "not" then not_schema
+        when "if" then if_schema
+        when "then" then then_schema
+        when "else" then else_schema
+        else
+          definition_entries.find { |e| e.name == segment }&.schema
+        end
+      end
+
+      def each_child
+        return enum_for(:each_child) unless block_given?
+
+        property_entries.each do |e|
+          yield e.schema, "properties/#{e.name}" if e.schema
+        end
+        definition_entries.each do |e|
+          yield e.schema, "$defs/#{e.name}" if e.schema
+        end
+        pattern_property_entries.each do |e|
+          yield e.schema, "patternProperties/#{e.name}" if e.schema
+        end
+        all_of.each_with_index { |s, i| yield s, "allOf[#{i}]" }
+        any_of.each_with_index { |s, i| yield s, "anyOf[#{i}]" }
+        one_of.each_with_index { |s, i| yield s, "oneOf[#{i}]" }
+        yield items, "items" if items
+        yield not_schema, "not" if not_schema
+        yield if_schema, "if" if if_schema
+        yield then_schema, "then" if then_schema
+        yield else_schema, "else" if else_schema
+        links.each do |link|
+          yield link.schema, "link.schema" if link.schema
+          yield link.target_schema, "link.target_schema" if link.target_schema
+        end
+      end
+
+      def suppress_output(_instance, _hash); end
 
       def parse_legacy_definitions(instance, value)
         return unless value.is_a?(Hash)

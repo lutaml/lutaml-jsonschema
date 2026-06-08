@@ -1,38 +1,30 @@
 # frozen_string_literal: true
 
-require "yaml"
-
 module Lutaml
   module Jsonschema
-    class Configuration
-      attr_accessor :title, :version, :description, :base_url, :theme,
-                    :output_path, :appearance
+    class Configuration < Base
+      attribute :title, :string
+      attribute :version, :string
+      attribute :description, :string
+      attribute :base_url, :string
+      attribute :theme, :string, default: -> { "light" }
+      attribute :output_path, :string, default: -> { "output" }
+      attribute :appearance, :hash
 
-      def initialize
-        @title = nil
-        @version = nil
-        @description = nil
-        @base_url = nil
-        @theme = "light"
-        @output_path = "output"
-        @appearance = nil
+      key_value do
+        map "title", to: :title
+        map "version", to: :version
+        map "description", to: :description
+        map "base_url", to: :base_url
+        map "theme", to: :theme
+        map "output_path", to: :output_path
+        map "appearance", to: :appearance
       end
 
       def self.load_from_file(path)
         return new unless File.exist?(path)
 
-        data = YAML.safe_load_file(path)
-        config = new
-        return config unless data.is_a?(Hash)
-
-        config.title = data["title"] if data.key?("title")
-        config.version = data["version"] if data.key?("version")
-        config.description = data["description"] if data.key?("description")
-        config.base_url = data["base_url"] if data.key?("base_url")
-        config.theme = data["theme"] if data.key?("theme")
-        config.output_path = data["output_path"] if data.key?("output_path")
-        config.appearance = data["appearance"] if data.key?("appearance")
-        config
+        from_yaml(File.read(path, encoding: "utf-8"))
       end
 
       def to_metadata
@@ -47,14 +39,14 @@ module Lutaml
       end
 
       def apply_appearance_overrides(logo:, subtitle:)
-        @appearance ||= {}
-        @appearance["logos"] ||= {}
-        @appearance["logos"]["square"] ||= {}
+        self.appearance ||= {}
+        appearance["logos"] ||= {}
+        appearance["logos"]["square"] ||= {}
         if logo
-          @appearance["logos"]["square"]["light"] = { "url" => logo }
-          @appearance["logos"]["square"]["dark"] = { "url" => logo }
+          appearance["logos"]["square"]["light"] = { "url" => logo }
+          appearance["logos"]["square"]["dark"] = { "url" => logo }
         end
-        @appearance["subtitle"] = subtitle if subtitle
+        appearance["subtitle"] = subtitle if subtitle
       end
     end
   end

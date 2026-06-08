@@ -2,8 +2,6 @@
 
 require "thor"
 require "json"
-require "lutaml/jsonschema"
-require "lutaml/jsonschema/configuration"
 
 module Lutaml
   module Jsonschema
@@ -15,7 +13,7 @@ module Lutaml
       option :config, aliases: "-c", type: :string,
                       desc: "Path to YAML configuration file"
       option :title, type: :string, desc: "Documentation title"
-      option :theme, type: :string, default: "light", desc: "Theme (light/dark)"
+      option :theme, type: :string, desc: "Theme (light/dark)"
       option :logo, type: :string, desc: "Sidebar header logo URL"
       option :subtitle, type: :string, desc: "Sidebar subtitle text"
       def spa(*schema_files)
@@ -25,7 +23,8 @@ module Lutaml
         config.output_path = options[:output] if options[:output]
         config.title = options[:title] if options[:title]
         config.theme = options[:theme] if options[:theme]
-        config.apply_appearance_overrides(logo: options[:logo], subtitle: options[:subtitle])
+        config.apply_appearance_overrides(logo: options[:logo],
+                                          subtitle: options[:subtitle])
 
         schema_set = SchemaSet.load_from_files(*schema_files)
         generator = Spa::Generator.new(schema_set, config.output_path,

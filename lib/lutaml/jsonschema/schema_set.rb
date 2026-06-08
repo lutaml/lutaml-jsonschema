@@ -3,18 +3,21 @@
 module Lutaml
   module Jsonschema
     class SchemaSet
-      attr_reader :schemas, :base_dir
+      attr_reader :schemas
+      attr_accessor :base_dir
 
       def initialize(base_dir: nil)
         @schemas = {}
         @base_dir = base_dir
+        @file_paths = {}
+        @source_jsons = {}
         @resolver = ReferenceResolver.new(@schemas)
       end
 
       def self.load_from_files(*paths, base_dir: nil)
         set = new(base_dir: base_dir || infer_base_dir(paths))
         paths.each do |path|
-          data = File.read(path)
+          data = File.read(path, encoding: "utf-8")
           schema = Schema.from_json(data)
           name = File.basename(path, ".*")
           set.add(name, schema, path, data)
@@ -31,14 +34,12 @@ module Lutaml
         @schemas[name] = schema
         return unless file_path
 
-        @file_paths ||= {}
         @file_paths[File.basename(file_path)] = file_path
-        @source_jsons ||= {}
         @source_jsons[name] = source_json if source_json
       end
 
       def source_json(name)
-        @source_jsons&.dig(name)
+        @source_jsons[name]
       end
 
       def resolve_ref(ref_string, context_schema = nil)
@@ -58,13 +59,7 @@ module Lutaml
       end
 
       def validate!
-        errors = []
-        seen_refs = Set.new
-
-        @schemas.each do |name, schema|
-          collect_refs(schema, name, errors, seen_refs, "")
-        end
-
+        errors = validation_errors
         raise ValidationError, errors.join("\n") if errors.any?
 
         true
@@ -139,26 +134,7 @@ module Lutaml
       def find_anchor(schema, anchor)
         return schema if schema.dollar_anchor == anchor
 
-        [
-          schema.property_entries, schema.definition_entries,
-          schema.pattern_property_entries, schema.all_of,
-          schema.any_of, schema.one_of
-        ].each do |entries|
-          entries.each do |entry|
-            next if entry.nil?
-
-            child = entry.is_a?(PropertyEntry) ? entry.schema : entry
-            next if child.nil?
-
-            found = find_anchor(child, anchor)
-            return found if found
-          end
-        end
-
-        [schema.items, schema.not_schema, schema.if_schema,
-         schema.then_schema, schema.else_schema].each do |child|
-          next if child.nil?
-
+        schema.each_child do |child, _segment|
           found = find_anchor(child, anchor)
           return found if found
         end
@@ -167,13 +143,11 @@ module Lutaml
       end
 
       def find_schema_by_filename(filename)
-        # Check if we already loaded this file
         @schemas.each do |name, schema|
           return schema if name == File.basename(filename, ".*")
         end
 
-        # Check file_paths mapping
-        return nil unless @file_paths&.key?(filename)
+        return nil unless @file_paths.key?(filename)
 
         name = File.basename(filename, ".*")
         @schemas[name]
@@ -189,51 +163,9 @@ module Lutaml
           )
         end
 
-        children = [
-          [:property_entries, schema.property_entries],
-          [:definition_entries, schema.definition_entries],
-          [:pattern_property_entries, schema.pattern_property_entries],
-        ]
-        children.each do |key, entries|
-          entries.each do |entry|
-            collect_refs(entry.schema, source_name, errors, seen_refs,
-                         "#{path}/#{key}/#{entry.name}")
-          end
-        end
-
-        schema.all_of.each_with_index do |s, i|
-          collect_refs(s, source_name, errors, seen_refs, "#{path}/allOf[#{i}]")
-        end
-        schema.any_of.each_with_index do |s, i|
-          collect_refs(s, source_name, errors, seen_refs, "#{path}/anyOf[#{i}]")
-        end
-        schema.one_of.each_with_index do |s, i|
-          collect_refs(s, source_name, errors, seen_refs, "#{path}/oneOf[#{i}]")
-        end
-
-        single_children = {
-          items: schema.items,
-          not_schema: schema.not_schema,
-          if_schema: schema.if_schema,
-          then_schema: schema.then_schema,
-          else_schema: schema.else_schema,
-        }
-        single_children.each do |attr, child|
-          if child
-            collect_refs(child, source_name, errors, seen_refs,
-                         "#{path}/#{attr}")
-          end
-        end
-
-        schema.links.each do |link|
-          if link.schema
-            collect_refs(link.schema, source_name, errors, seen_refs,
-                         "#{path}/link.schema")
-          end
-          if link.target_schema
-            collect_refs(link.target_schema, source_name, errors, seen_refs,
-                         "#{path}/link.target_schema")
-          end
+        schema.each_child do |child, segment|
+          collect_refs(child, source_name, errors, seen_refs,
+                       "#{path}/#{segment}")
         end
       end
 

@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require "lutaml/jsonschema"
+require "spec_helper"
 
 RSpec.describe Lutaml::Jsonschema::Spa::SpaDocument do
   let(:fixtures_dir) { File.join(__dir__, "..", "fixtures") }
