@@ -31,6 +31,6 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency "json"
   spec.add_dependency "lutaml-model", "~> 0.8.0"
-  spec.add_dependency "lutaml-store", "~> 0.2.0"
+  spec.add_dependency "lutaml-store", "~> 0.3"
   spec.add_dependency "thor", "~> 1.3"
 end
