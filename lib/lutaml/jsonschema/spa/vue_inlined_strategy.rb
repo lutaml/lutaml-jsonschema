@@ -27,7 +27,7 @@ module Lutaml
           return File.read(path) if File.exist?(path)
 
           raise Error,
-                "Frontend asset not found: #{path}. Run `bundle exec rake build_frontend` first."
+                "Frontend asset not found: #{path}. The installed gem should ship it — reinstall the gem."
         end
 
         def build_html(json_data, js, css)
