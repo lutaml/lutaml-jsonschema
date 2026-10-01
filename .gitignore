@@ -11,7 +11,7 @@
 .rspec_status
 
 # Frontend
-frontend/dist/
+
 frontend/node_modules/
 node_modules/
 

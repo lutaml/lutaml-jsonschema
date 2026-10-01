@@ -23,7 +23,9 @@ jobs:
     uses: metanorma/ci/.github/workflows/rubygems-release.yml@main
     with:
       next_version: ${{ github.event.inputs.next_version }}
-      post_install: 'cd frontend && rm -f package-lock.json && npm install --no-package-lock && npm run build'
+      # The frontend dist is committed (the ea pattern) — nothing to
+      # build or install in the release pipeline; npm runs at development
+      # time only, when frontend sources change.
     secrets:
       rubygems-api-key: ${{ secrets.LUTAML_CI_RUBYGEMS_API_KEY }}
       pat_token: ${{ secrets.GITHUB_TOKEN }}
