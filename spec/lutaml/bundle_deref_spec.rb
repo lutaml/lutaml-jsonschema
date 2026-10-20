@@ -23,6 +23,16 @@ RSpec.describe "SchemaSet bundle and dereference modes" do
       expect(json["$defs"].keys).to include("x")
       expect(json["properties"]["demo"]["$ref"]).to eq("#/$defs/demo")
     end
+
+    it "keeps the Combiner facade in sync with the resolution layer" do
+      set = schema_set_from(
+        "definitions" => { "x" => { "type" => "string" } },
+        "properties" => { "a" => { "$ref" => "#/definitions/x" } },
+      )
+
+      expect(Lutaml::Jsonschema::Combiner.new.combine(set).to_json)
+        .to eq(set.bundle.to_json)
+    end
   end
 
   describe "#dereference" do

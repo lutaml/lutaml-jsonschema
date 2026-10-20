@@ -92,9 +92,23 @@ module Lutaml
       end
 
       # Bundle mode: every schema's definitions hoisted into one
-      # combined document with localized refs (the Combiner contract).
+      # combined document with localized refs.
       def bundle
-        Combiner.new.combine(self)
+        combined = Schema.new
+
+        @schemas.each do |name, schema|
+          combined.definition_entries.concat(schema.definition_entries)
+          combined.property_entries.push(
+            PropertyEntry.new(
+              name: name,
+              schema: Schema.new(dollar_ref: "#/definitions/#{name}"),
+            ),
+          )
+          combined.title ||= schema.title if schema.title
+        end
+
+        rewrite_bundled_refs!(combined)
+        combined
       end
 
       # Dereference mode: a plain-Hash view of a named schema with
@@ -112,6 +126,17 @@ module Lutaml
       end
 
       private
+
+      # The bundle renames `definitions` to `$defs`; point every local
+      # `#/definitions/...` ref at the new location.
+      def rewrite_bundled_refs!(schema)
+        @resolver.each_schema(schema) do |node|
+          ref = node.dollar_ref
+          next unless ref&.start_with?("#/definitions/")
+
+          node.dollar_ref = ref.sub(%r{^#/definitions/}, "#/$defs/")
+        end
+      end
 
       def dereference_node(node, context_schema, seen)
         case node
