@@ -153,9 +153,11 @@ module Lutaml
                                             context_schema)) || schema
         end
 
-        # Boolean schemas (`true` = anything, `false` = nothing) appear
-        # wherever a schema can; normalize them to a renderable Schema.
+        # Boolean schemas (`true` = anything, `false` = nothing) and
+        # TupleItem wrappers appear wherever a schema can; normalize them
+        # to a renderable Schema.
         def as_schema(value)
+          value = value.value if value.is_a?(TupleItem)
           return value if value.is_a?(Schema)
           return nil if value.nil?
 
@@ -204,10 +206,10 @@ module Lutaml
 
           # Case 2: allOf with a single $ref and no own properties
           if s.all_of.length == 1 && !s.type && s.property_entries.empty?
-            ref_schema = s.all_of.first
-            if ref_schema.dollar_ref
-              resolved = as_schema(@schema_set.resolve_ref(ref_schema.dollar_ref,
-                                                           root_schema))
+            item = s.all_of.first
+            ref = item.is_a?(TupleItem) ? item.schema&.dollar_ref : item.dollar_ref
+            if ref
+              resolved = as_schema(@schema_set.resolve_ref(ref, root_schema))
               return resolved if resolved
             end
           end
@@ -546,7 +548,9 @@ module Lutaml
           return nil unless schema.all_of.any?
 
           schema.all_of
-            .filter_map(&:dollar_ref)
+            .filter_map do |item|
+              item.is_a?(TupleItem) ? item.schema&.dollar_ref : item.dollar_ref
+            end
             .first
         end
 
@@ -716,6 +720,7 @@ module Lutaml
           return [] if depth > 2
 
           sub_schemas.filter_map do |sub|
+            source_ref = sub.is_a?(TupleItem) ? sub.schema&.dollar_ref : sub.dollar_ref
             resolved = resolve_composition_schema(sub, root_schema)
             next unless resolved
 
@@ -731,7 +736,7 @@ module Lutaml
               title: resolved.title,
               description: resolved.description,
               type: resolved.type,
-              ref: sub.dollar_ref || resolved.dollar_ref,
+              ref: source_ref || resolved.dollar_ref,
               const_value: resolved.const,
               enum: resolved.enum,
               enum_descriptions: resolved.enum_descriptions,

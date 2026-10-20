@@ -158,7 +158,7 @@ RSpec.describe Lutaml::Jsonschema::Schema do
                            })
       schema = described_class.from_json(json)
       expect(schema.any_of.length).to eq(2)
-      expect(schema.any_of.first.format).to eq("email")
+      expect(schema.any_of_values.first.format).to eq("email")
     end
   end
 

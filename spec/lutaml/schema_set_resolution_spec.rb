@@ -52,7 +52,7 @@ RSpec.describe Lutaml::Jsonschema::SchemaSet do
 
     it "resolves $ref inside allOf" do
       contact = schema.property_entries.find { |p| p.name == "contact" }
-      ref = contact.schema.all_of.first.dollar_ref
+      ref = contact.schema.all_of_values.first.dollar_ref
       resolved = set.resolve_ref(ref, schema)
       expect(resolved).not_to be_nil
       expect(resolved.type).to eq("object")

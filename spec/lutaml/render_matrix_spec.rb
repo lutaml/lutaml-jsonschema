@@ -204,6 +204,15 @@ RSpec.describe "Dialect-aware constraint rendering" do
     expect(schema.pattern_properties).to eq("^x-" => { "type" => "any" })
   end
 
+  it "renders boolean composition variants" do
+    property = spa_property(
+      {},
+      { "oneOf" => [false, { "type" => "string" }] },
+    )
+
+    expect(property.one_of_variants.map(&:type)).to eq(%w[never string])
+  end
+
   it "renders boolean not and contains constraints" do
     root = Lutaml::Jsonschema::Schema.from_json(Yeptris::JSON.dump(
                                                   "type" => "array",
