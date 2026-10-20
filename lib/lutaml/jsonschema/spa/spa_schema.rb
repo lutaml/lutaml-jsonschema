@@ -25,6 +25,19 @@ module Lutaml
         attribute :has_any_of, :boolean
         attribute :has_one_of, :boolean
 
+        # Array items detail (top-level arrays)
+        attribute :items_type, :string
+        attribute :items_ref, :string
+        attribute :items_properties, SpaProperty, collection: true,
+                                                  initialize_empty: true
+        attribute :items_required, :string, collection: true,
+                                            initialize_empty: true
+        attribute :items_enum, :string, collection: true
+        attribute :items_format, :string
+        attribute :items_tuple, :string, collection: true
+        attribute :items_tail, :string
+        attribute :items_closed, :boolean
+
         # Conditional schemas
         attribute :if_schema, SpaProperty
         attribute :then_required, :string, collection: true
@@ -66,6 +79,15 @@ module Lutaml
           map "hasAllOf", to: :has_all_of
           map "hasAnyOf", to: :has_any_of
           map "hasOneOf", to: :has_one_of
+          map "itemsType", to: :items_type
+          map "itemsRef", to: :items_ref
+          map "itemsProperties", to: :items_properties
+          map "itemsRequired", to: :items_required
+          map "itemsEnum", to: :items_enum
+          map "itemsFormat", to: :items_format
+          map "itemsTuple", to: :items_tuple
+          map "itemsTail", to: :items_tail
+          map "itemsClosed", to: :items_closed
           map "ifSchema", to: :if_schema
           map "thenRequired", to: :then_required
           map "thenProperties", to: :then_properties

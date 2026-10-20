@@ -154,4 +154,34 @@ RSpec.describe "Dialect-aware constraint rendering" do
 
     expect(property.items_tuple).to eq(["Money"])
   end
+
+  it "exposes items on a top-level array schema" do
+    root = Lutaml::Jsonschema::Schema.from_json(Yeptris::JSON.dump(
+                                                  "$schema" => "https://json-schema.org/draft/2020-12/schema",
+                                                  "type" => "array",
+                                                  "prefixItems" => [{ "type" => "string" }],
+                                                  "items" => false,
+                                                ))
+    set = Lutaml::Jsonschema::SchemaSet.new
+    set.add("demo", root)
+    document = Lutaml::Jsonschema::Spa::SpaBuilder.new(set).build
+    schema = document.schemas.first
+
+    expect(schema.items_tuple).to eq(["string"])
+    expect(schema.items_closed).to be(true)
+    expect(Yeptris::JSON.load(document.to_json)["schemas"].first)
+      .to include("itemsTuple" => ["string"], "itemsClosed" => true)
+  end
+
+  it "exposes a single-schema items type on a top-level array schema" do
+    root = Lutaml::Jsonschema::Schema.from_json(Yeptris::JSON.dump(
+                                                  "type" => "array",
+                                                  "items" => { "type" => "integer" },
+                                                ))
+    set = Lutaml::Jsonschema::SchemaSet.new
+    set.add("demo", root)
+    schema = Lutaml::Jsonschema::Spa::SpaBuilder.new(set).build.schemas.first
+
+    expect(schema.items_type).to eq("integer")
+  end
 end

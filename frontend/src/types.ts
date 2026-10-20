@@ -115,6 +115,11 @@ export interface SpaSchema {
   hasAllOf?: boolean
   hasAnyOf?: boolean
   hasOneOf?: boolean
+  itemsType?: string
+  itemsRef?: string
+  itemsTuple?: string[]
+  itemsTail?: string
+  itemsClosed?: boolean
 }
 
 export interface SpaSearchEntry {
