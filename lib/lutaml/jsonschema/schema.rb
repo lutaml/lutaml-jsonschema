@@ -43,6 +43,7 @@ module Lutaml
       attribute :unevaluated_properties, :boolean
       attribute :unevaluated_properties_schema, Schema
       attribute :property_names, Schema
+      attribute :property_names_boolean, :boolean
       attribute :dependent_required, :hash
       attribute :dependent_schemas_entries, PropertyEntry, collection: true,
                                                            initialize_empty: true
@@ -66,6 +67,7 @@ module Lutaml
       attribute :max_items, :integer
       attribute :unique_items, :boolean
       attribute :contains, Schema
+      attribute :contains_boolean, :boolean
       attribute :min_contains, :integer
       attribute :max_contains, :integer
 
@@ -83,6 +85,7 @@ module Lutaml
       attribute :content_type, :string
       attribute :content_encoding, :string
       attribute :content_schema, Schema
+      attribute :content_schema_boolean, :boolean
 
       # Enum / const
       attribute :enum, :string, collection: true
@@ -94,11 +97,15 @@ module Lutaml
       attribute :any_of, Schema, collection: true, initialize_empty: true
       attribute :one_of, Schema, collection: true, initialize_empty: true
       attribute :not_schema, Schema
+      attribute :not_boolean, :boolean
 
       # Conditional
       attribute :if_schema, Schema
+      attribute :if_boolean, :boolean
       attribute :then_schema, Schema
+      attribute :then_boolean, :boolean
       attribute :else_schema, Schema
+      attribute :else_boolean, :boolean
 
       # Definitions ($defs / definitions)
       attribute :definition_entries, PropertyEntry, collection: true,
@@ -143,7 +150,9 @@ module Lutaml
         map "unevaluatedProperties", to: :unevaluated_properties,
                                      with: { from: :parse_unevaluated_properties,
                                              to: :serialize_unevaluated_properties }
-        map "propertyNames", to: :property_names
+        map "propertyNames", to: :property_names,
+                             with: { from: :parse_property_names,
+                                     to: :serialize_property_names }
         map "dependentRequired", to: :dependent_required
         map "dependentSchemas", to: :dependent_schemas_entries,
                                 with: { from: :parse_dependent_schema_entries,
@@ -163,7 +172,8 @@ module Lutaml
         map "minItems", to: :min_items
         map "maxItems", to: :max_items
         map "uniqueItems", to: :unique_items
-        map "contains", to: :contains
+        map "contains", to: :contains,
+                        with: { from: :parse_contains, to: :serialize_contains }
         map "minContains", to: :min_contains
         map "maxContains", to: :max_contains
         map "minimum", to: :minimum
@@ -176,17 +186,23 @@ module Lutaml
         map "pattern", to: :pattern
         map "contentMediaType", to: :content_type
         map "contentEncoding", to: :content_encoding
-        map "contentSchema", to: :content_schema
+        map "contentSchema", to: :content_schema,
+                             with: { from: :parse_content_schema,
+                                     to: :serialize_content_schema }
         map "enum", to: :enum
         map "x-enumDescriptions", to: :enum_descriptions
         map "const", to: :const
         map "allOf", to: :all_of
         map "anyOf", to: :any_of
         map "oneOf", to: :one_of
-        map "not", to: :not_schema
-        map "if", to: :if_schema
-        map "then", to: :then_schema
-        map "else", to: :else_schema
+        map "not", to: :not_schema,
+                   with: { from: :parse_not, to: :serialize_not }
+        map "if", to: :if_schema,
+                  with: { from: :parse_if, to: :serialize_if }
+        map "then", to: :then_schema,
+                    with: { from: :parse_then, to: :serialize_then }
+        map "else", to: :else_schema,
+                    with: { from: :parse_else, to: :serialize_else }
         map "$defs", to: :definition_entries,
                      with: { from: :parse_definitions,
                              to: :serialize_definitions }
@@ -460,6 +476,36 @@ module Lutaml
         false
       end
 
+      # Schema-or-boolean keyword values (`true` = anything, `false` =
+      # nothing); the schema side lives in the corresponding attribute.
+      def property_names_value
+        property_names || property_names_boolean
+      end
+
+      def contains_value
+        contains || contains_boolean
+      end
+
+      def content_schema_value
+        content_schema || content_schema_boolean
+      end
+
+      def not_value
+        not_schema || not_boolean
+      end
+
+      def if_value
+        if_schema || if_boolean
+      end
+
+      def then_value
+        then_schema || then_boolean
+      end
+
+      def else_value
+        else_schema || else_boolean
+      end
+
       def exclusive_bound_value(exclusive, bound)
         return nil if exclusive.nil? || exclusive == false
         return bound if exclusive == true
@@ -501,6 +547,75 @@ module Lutaml
         serialize_boolean_or_schema(hash, "unevaluatedProperties",
                                     instance.unevaluated_properties,
                                     instance.unevaluated_properties_schema)
+      end
+
+      def parse_property_names(instance, value)
+        parse_boolean_or_schema(instance, value, :property_names_boolean=,
+                                :property_names=)
+      end
+
+      def serialize_property_names(instance, hash)
+        serialize_boolean_or_schema(hash, "propertyNames",
+                                    instance.property_names_boolean,
+                                    instance.property_names)
+      end
+
+      def parse_contains(instance, value)
+        parse_boolean_or_schema(instance, value, :contains_boolean=,
+                                :contains=)
+      end
+
+      def serialize_contains(instance, hash)
+        serialize_boolean_or_schema(hash, "contains",
+                                    instance.contains_boolean,
+                                    instance.contains)
+      end
+
+      def parse_content_schema(instance, value)
+        parse_boolean_or_schema(instance, value, :content_schema_boolean=,
+                                :content_schema=)
+      end
+
+      def serialize_content_schema(instance, hash)
+        serialize_boolean_or_schema(hash, "contentSchema",
+                                    instance.content_schema_boolean,
+                                    instance.content_schema)
+      end
+
+      def parse_not(instance, value)
+        parse_boolean_or_schema(instance, value, :not_boolean=, :not_schema=)
+      end
+
+      def serialize_not(instance, hash)
+        serialize_boolean_or_schema(hash, "not", instance.not_boolean,
+                                    instance.not_schema)
+      end
+
+      def parse_if(instance, value)
+        parse_boolean_or_schema(instance, value, :if_boolean=, :if_schema=)
+      end
+
+      def serialize_if(instance, hash)
+        serialize_boolean_or_schema(hash, "if", instance.if_boolean,
+                                    instance.if_schema)
+      end
+
+      def parse_then(instance, value)
+        parse_boolean_or_schema(instance, value, :then_boolean=, :then_schema=)
+      end
+
+      def serialize_then(instance, hash)
+        serialize_boolean_or_schema(hash, "then", instance.then_boolean,
+                                    instance.then_schema)
+      end
+
+      def parse_else(instance, value)
+        parse_boolean_or_schema(instance, value, :else_boolean=, :else_schema=)
+      end
+
+      def serialize_else(instance, hash)
+        serialize_boolean_or_schema(hash, "else", instance.else_boolean,
+                                    instance.else_schema)
       end
 
       def parse_boolean_or_schema(instance, value, boolean_writer,

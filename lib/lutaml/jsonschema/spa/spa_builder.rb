@@ -384,8 +384,7 @@ module Lutaml
           # Capture oneOf/anyOf from the pre-resolution schema for variant detail
           pre_comp_one_of = resolved.one_of.any? ? resolved.one_of.dup : source_schema.one_of.dup
           pre_comp_any_of = resolved.any_of.any? ? resolved.any_of.dup : source_schema.any_of.dup
-          original_not_type = [resolved.not_schema,
-                               source_schema.not_schema].compact.first&.type
+          original_not_type = original_not_type_for(resolved, source_schema)
 
           if !resolved.type && composition_schema?(source_schema)
             resolved = resolve_composition_property(source_schema,
@@ -576,7 +575,7 @@ module Lutaml
 
         def composition_schema?(schema)
           schema.all_of.any? || schema.any_of.any? ||
-            schema.one_of.any? || schema.not_schema
+            schema.one_of.any? || schema.not_value
         end
 
         def resolve_composition_property(schema, root_schema)
@@ -586,7 +585,7 @@ module Lutaml
             resolve_any_of_property(schema, root_schema)
           elsif schema.one_of.any?
             resolve_one_of_property(schema, root_schema)
-          elsif schema.not_schema
+          elsif schema.not_value
             resolve_not_property(schema, root_schema)
           end
         end
@@ -646,7 +645,7 @@ module Lutaml
         end
 
         def resolve_not_property(schema, _root_schema)
-          negated = schema.not_schema
+          negated = as_schema(schema.not_value)
           negated_type = negated&.type || "any"
           Schema.new(
             type: "not #{negated_type}",
@@ -749,9 +748,9 @@ module Lutaml
         # ── Contains ──
 
         def resolve_contains_type(schema)
-          return nil unless schema.contains
+          c = as_schema(schema.contains_value)
+          return nil unless c
 
-          c = schema.contains
           if c.dollar_ref
             resolved = @schema_set.resolve_ref(c.dollar_ref, schema)
             resolved&.type || c.type
@@ -761,7 +760,7 @@ module Lutaml
         end
 
         def resolve_contains_ref(schema)
-          schema.contains&.dollar_ref
+          as_schema(schema.contains_value)&.dollar_ref
         end
 
         # ── patternProperties ──
@@ -777,9 +776,17 @@ module Lutaml
         # ── not ──
 
         def resolve_not_type(schema)
-          return nil unless schema.not_schema
+          value = schema.not_value
+          return nil if value.nil?
+          return value ? "any" : "never" unless value.is_a?(Schema)
 
-          schema.not_schema.type || "any"
+          value.type || "any"
+        end
+
+        def original_not_type_for(resolved, source_schema)
+          [resolved, source_schema].filter_map do |schema|
+            resolve_not_type(schema)
+          end.first
         end
 
         # ── if/then/else ──
@@ -788,46 +795,41 @@ module Lutaml
           result = { if_prop: nil, then_required: [], then_properties: [],
                      else_properties: [] }
 
-          return result unless schema.if_schema
+          # `if: false` never fires, so it is equivalent to no condition.
+          return result unless schema.if_value
 
-          # Build if condition as a property for display
-          if_schema = schema.if_schema
-          if_props = collect_all_properties(if_schema)
-          result[:if_prop] = SpaProperty.new(
-            title: "When condition is met",
-            properties: if if_props.any?
-                          build_properties(if_props, schema,
-                                           [])
-                        else
-                          []
-                        end,
-          )
-
-          if schema.then_schema
-            then_props = collect_all_properties(schema.then_schema)
-            then_required = collect_all_required(schema.then_schema)
-            result[:then_required] = then_required
-            result[:then_properties] = if then_props.any?
-                                         build_properties(then_props, schema,
-                                                          then_required)
-                                       else
-                                         then_required.map do |name|
-                                           SpaProperty.new(name: name,
-                                                           required: true)
-                                         end
-                                       end
+          result[:if_prop] = if_property(schema, as_schema(schema.if_value))
+          then_value = as_schema(schema.then_value)
+          result.merge!(then_branch(schema, then_value)) if then_value
+          else_value = as_schema(schema.else_value)
+          if else_value
+            result[:else_properties] = branch_properties(schema, else_value)
           end
-
-          if schema.else_schema
-            else_props = collect_all_properties(schema.else_schema)
-            result[:else_properties] = if else_props.any?
-                                         build_properties(else_props, schema, [])
-                                       else
-                                         []
-                                       end
-          end
-
           result
+        end
+
+        def if_property(schema, if_schema)
+          if_props = collect_all_properties(if_schema)
+          SpaProperty.new(
+            title: "When condition is met",
+            properties: if_props.any? ? build_properties(if_props, schema, []) : [],
+          )
+        end
+
+        def then_branch(schema, then_schema)
+          then_props = collect_all_properties(then_schema)
+          required = collect_all_required(then_schema)
+          properties = if then_props.any?
+                         build_properties(then_props, schema, required)
+                       else
+                         required.map { |name| SpaProperty.new(name: name, required: true) }
+                       end
+          { then_required: required, then_properties: properties }
+        end
+
+        def branch_properties(schema, branch)
+          props = collect_all_properties(branch)
+          props.any? ? build_properties(props, schema, []) : []
         end
 
         # ── Links (hyper-schema) ──

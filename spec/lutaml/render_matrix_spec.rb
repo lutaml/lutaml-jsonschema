@@ -204,6 +204,20 @@ RSpec.describe "Dialect-aware constraint rendering" do
     expect(schema.pattern_properties).to eq("^x-" => { "type" => "any" })
   end
 
+  it "renders boolean not and contains constraints" do
+    root = Lutaml::Jsonschema::Schema.from_json(Yeptris::JSON.dump(
+                                                  "type" => "array",
+                                                  "not" => false,
+                                                  "contains" => true,
+                                                ))
+    set = Lutaml::Jsonschema::SchemaSet.new
+    set.add("demo", root)
+    schema = Lutaml::Jsonschema::Spa::SpaBuilder.new(set).build.schemas.first
+
+    expect(schema.not_type).to eq("never")
+    expect(schema.contains_type).to eq("any")
+  end
+
   it "projects nested object fields and additional properties" do
     property = spa_property(
       { "$defs" => { "Extra" => { "type" => "integer" } } },
