@@ -9,6 +9,7 @@ module Lutaml
       attribute :base_url, :string
       attribute :theme, :string, default: -> { "light" }
       attribute :output_path, :string, default: -> { "output" }
+      attribute :sort_properties, :string
       attribute :appearance, :hash
 
       key_value do
@@ -18,6 +19,7 @@ module Lutaml
         map "base_url", to: :base_url
         map "theme", to: :theme
         map "output_path", to: :output_path
+        map "sort_properties", to: :sort_properties
         map "appearance", to: :appearance
       end
 
@@ -34,6 +36,7 @@ module Lutaml
           description: description,
           base_url: base_url,
           theme: theme,
+          sort_properties: sort_properties,
           appearance: appearance,
         )
       end
