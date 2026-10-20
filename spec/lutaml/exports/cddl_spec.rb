@@ -49,6 +49,20 @@ RSpec.describe Lutaml::Jsonschema::Exports::Cddl do
     expect(tuple).to include("demo = [text, * int]")
   end
 
+  it "renders draft-04 tuple items and boolean forms" do
+    tuple = render(
+      "type" => "array",
+      "items" => [{ "type" => "string" }, { "type" => "integer" }],
+      "additionalItems" => false,
+    )
+    expect(tuple).to include("demo = [text, int]")
+
+    expect(render("type" => "array", "items" => true))
+      .to include("demo = [* any]")
+    expect(render("type" => "array", "items" => false))
+      .to include("demo = []")
+  end
+
   it "resolves $ref members to their definition group names" do
     output = render(
       "definitions" => {

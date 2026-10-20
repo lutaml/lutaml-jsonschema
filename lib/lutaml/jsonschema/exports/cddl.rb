@@ -112,23 +112,39 @@ module Lutaml
         end
 
         def array_type(schema)
-          return "[* any]" if schema.prefix_items.empty? && schema.items.nil?
-          return "[* #{type_for(schema.items, 'item')}]" if schema.prefix_items.empty?
+          tuple = schema.tuple_items
+          return tuple_type(schema, tuple) if tuple
 
-          "[#{prefix_members(schema).join(', ')}]"
+          return "[]" if schema.items == false
+          return "[* any]" if schema.items.nil? || schema.items == true
+
+          "[* #{type_for(schema.items, 'item')}]"
         end
 
-        def prefix_members(schema)
-          members = schema.prefix_items.map { |item| type_for(item, "item") }
-          members << rest_member(schema) if schema.additional_items != false
-          members
+        def tuple_type(schema, tuple)
+          members, unreachable = tuple_member_list(tuple)
+          unless unreachable || schema.items_closed?
+            members << tail_member(schema)
+          end
+          "[#{members.join(', ')}]"
         end
 
-        # The 2020-12 tail (`items` alongside `prefixItems`) or the
-        # draft-07 `additionalItems` schema; otherwise anything goes.
-        def rest_member(schema)
-          target = schema.additional_items_schema || schema.items
-          target ? "* #{type_for(target, 'item')}" : "* any"
+        # A `false` entry makes the position unreachable, so the tuple ends
+        # there (and no rest member is allowed).
+        def tuple_member_list(tuple)
+          members = []
+          tuple.each do |item|
+            break if item == false
+
+            members << (item == true ? "any" : type_for(item, "item"))
+          end
+          [members, tuple.include?(false)]
+        end
+
+        def tail_member(schema)
+          tail = schema.additional_items_schema
+          tail = schema.items if tail.nil? && schema.items.is_a?(Schema)
+          tail ? "* #{type_for(tail, 'item')}" : "* any"
         end
 
         def ref_name(ref)

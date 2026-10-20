@@ -222,6 +222,19 @@
                       <span v-if="propertyItem.itemsRef" class="prop-ref-link" role="button" tabindex="0" @click.stop="navigateToRef(propertyItem.itemsRef)" @keydown.enter="navigateToRef(propertyItem.itemsRef)"> → {{ refName(propertyItem.itemsRef) }}</span>
                     </td>
                   </tr>
+                  <tr v-if="propertyItem.itemsTuple?.length">
+                    <td class="constraint-key">Tuple Items</td>
+                    <td class="constraint-value">
+                      <div class="enum-values-list">
+                        <span v-for="(label, index) in propertyItem.itemsTuple" :key="index" class="enum-value-chip">{{ index }}: {{ label }}</span>
+                        <span v-if="propertyItem.itemsTail" class="enum-value-chip">rest: {{ propertyItem.itemsTail }}</span>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr v-if="propertyItem.itemsClosed">
+                    <td class="constraint-key">Additional Items</td>
+                    <td class="constraint-value">not allowed</td>
+                  </tr>
                   <tr v-if="propertyItem.uniqueItems">
                     <td class="constraint-key">Unique Items</td>
                     <td class="constraint-value"><span class="constraint-yes">Yes</span></td>
@@ -323,6 +336,8 @@
                         <span v-if="prop.format" class="prop-format">&lt;{{ prop.format }}&gt;</span>
                         <span v-if="prop.itemsType" class="prop-format">[{{ prop.itemsType }}]</span>
                         <span v-if="prop.itemsRef" class="prop-format">[<span class="prop-ref-link" role="button" tabindex="0" @click.stop="navigateToRef(prop.itemsRef)" @keydown.enter="navigateToRef(prop.itemsRef)">{{ refName(prop.itemsRef) }}</span>]</span>
+                        <span v-if="prop.itemsTuple?.length" class="prop-format">[{{ prop.itemsTuple.join(', ') }}{{ prop.itemsTail ? `, *${prop.itemsTail}` : '' }}]</span>
+                        <span v-if="prop.itemsClosed" class="prop-format">closed</span>
                       </template>
                       <span v-if="prop.default != null" class="prop-default">default: {{ prop.default }}</span>
                       <span v-if="prop.enum?.length" class="prop-enum">{{ prop.enum.length }} values</span>

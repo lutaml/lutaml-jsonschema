@@ -52,6 +52,19 @@ RSpec.describe Lutaml::Jsonschema::Schema, "#each_child" do
     expect(paths).to contain_exactly("items", "not")
   end
 
+  it "yields tuple item schemas positionally" do
+    schema = described_class.from_json(JSON.generate({
+                                                       "items" => [
+                                                         { "type" => "string" },
+                                                         { "type" => "integer" },
+                                                       ],
+                                                     }))
+    children = schema.each_child.to_a
+
+    expect(children.map { |_, path| path }).to eq(%w[items[0] items[1]])
+    expect(schema.child_at("items").map(&:type)).to eq(%w[string integer])
+  end
+
   it "yields conditional schemas" do
     schema = described_class.from_json(JSON.generate({
                                                        "if" => { "properties" => { "x" => { "type" => "string" } } },

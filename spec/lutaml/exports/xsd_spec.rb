@@ -46,6 +46,20 @@ RSpec.describe Lutaml::Jsonschema::Exports::Xsd do
     expect(age.attributes["minOccurs"]).to eq("0")
   end
 
+  it "renders boolean items without supplying a bogus element type" do
+    doc = parse_xml(render(
+                      "type" => "object",
+                      "properties" => {
+                        "tags" => { "type" => "array", "items" => false },
+                      },
+                    ))
+    element = doc.root.get_elements("//xs:element").find do |e|
+      e.attributes["name"] == "tags"
+    end
+
+    expect(element.attributes["type"]).to be_nil
+  end
+
   it "renders arrays as unbounded repeated items" do
     doc = parse_xml(render(
                       "type" => "object",
