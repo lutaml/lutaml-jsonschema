@@ -122,6 +122,15 @@
                   <span class="meta-label">Additional</span>
                   <span class="badge badge-locked-detail">Denied</span>
                 </div>
+                <div v-for="section in conditionalSections" :key="section.label" class="meta-row">
+                  <span class="meta-label">{{ section.label }}</span>
+                  <div class="meta-tags">
+                    <span v-for="row in section.rows" :key="row.name" class="badge badge-type">
+                      {{ row.name }}<template v-if="row.type">: {{ row.type }}</template>
+                    </span>
+                    <span v-for="name in section.required" :key="'required-' + name" class="badge badge-required-sm">{{ name }}</span>
+                  </div>
+                </div>
                 <div v-if="definitionItem && definitionItem.required?.length" class="meta-row">
                   <span class="meta-label">Required</span>
                   <div class="meta-tags">
@@ -421,7 +430,7 @@ import { useSchemaStore, type SelectedItem } from '../stores/schemaStore'
 import { useUiStore } from '../stores/uiStore'
 import { renderInlineMarkdown } from '../composables/useMarkdownLite'
 import { jsonToCollapsibleHtml } from '../composables/useJsonViewer'
-import { numberRange, stringRange, itemsRange, refLabel, patternPropertyRows as toPatternPropertyRows } from '../composables/useSchemaTypes'
+import { numberRange, stringRange, itemsRange, refLabel, patternPropertyRows as toPatternPropertyRows, conditionalSections as toConditionalSections } from '../composables/useSchemaTypes'
 import type { SpaProperty } from '../types'
 
 const schemaStore = useSchemaStore()
@@ -667,6 +676,11 @@ const additionalPropertyRow = computed<{ type?: string; ref?: string } | null>((
   const d = item.value.definition
   if (!d.additionalPropertiesType && !d.additionalPropertiesRef) return null
   return { type: d.additionalPropertiesType, ref: d.additionalPropertiesRef }
+})
+
+const conditionalSections = computed(() => {
+  if (item.value?.kind !== 'schema') return []
+  return toConditionalSections(item.value.schema)
 })
 
 function navigateToRef(ref: string | undefined) {
