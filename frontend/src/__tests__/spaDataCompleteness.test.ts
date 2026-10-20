@@ -282,6 +282,21 @@ describe('SPA data completeness for complex schemas', () => {
     it('displayType for nullable array with itemsRef', () => {
       expect(displayType(prop({ type: 'array,null', itemsRef: '#/$defs/Item' }))).toBe('array of Item | null')
     })
+
+    it('displayType renders tuple items, preferring positions over itemsType', () => {
+      const p = prop({ type: 'array', itemsType: 'any', itemsTuple: ['string', 'integer'], itemsClosed: true })
+      expect(displayType(p)).toBe('array of [string, integer] (closed)')
+    })
+
+    it('displayType keeps an open tuple open', () => {
+      const p = prop({ type: 'array', itemsTuple: ['string'] })
+      expect(displayType(p)).toBe('array of [string]')
+    })
+
+    it('displayType shows an open tuple tail', () => {
+      const p = prop({ type: 'array', itemsTuple: ['string'], itemsTail: 'integer' })
+      expect(displayType(p)).toBe('array of [string, *integer]')
+    })
   })
 
   describe('builder field creation for complex properties', () => {

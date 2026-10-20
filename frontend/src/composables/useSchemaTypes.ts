@@ -40,7 +40,13 @@ export function displayType(prop: SpaProperty, resolvedTitle?: string): string {
     const itemType = (prop.itemsRef && (!prop.itemsType || prop.itemsType === 'object'))
       ? refLabel(prop.itemsRef)
       : prop.itemsType
-    let label = itemType ? `array of ${itemType}` : 'array'
+    const tuple = prop.itemsTuple?.length
+      ? `[${prop.itemsTuple.join(', ')}${prop.itemsTail ? `, *${prop.itemsTail}` : ''}]`
+      : undefined
+    let label = tuple
+      ? `array of ${tuple}`
+      : itemType ? `array of ${itemType}` : 'array'
+    if (prop.itemsClosed) label += ' (closed)'
     if (prop.minItems != null && prop.maxItems != null) label += ` [ ${prop.minItems} .. ${prop.maxItems} ]`
     else if (prop.minItems != null) label += ` >= ${prop.minItems}`
     else if (prop.maxItems != null) label += ` <= ${prop.maxItems}`

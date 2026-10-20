@@ -45,6 +45,9 @@ module Lutaml
                                             initialize_empty: true
         attribute :items_enum, :string, collection: true
         attribute :items_format, :string
+        attribute :items_tuple, :string, collection: true
+        attribute :items_tail, :string
+        attribute :items_closed, :boolean
 
         # Contains (array must contain at least one item matching schema)
         attribute :contains_type, :string
@@ -103,6 +106,9 @@ module Lutaml
           map "itemsRequired", to: :items_required
           map "itemsEnum", to: :items_enum
           map "itemsFormat", to: :items_format
+          map "itemsTuple", to: :items_tuple
+          map "itemsTail", to: :items_tail
+          map "itemsClosed", to: :items_closed
           map "containsType", to: :contains_type
           map "containsRef", to: :contains_ref
           map "patternProperties", to: :pattern_properties

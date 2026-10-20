@@ -49,7 +49,11 @@ module Lutaml
       attribute :max_properties, :integer
 
       # Array keywords
-      attribute :items, Schema
+      # Tuple form (draft-04..2019-09 `items` array, 2020-12 `prefixItems`)
+      # lives in `items_tuple`; `items` holds the single-schema or boolean form
+      # (2020-12 uses it as the prefixItems tail).
+      attribute :items, [Schema, :boolean]
+      attribute :items_tuple, [Schema, :boolean], collection: true
       attribute :prefix_items, Schema, collection: true, initialize_empty: true
       attribute :additional_items, :boolean
       attribute :additional_items_schema, Schema
@@ -139,7 +143,8 @@ module Lutaml
         map "dependencies", to: :dependencies
         map "minProperties", to: :min_properties
         map "maxProperties", to: :max_properties
-        map "items", to: :items
+        map "items", to: :items,
+                     with: { from: :parse_items, to: :serialize_items }
         map "prefixItems", to: :prefix_items
         map "additionalItems", to: :additional_items,
                                with: { from: :parse_additional_items,
@@ -193,6 +198,40 @@ module Lutaml
         hash["type"] = parts.length == 1 ? parts.first : parts
       end
 
+      # `items` is a schema, a boolean (draft-06+), or — in the tuple drafts —
+      # an array of schemas. The array form cannot share the `items`
+      # attribute with the singular form, so it lands in `items_tuple`.
+      def parse_items(instance, value)
+        case value
+        when Array
+          instance.items_tuple = value.map { |item| schema_or_boolean(item) }
+        when true, false
+          instance.items = value
+        when Hash
+          instance.items = Schema.from_json(value.to_json)
+        end
+      end
+
+      def serialize_items(instance, hash)
+        if instance.items_tuple
+          hash["items"] = instance.items_tuple.map do |item|
+            schema_or_boolean_json(item)
+          end
+        elsif !instance.items.nil?
+          hash["items"] = schema_or_boolean_json(instance.items)
+        end
+      end
+
+      def schema_or_boolean(value)
+        return value if [true, false].include?(value)
+
+        Schema.from_json(value.to_json)
+      end
+
+      def schema_or_boolean_json(value)
+        value.is_a?(Schema) ? Yeptris::JSON.load(value.to_json) : value
+      end
+
       def parse_additional_properties(instance, value)
         case value
         when true, false
@@ -241,7 +280,8 @@ module Lutaml
         when "properties" then property_entries
         when "patternProperties" then pattern_property_entries
         when "dependentSchemas" then dependent_schemas_entries
-        when "items" then items
+        when "items"
+          items_tuple || (items if items.is_a?(Schema))
         when "prefixItems" then prefix_items
         when "additionalItems" then additional_items_schema
         when "unevaluatedItems" then unevaluated_items_schema
@@ -279,7 +319,10 @@ module Lutaml
         any_of.each_with_index { |s, i| yield s, "anyOf[#{i}]" }
         one_of.each_with_index { |s, i| yield s, "oneOf[#{i}]" }
         prefix_items.each_with_index { |s, i| yield s, "prefixItems[#{i}]" }
-        yield items, "items" if items
+        items_tuple&.each_with_index do |item, i|
+          yield item, "items[#{i}]" if item.is_a?(Schema)
+        end
+        yield items, "items" if items.is_a?(Schema)
         yield additional_items_schema, "additionalItems" if additional_items_schema
         yield unevaluated_items_schema, "unevaluatedItems" if unevaluated_items_schema
         if unevaluated_properties_schema
@@ -314,6 +357,31 @@ module Lutaml
 
       def exclusive_maximum_value
         exclusive_bound_value(exclusive_maximum, maximum)
+      end
+
+      # Tuple-form item schemas: draft-04..2019-09 spell them as an array in
+      # `items`, 2020-12 as `prefixItems`. An explicitly empty tuple (`items:
+      # []`) is distinct from an absent one, hence no empty-array default.
+      def tuple_items
+        items_tuple || (prefix_items.any? ? prefix_items : nil)
+      end
+
+      # Schema for items past the tuple positions: the 2020-12 `items` tail
+      # or the tuple drafts' `additionalItems` schema.
+      def items_tail_schema
+        return nil unless tuple_items
+        return items if items.is_a?(Schema)
+
+        additional_items_schema
+      end
+
+      # Whether the schema forbids items past the tuple positions: the tuple
+      # drafts say `additionalItems: false`, 2020-12 says `items: false`.
+      def items_closed?
+        return true if items == false
+        return additional_items == false if tuple_items
+
+        false
       end
 
       def exclusive_bound_value(exclusive, bound)

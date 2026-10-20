@@ -210,12 +210,7 @@ module Lutaml
               has_any_of: resolved.any_of.any? || s.any_of.any?,
               has_one_of: resolved.one_of.any? || s.one_of.any?,
               composition_variants: variants,
-              items_type: features[:items_info][:type],
-              items_ref: features[:items_info][:ref],
-              items_properties: features[:items_detail][:properties],
-              items_required: features[:items_detail][:required],
-              items_enum: features[:items_detail][:enum],
-              items_format: features[:items_detail][:format],
+              **property_items_fields(features),
               contains_type: features[:contains_type],
               contains_ref: features[:contains_ref],
               pattern_properties: features[:pattern_properties],
@@ -269,12 +264,30 @@ module Lutaml
           }
         end
 
+        # Item-schema fields shared by SpaProperty and SpaDefinition.
+        def property_items_fields(features)
+          {
+            items_type: features[:items_info][:type],
+            items_ref: features[:items_info][:ref],
+            items_properties: features[:items_detail][:properties],
+            items_required: features[:items_detail][:required],
+            items_enum: features[:items_detail][:enum],
+            items_format: features[:items_detail][:format],
+            items_tuple: features[:items_tuple],
+            items_tail: features[:items_tail],
+            items_closed: features[:items_closed],
+          }
+        end
+
         # Bundles all schema feature resolutions (items, contains,
         # patternProperties, not, links) into a single hash.
         def resolve_schema_features(resolved, root_schema, depth = 0)
           {
             items_info: resolve_items_info(resolved, root_schema),
             items_detail: build_items_detail(resolved, root_schema, depth),
+            items_tuple: resolve_items_tuple(resolved, root_schema),
+            items_tail: resolve_items_tail(resolved, root_schema),
+            items_closed: resolved.items_closed?,
             contains_type: resolve_contains_type(resolved),
             contains_ref: resolve_contains_ref(resolved),
             pattern_properties: build_pattern_properties(resolved),
@@ -382,12 +395,7 @@ module Lutaml
             properties: nested,
             required_fields: nested_required,
             definitions: nested_defs,
-            items_type: features[:items_info][:type],
-            items_ref: features[:items_info][:ref],
-            items_properties: features[:items_detail][:properties],
-            items_required: features[:items_detail][:required],
-            items_enum: features[:items_detail][:enum],
-            items_format: features[:items_detail][:format],
+            **property_items_fields(features),
             contains_type: features[:contains_type],
             contains_ref: features[:contains_ref],
             pattern_properties: features[:pattern_properties],
@@ -420,17 +428,18 @@ module Lutaml
           )
         end
 
+        # A typeless schema is unrestricted, but it may still carry
+        # constraints (bounds, enum, pattern) or applicators — default the
+        # rendered type without discarding them.
         def empty_schema_fallback(schema)
-          Schema.new(
-            type: "any",
-            title: schema.title,
-            description: schema.description,
-          )
+          fallback = schema.dup
+          fallback.type = "any"
+          fallback
         end
 
         def resolve_items_info(resolved, root_schema)
           items = resolved.items
-          return { type: nil, ref: nil } unless items
+          return { type: nil, ref: nil } unless items.is_a?(Schema)
 
           if items.dollar_ref
             ref = items.dollar_ref
@@ -441,17 +450,52 @@ module Lutaml
               { type: nil, ref: ref }
             end
           elsif items.one_of.any? || items.any_of.any?
-            subs = items.one_of.any? ? items.one_of : items.any_of
-            prefix = items.one_of.any? ? "oneOf" : "anyOf"
-            labels = subs.filter_map do |sub|
-              r = resolve_composition_schema(sub, root_schema)
-              type_label(r)
-            end.compact
-            { type: labels.empty? ? nil : "#{prefix}: #{labels.join(' | ')}",
-              ref: nil }
+            { type: composition_type_label(items, root_schema), ref: nil }
           else
             { type: items.type, ref: nil }
           end
+        end
+
+        def composition_type_label(schema, root_schema)
+          return nil unless schema.one_of.any? || schema.any_of.any?
+
+          subs = schema.one_of.any? ? schema.one_of : schema.any_of
+          prefix = schema.one_of.any? ? "oneOf" : "anyOf"
+          labels = subs.filter_map do |sub|
+            resolved = resolve_composition_schema(sub, root_schema)
+            type_label(resolved) if resolved
+          end
+          labels.empty? ? nil : "#{prefix}: #{labels.join(' | ')}"
+        end
+
+        # Positional labels for tuple item schemas, from either the tuple
+        # drafts' `items` array or 2020-12 `prefixItems`.
+        def resolve_items_tuple(resolved, root_schema)
+          tuple = resolved.tuple_items
+          return nil unless tuple
+
+          tuple.map { |item| tuple_item_label(item, root_schema) }
+        end
+
+        def tuple_item_label(item, root_schema)
+          return "any" if item == true
+          return "never" if item == false
+
+          ref = item.dollar_ref
+          if ref
+            target = @schema_set.resolve_ref(ref, root_schema)
+            target&.title || target&.type || ref.split("/").last
+          else
+            composition_type_label(item, root_schema) ||
+              item.title || item.type || "any"
+          end
+        end
+
+        def resolve_items_tail(resolved, root_schema)
+          tail = resolved.items_tail_schema
+          return nil unless tail
+
+          tuple_item_label(tail, root_schema)
         end
 
         def resolve_prop_ref(schema)
@@ -603,7 +647,7 @@ module Lutaml
 
         def build_items_detail(resolved, root_schema, depth = 0)
           items = resolved.items
-          return {} unless items
+          return {} unless items.is_a?(Schema)
 
           items_resolved = if items.dollar_ref
                              @schema_set.resolve_ref(items.dollar_ref,

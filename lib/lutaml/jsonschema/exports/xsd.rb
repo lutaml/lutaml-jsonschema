@@ -138,7 +138,7 @@ module Lutaml
         end
 
         def add_item_content(element, item)
-          return if item.nil?
+          return if item.nil? || item == true || item == false
           return element.add_attribute("type", "tns:#{type_name(ref_name(item.dollar_ref))}") if item.dollar_ref
           return add_complex_body(element.add_element("xs:complexType"), item) if object_shaped?(item)
 

@@ -170,21 +170,52 @@ RSpec.describe "Schema dialect coverage" do
         .to include("additionalItems" => false)
     end
 
-    # draft-04..07 tuple `items` (array value) needs a collection
-    # attribute populated from the `items` key, but lutaml-model's
-    # post-parse defaults pass resets any attribute that is not a
-    # mapping target — and one key cannot target two attributes
-    # without breaking the single-schema form. Tracked in
-    # TODO.sota/01; boolean-schema values (items: false) share the
-    # same normalization gap.
-    it "parses draft-04 tuple items" do
-      pending "tuple items need framework support (see TODO.sota/01)"
-      schema = parse(
+    it "parses and round-trips draft-04 tuple items" do
+      hash = {
         "$schema" => "http://json-schema.org/draft-04/schema#",
         "items" => [{ "type" => "string" }, { "type" => "integer" }],
-      )
+        "additionalItems" => false,
+      }
+      schema = parse(hash)
 
-      expect(schema.prefix_items.map(&:type)).to eq(%w[string integer])
+      expect(schema.items).to be_nil
+      expect(schema.items_tuple.map(&:type)).to eq(%w[string integer])
+      expect(schema.items_closed?).to be(true)
+      expect(round_trip(hash)).to include(
+        "items" => [{ "type" => "string" }, { "type" => "integer" }],
+        "additionalItems" => false,
+      )
+    end
+
+    it "round-trips an explicitly empty tuple and boolean tuple entries" do
+      expect(round_trip("items" => [])).to include("items" => [])
+      expect(round_trip("items" => [true, false]))
+        .to include("items" => [true, false])
+    end
+
+    it "round-trips boolean items (draft-06+ and the 2020-12 tail)" do
+      closed = parse("items" => false)
+      expect(closed.items).to be(false)
+      expect(closed.items_closed?).to be(true)
+
+      open = parse("items" => true)
+      expect(open.items).to be(true)
+      expect(open.items_closed?).to be(false)
+    end
+
+    it "round-trips a closed 2020-12 prefixItems tuple" do
+      hash = {
+        "prefixItems" => [{ "type" => "string" }],
+        "items" => false,
+      }
+      schema = parse(hash)
+
+      expect(schema.tuple_items.map(&:type)).to eq(["string"])
+      expect(schema.items_closed?).to be(true)
+      expect(round_trip(hash)).to include(
+        "items" => false,
+        "prefixItems" => [{ "type" => "string" }],
+      )
     end
   end
 

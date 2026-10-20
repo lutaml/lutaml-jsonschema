@@ -35,6 +35,12 @@ export interface SpaProperty {
   maximum?: number
   itemsType?: string
   itemsRef?: string
+  /** Positional item labels for tuple-form arrays (`items` array / `prefixItems`) */
+  itemsTuple?: string[]
+  /** Label for items past the tuple positions */
+  itemsTail?: string
+  /** Whether items past the tuple positions are forbidden */
+  itemsClosed?: boolean
   deprecated?: boolean
   readOnly?: boolean
   writeOnly?: boolean
@@ -79,6 +85,11 @@ export interface SpaDefinition {
   additionalProperties?: boolean
   additionalPropertiesRef?: string
   additionalPropertiesType?: string
+  itemsType?: string
+  itemsRef?: string
+  itemsTuple?: string[]
+  itemsTail?: string
+  itemsClosed?: boolean
   hasAllOf?: boolean
   hasAnyOf?: boolean
   hasOneOf?: boolean
