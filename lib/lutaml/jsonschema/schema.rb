@@ -58,7 +58,8 @@ module Lutaml
       attribute :items, Schema
       attribute :items_boolean, :boolean
       attribute :items_tuple, TupleItem, collection: true
-      attribute :prefix_items, Schema, collection: true, initialize_empty: true
+      attribute :prefix_items, TupleItem, collection: true,
+                                          initialize_empty: true
       attribute :additional_items, :boolean
       attribute :additional_items_schema, Schema
       attribute :unevaluated_items, :boolean
@@ -162,7 +163,9 @@ module Lutaml
         map "maxProperties", to: :max_properties
         map "items", to: :items,
                      with: { from: :parse_items, to: :serialize_items }
-        map "prefixItems", to: :prefix_items
+        map "prefixItems", to: :prefix_items,
+                           with: { from: :parse_prefix_items,
+                                   to: :serialize_prefix_items }
         map "additionalItems", to: :additional_items,
                                with: { from: :parse_additional_items,
                                        to: :serialize_additional_items }
@@ -230,13 +233,7 @@ module Lutaml
       def parse_items(instance, value)
         case value
         when Array
-          instance.items_tuple = value.map do |item|
-            if [true, false].include?(item)
-              TupleItem.new(boolean_value: item)
-            else
-              TupleItem.new(schema: Schema.from_json(item.to_json))
-            end
-          end
+          instance.items_tuple = value.map { |item| tuple_item(item) }
         when true, false
           instance.items_boolean = value
         when Hash
@@ -247,17 +244,38 @@ module Lutaml
       def serialize_items(instance, hash)
         if instance.items_tuple
           hash["items"] = instance.items_tuple.map do |item|
-            if item.boolean?
-              item.boolean_value
-            else
-              Yeptris::JSON.load(item.schema.to_json)
-            end
+            tuple_item_json(item)
           end
         elsif !instance.items_boolean.nil?
           hash["items"] = instance.items_boolean
         elsif instance.items
           hash["items"] = Yeptris::JSON.load(instance.items.to_json)
         end
+      end
+
+      def parse_prefix_items(instance, value)
+        return unless value.is_a?(Array)
+
+        instance.prefix_items = value.map { |item| tuple_item(item) }
+      end
+
+      def serialize_prefix_items(instance, hash)
+        items = instance.prefix_items
+        unless items.empty?
+          hash["prefixItems"] = items.map { |item| tuple_item_json(item) }
+        end
+      end
+
+      def tuple_item(value)
+        if [true, false].include?(value)
+          TupleItem.new(boolean_value: value)
+        else
+          TupleItem.new(schema: Schema.from_json(value.to_json))
+        end
+      end
+
+      def tuple_item_json(item)
+        item.boolean? ? item.boolean_value : Yeptris::JSON.load(item.schema.to_json)
       end
 
       # Entry maps (properties, patternProperties, dependentSchemas, $defs)
@@ -366,7 +384,7 @@ module Lutaml
         when "dependentSchemas" then dependent_schemas_entries
         when "items"
           items_tuple ? items_tuple.map(&:value) : items
-        when "prefixItems" then prefix_items
+        when "prefixItems" then prefix_items.map(&:value)
         when "additionalItems" then additional_items_schema
         when "unevaluatedItems" then unevaluated_items_schema
         when "unevaluatedProperties" then unevaluated_properties_schema
@@ -406,7 +424,9 @@ module Lutaml
         all_of.each_with_index { |s, i| yield s, "allOf[#{i}]" }
         any_of.each_with_index { |s, i| yield s, "anyOf[#{i}]" }
         one_of.each_with_index { |s, i| yield s, "oneOf[#{i}]" }
-        prefix_items.each_with_index { |s, i| yield s, "prefixItems[#{i}]" }
+        prefix_items.each_with_index do |item, i|
+          yield item.value, "prefixItems[#{i}]" if item.schema
+        end
         items_tuple&.each_with_index do |item, i|
           yield item.value, "items[#{i}]" if item.schema
         end
@@ -454,7 +474,7 @@ module Lutaml
         if items_tuple
           items_tuple.map(&:value)
         elsif prefix_items.any?
-          prefix_items
+          prefix_items.map(&:value)
         end
       end
 

@@ -203,6 +203,21 @@ RSpec.describe "Schema dialect coverage" do
       expect(open.items_closed?).to be(false)
     end
 
+    it "round-trips boolean prefixItems entries" do
+      hash = {
+        "prefixItems" => [true, { "type" => "string" }, false],
+        "items" => false,
+      }
+      schema = parse(hash)
+
+      expect(schema.tuple_items.map do |value|
+        value.is_a?(Lutaml::Jsonschema::Schema) ? value.type : value
+      end).to eq([true, "string", false])
+      expect(round_trip(hash)).to include(
+        "prefixItems" => [true, { "type" => "string" }, false],
+      )
+    end
+
     it "round-trips a closed 2020-12 prefixItems tuple" do
       hash = {
         "prefixItems" => [{ "type" => "string" }],

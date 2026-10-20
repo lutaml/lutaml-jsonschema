@@ -73,6 +73,15 @@ RSpec.describe Lutaml::Jsonschema::Exports::Cddl do
     expect(output).to include("flag: any")
   end
 
+  it "renders boolean prefixItems entries" do
+    tuple = render(
+      "type" => "array",
+      "prefixItems" => [true, { "type" => "string" }, false],
+    )
+
+    expect(tuple).to include("demo = [any, text]")
+  end
+
   it "resolves $ref members to their definition group names" do
     output = render(
       "definitions" => {
