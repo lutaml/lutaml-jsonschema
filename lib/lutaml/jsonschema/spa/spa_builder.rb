@@ -125,9 +125,20 @@ module Lutaml
         end
 
         def resolve_composition_schema(schema, context_schema)
+          schema = as_schema(schema)
           return schema unless schema.dollar_ref
 
-          @schema_set.resolve_ref(schema.dollar_ref, context_schema) || schema
+          as_schema(@schema_set.resolve_ref(schema.dollar_ref,
+                                            context_schema)) || schema
+        end
+
+        # Boolean schemas (`true` = anything, `false` = nothing) appear
+        # wherever a schema can; normalize them to a renderable Schema.
+        def as_schema(value)
+          return value if value.is_a?(Schema)
+          return nil if value.nil?
+
+          Schema.new(type: value ? "any" : "never")
         end
 
         def composition_schemas(schema)
@@ -165,7 +176,8 @@ module Lutaml
           # Case 1: bare $ref (e.g. Abstract_DistributionUnion → #MD_Distribution)
           if s.dollar_ref && !s.type && s.property_entries.empty? &&
               s.one_of.empty? && s.all_of.empty? && s.any_of.empty?
-            resolved = @schema_set.resolve_ref(s.dollar_ref, root_schema)
+            resolved = as_schema(@schema_set.resolve_ref(s.dollar_ref,
+                                                         root_schema))
             return resolved if resolved
           end
 
@@ -173,8 +185,8 @@ module Lutaml
           if s.all_of.length == 1 && !s.type && s.property_entries.empty?
             ref_schema = s.all_of.first
             if ref_schema.dollar_ref
-              resolved = @schema_set.resolve_ref(ref_schema.dollar_ref,
-                                                 root_schema)
+              resolved = as_schema(@schema_set.resolve_ref(ref_schema.dollar_ref,
+                                                           root_schema))
               return resolved if resolved
             end
           end
@@ -184,8 +196,9 @@ module Lutaml
         end
 
         def build_definitions_from_entries(entries, root_schema)
-          entries.map do |entry|
-            s = entry.schema
+          entries.filter_map do |entry|
+            s = as_schema(entry.schema_value)
+            next unless s
 
             resolved = resolve_definition_schema(s, root_schema)
 
@@ -229,7 +242,7 @@ module Lutaml
 
           if ap_schema.dollar_ref
             ref = ap_schema.dollar_ref
-            resolved = @schema_set.resolve_ref(ref, root_schema)
+            resolved = as_schema(@schema_set.resolve_ref(ref, root_schema))
             { ref: ref,
               type: resolved&.type || resolved&.title }
           else
@@ -340,18 +353,19 @@ module Lutaml
 
         def build_single_property(entry, root_schema, all_required,
                                   composition_source = nil, depth = 0)
+          source_schema = as_schema(entry.schema_value)
           resolved = resolve_property(entry, root_schema)
 
           resolved = resolve_ref_chain(resolved, root_schema)
 
           # Capture oneOf/anyOf from the pre-resolution schema for variant detail
-          pre_comp_one_of = resolved.one_of.any? ? resolved.one_of.dup : entry.schema.one_of.dup
-          pre_comp_any_of = resolved.any_of.any? ? resolved.any_of.dup : entry.schema.any_of.dup
+          pre_comp_one_of = resolved.one_of.any? ? resolved.one_of.dup : source_schema.one_of.dup
+          pre_comp_any_of = resolved.any_of.any? ? resolved.any_of.dup : source_schema.any_of.dup
           original_not_type = [resolved.not_schema,
-                               entry.schema.not_schema].compact.first&.type
+                               source_schema.not_schema].compact.first&.type
 
-          if !resolved.type && composition_schema?(entry.schema)
-            resolved = resolve_composition_property(entry.schema,
+          if !resolved.type && composition_schema?(source_schema)
+            resolved = resolve_composition_property(source_schema,
                                                     root_schema) || resolved
           end
 
@@ -364,7 +378,7 @@ module Lutaml
 
           resolved = empty_schema_fallback(resolved) unless resolved.type
 
-          prop_ref = resolve_prop_ref(entry.schema)
+          prop_ref = resolve_prop_ref(source_schema)
           features = resolve_schema_features(resolved, root_schema, depth)
 
           nested = if depth < 3
@@ -444,7 +458,8 @@ module Lutaml
 
           if items.dollar_ref
             ref = items.dollar_ref
-            resolved_items = @schema_set.resolve_ref(ref, root_schema)
+            resolved_items = as_schema(@schema_set.resolve_ref(ref,
+                                                               root_schema))
             if resolved_items
               { type: resolved_items.type || resolved_items.title, ref: ref }
             else
@@ -484,7 +499,7 @@ module Lutaml
 
           ref = item.dollar_ref
           if ref
-            target = @schema_set.resolve_ref(ref, root_schema)
+            target = as_schema(@schema_set.resolve_ref(ref, root_schema))
             target&.title || target&.type || ref.split("/").last
           else
             composition_type_label(item, root_schema) ||
@@ -510,13 +525,11 @@ module Lutaml
         end
 
         def resolve_property(entry, root_schema)
-          schema = entry.schema
+          schema = as_schema(entry.schema_value)
           return schema unless schema.dollar_ref
 
-          resolved = @schema_set.resolve_ref(schema.dollar_ref, root_schema)
-          return resolved if resolved
-
-          schema
+          as_schema(@schema_set.resolve_ref(schema.dollar_ref,
+                                            root_schema)) || schema
         end
 
         # Follow a chain of bare $ref schemas (A → B → C).
@@ -527,7 +540,8 @@ module Lutaml
           return schema if schema.type || schema.property_entries.any?
           return schema if schema.one_of.any? || schema.all_of.any? || schema.any_of.any?
 
-          resolved = @schema_set.resolve_ref(schema.dollar_ref, root_schema)
+          resolved = as_schema(@schema_set.resolve_ref(schema.dollar_ref,
+                                                       root_schema))
           return schema unless resolved
 
           resolve_ref_chain(resolved, root_schema, depth + 1)
@@ -727,7 +741,7 @@ module Lutaml
           return nil unless schema.pattern_property_entries&.any?
 
           schema.pattern_property_entries.each_with_object({}) do |entry, hash|
-            hash[entry.name] = { "type" => entry.schema&.type }.compact
+            hash[entry.name] = { "type" => as_schema(entry.schema_value)&.type }.compact
           end
         end
 

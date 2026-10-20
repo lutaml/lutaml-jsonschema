@@ -9,7 +9,8 @@ module Lutaml
       # closed — an explicit `* text => any` (or the additionalProperties
       # schema) is emitted when the source declares one, and omitted when
       # additionalProperties is absent or false. `allOf` has no CDDL
-      # intersection equivalent; its members are not merged.
+      # intersection equivalent; its members are not merged. Boolean
+      # schemas render as `any` (CDDL has no uninhabited type for `false`).
       class Cddl
         TYPE_NAMES = {
           "string" => "text",
@@ -31,7 +32,7 @@ module Lutaml
           sections = []
           @schema_set.schemas.each do |name, schema|
             schema.definition_entries.each do |entry|
-              sections << "#{entry.name} = #{type_for(entry.schema, entry.name)}"
+              sections << "#{entry.name} = #{type_for(entry.schema_value, entry.name)}"
             end
             sections << "#{name} = #{type_for(schema, name)}"
           end
@@ -97,7 +98,7 @@ module Lutaml
 
         def member(entry, schema)
           marker = schema.required.include?(entry.name) ? nil : "?"
-          "#{marker}#{map_key(entry.name)}: #{type_for(entry.schema, entry.name)}"
+          "#{marker}#{map_key(entry.name)}: #{type_for(entry.schema_value, entry.name)}"
         end
 
         def additional_members(schema)
@@ -115,8 +116,8 @@ module Lutaml
           tuple = schema.tuple_items
           return tuple_type(schema, tuple) if tuple
 
-          return "[]" if schema.items == false
-          return "[* any]" if schema.items.nil? || schema.items == true
+          return "[]" if schema.items_boolean == false
+          return "[* any]" if schema.items.nil?
 
           "[* #{type_for(schema.items, 'item')}]"
         end

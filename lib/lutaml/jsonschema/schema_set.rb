@@ -130,7 +130,7 @@ module Lutaml
           ref.is_a?(String) && ref.start_with?("#/") && !seen[ref]
 
         target = resolve_ref(ref, context_schema)
-        return map_hash_values(node, context_schema, seen) unless target
+        return map_hash_values(node, context_schema, seen) if target.nil?
 
         resolved = Yeptris::JSON.load(target.to_json)
         dereference_node(resolved, context_schema, seen.merge(ref => true))

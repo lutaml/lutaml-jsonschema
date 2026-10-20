@@ -48,10 +48,30 @@ module Lutaml
       private
 
       def compare_schemas(old, new, pointer)
-        return unless old.is_a?(Schema) && new.is_a?(Schema)
+        unless old.is_a?(Schema) && new.is_a?(Schema)
+          compare_boolean_schemas(old, new, pointer)
+          return
+        end
 
         compare_keywords(old, new, pointer)
         compare_children(old, new, pointer)
+      end
+
+      # `true` accepts everything and `false` accepts nothing, so a schema
+      # replaced by a boolean (or vice versa) changes what consumers must
+      # accept even though there are no keywords to compare.
+      def compare_boolean_schemas(old, new, pointer)
+        return if old.equal?(new)
+
+        if new == true
+          add(pointer, :changed, ADDITIVE, "accepts anything")
+        elsif new == false
+          add(pointer, :changed, BREAKING, "accepts nothing")
+        elsif old == false
+          add(pointer, :changed, ADDITIVE, "schema was unsatisfiable")
+        elsif old == true
+          add(pointer, :changed, BREAKING, "schema accepted anything")
+        end
       end
 
       def compare_keywords(old, new, pointer)
@@ -237,7 +257,7 @@ module Lutaml
       end
 
       def entries_by_name(entries)
-        entries.to_h { |entry| [entry.name, entry.schema] }
+        entries.to_h { |entry| [entry.name, entry.schema_value] }
       end
 
       def join(*parts)

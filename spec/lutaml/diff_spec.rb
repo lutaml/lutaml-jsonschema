@@ -35,6 +35,22 @@ RSpec.describe Lutaml::Jsonschema::Diff do
     expect(summary(changes)).to include(["/properties/a", :breaking])
   end
 
+  it "classifies boolean schema transitions by openness" do
+    object = { "type" => "object",
+               "properties" => { "a" => { "type" => "string" } } }
+    never = { "type" => "object", "properties" => { "a" => false } }
+    anything = { "type" => "object", "properties" => { "a" => true } }
+
+    expect(summary(diff(object, never)))
+      .to include(["/properties/a", :breaking])
+    expect(summary(diff(never, object)))
+      .to include(["/properties/a", :additive])
+    expect(summary(diff(object, anything)))
+      .to include(["/properties/a", :additive])
+    expect(summary(diff(anything, object)))
+      .to include(["/properties/a", :breaking])
+  end
+
   it "classifies requirement changes by direction" do
     base = { "type" => "object", "properties" => { "a" => {}, "b" => {} } }
     added = diff(base, base.merge("required" => ["a"]))

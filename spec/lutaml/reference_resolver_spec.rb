@@ -33,6 +33,11 @@ RSpec.describe Lutaml::Jsonschema::ReferenceResolver do
       expect(resolver.resolve("#/definitions/x~01", schema).type).to eq("string")
     end
 
+    it "returns boolean schema targets verbatim" do
+      schema = parse("$defs" => { "flag" => false })
+      expect(resolver.resolve("#/$defs/flag", schema)).to be(false)
+    end
+
     it "percent-decodes fragment segments" do
       expect(resolver.resolve("#/definitions/with%20space", schema).type)
         .to eq("boolean")

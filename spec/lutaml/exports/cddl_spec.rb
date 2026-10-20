@@ -63,6 +63,16 @@ RSpec.describe Lutaml::Jsonschema::Exports::Cddl do
       .to include("demo = []")
   end
 
+  it "renders boolean schemas as any" do
+    output = render(
+      "type" => "object",
+      "required" => ["flag"],
+      "properties" => { "flag" => true },
+    )
+
+    expect(output).to include("flag: any")
+  end
+
   it "resolves $ref members to their definition group names" do
     output = render(
       "definitions" => {

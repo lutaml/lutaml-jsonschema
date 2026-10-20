@@ -50,11 +50,13 @@ module Lutaml
 
         def add_definitions(root, schema)
           schema.definition_entries.each do |entry|
-            add_named_type(root, entry.name, entry.schema)
+            add_named_type(root, entry.name, entry.schema_value)
           end
         end
 
         def add_named_type(root, name, schema)
+          return unless schema.is_a?(Schema)
+
           name = type_name(name)
           if object_shaped?(schema)
             type = root.add_element("xs:complexType", "name" => name)
@@ -95,7 +97,7 @@ module Lutaml
         end
 
         def add_member(sequence, entry, parent)
-          schema = entry.schema
+          schema = entry.schema_value
           element = sequence.add_element("xs:element", "name" => entry.name)
           element.add_attribute("minOccurs", "0") unless
             parent.required.include?(entry.name)
@@ -103,7 +105,7 @@ module Lutaml
         end
 
         def fill_element_type(element, schema)
-          return if schema.nil?
+          return unless schema.is_a?(Schema)
 
           type = declared_type(schema)
           if type
