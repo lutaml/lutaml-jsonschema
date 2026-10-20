@@ -72,6 +72,10 @@
                   <span class="meta-label">Default</span>
                   <span class="font-mono">{{ propertyItem.default }}</span>
                 </div>
+                <div v-if="item.kind === 'schema' && schemaItemsLabel" class="meta-row">
+                  <span class="meta-label">Items</span>
+                  <span class="font-mono text-secondary">{{ schemaItemsLabel }}</span>
+                </div>
                 <div v-if="item.kind === 'schema' && schema.required.length" class="meta-row">
                   <span class="meta-label">Required</span>
                   <div class="meta-tags">
@@ -397,7 +401,7 @@ import { useSchemaStore, type SelectedItem } from '../stores/schemaStore'
 import { useUiStore } from '../stores/uiStore'
 import { renderInlineMarkdown } from '../composables/useMarkdownLite'
 import { jsonToCollapsibleHtml } from '../composables/useJsonViewer'
-import { numberRange, stringRange, itemsRange } from '../composables/useSchemaTypes'
+import { numberRange, stringRange, itemsRange, refLabel } from '../composables/useSchemaTypes'
 import type { SpaProperty } from '../types'
 
 const schemaStore = useSchemaStore()
@@ -469,6 +473,19 @@ const itemDescription = computed(() => {
     case 'definition': return item.value.definition.description
     case 'property': return item.value.property.description
   }
+})
+
+const schemaItemsLabel = computed(() => {
+  if (item.value?.kind !== 'schema') return ''
+  const s = item.value.schema
+  if (s.itemsTuple?.length) {
+    const tail = s.itemsTail ? `, *${s.itemsTail}` : ''
+    return `[${s.itemsTuple.join(', ')}${tail}]${s.itemsClosed ? ' (closed)' : ''}`
+  }
+  if (s.itemsRef) return refLabel(s.itemsRef)
+  if (s.itemsType) return s.itemsType
+  if (s.itemsClosed) return '(closed)'
+  return ''
 })
 
 const properties = computed<SpaProperty[]>(() => {

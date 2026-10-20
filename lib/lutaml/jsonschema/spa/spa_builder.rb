@@ -69,6 +69,7 @@ module Lutaml
             has_all_of: schema.all_of.any?,
             has_any_of: schema.any_of.any?,
             has_one_of: schema.one_of.any?,
+            **property_items_fields(features),
             if_schema: if_info[:if_prop],
             then_required: if_info[:then_required],
             then_properties: if_info[:then_properties],
