@@ -387,7 +387,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="prop in properties" :key="prop.name" class="prop-row" role="link" tabindex="0" @click="navigateToProperty(prop.name)" @keydown.enter="navigateToProperty(prop.name)" @keydown.space.prevent="navigateToProperty(prop.name)">
+                  <tr v-for="prop in properties" :key="prop.name" class="prop-row" :role="navigableProperty(prop.name) ? 'link' : undefined" :tabindex="navigableProperty(prop.name) ? 0 : undefined" @click="navigateToProperty(prop.name)" @keydown.enter="navigateToProperty(prop.name)" @keydown.space.prevent="navigateToProperty(prop.name)">
                     <td>
                       <span class="font-mono">{{ prop.name }}</span>
                       <span v-if="prop.title && prop.title !== prop.name" class="prop-title">({{ prop.title }})</span>
@@ -604,7 +604,7 @@ const properties = computed<SpaProperty[]>(() => {
   switch (item.value.kind) {
     case 'schema': return item.value.schema.properties
     case 'definition': return item.value.definition.properties
-    case 'property': return []
+    case 'property': return item.value.property.properties ?? []
   }
 })
 
@@ -765,10 +765,18 @@ const patternPropertyRows = computed(() => {
 })
 
 const additionalPropertyRow = computed<{ type?: string; ref?: string } | null>(() => {
-  if (item.value?.kind !== 'definition') return null
-  const d = item.value.definition
-  if (!d.additionalPropertiesType && !d.additionalPropertiesRef) return null
-  return { type: d.additionalPropertiesType, ref: d.additionalPropertiesRef }
+  const current = item.value
+  if (!current) return null
+  const holder = current.kind === 'definition'
+    ? current.definition
+    : current.kind === 'property'
+      ? current.property
+      : null
+  if (!holder?.additionalPropertiesType && !holder?.additionalPropertiesRef) return null
+  return {
+    type: holder.additionalPropertiesType,
+    ref: holder.additionalPropertiesRef,
+  }
 })
 
 const conditionalSections = computed(() => {
@@ -821,7 +829,13 @@ function refName(ref: string): string {
   return match ? match[1] : ref
 }
 
+function navigableProperty(name: string): boolean {
+  if (item.value?.kind !== 'schema') return false
+  return item.value.schema.properties.some(prop => prop.name === name)
+}
+
 function navigateToProperty(name: string) {
+  if (!navigableProperty(name)) return
   uiStore.closeDetailPanel()
   schemaStore.selectProperty(name)
 }
