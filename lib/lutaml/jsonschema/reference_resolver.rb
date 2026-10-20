@@ -65,6 +65,14 @@ module Lutaml
         id_lookup(ref, root_schema)
       end
 
+      # Depth-first walk over every schema node reachable from `schema`.
+      def each_schema(schema, &)
+        return unless schema.is_a?(Schema)
+
+        yield schema
+        schema.each_child { |child, _segment| each_schema(child, &) }
+      end
+
       private
 
       def schema_map_lookup(ref, seen = nil)
