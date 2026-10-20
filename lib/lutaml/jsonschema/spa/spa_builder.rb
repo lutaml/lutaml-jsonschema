@@ -299,10 +299,28 @@ module Lutaml
         def build_properties(entries, root_schema,
                             all_required = root_schema.required,
                             source_map = nil, depth = 0)
-          entries.map do |entry|
+          properties = entries.map do |entry|
             source = source_map ? source_map[entry.name] : nil
             build_single_property(entry, root_schema, all_required, source,
                                   depth)
+          end
+          order_properties(properties, all_required)
+        end
+
+        # Configuration-driven ordering (Redoc sort options): alphabetical
+        # or required-first; anything else keeps source order.
+        def order_properties(properties, required)
+          case @metadata&.sort_properties
+          when "alphabetical"
+            properties.sort_by { |property| property.name.to_s.downcase }
+          when "required_first"
+            properties.each_with_index
+              .sort_by do |property, index|
+                [required.include?(property.name) ? 0 : 1, index]
+              end
+              .map(&:first)
+          else
+            properties
           end
         end
 
