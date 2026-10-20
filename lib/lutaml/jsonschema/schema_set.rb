@@ -91,7 +91,57 @@ module Lutaml
         errors
       end
 
+      # Bundle mode: every schema's definitions hoisted into one
+      # combined document with localized refs (the Combiner contract).
+      def bundle
+        Combiner.new.combine(self)
+      end
+
+      # Dereference mode: a plain-Hash view of a named schema with
+      # internal `#/...` references replaced by their targets in place.
+      #
+      # - Cycles are left as `$ref` nodes (path-local seen set), so the
+      #   walk always terminates.
+      # - External refs (`./file.json`, absolute URLs) and unresolvable
+      #   refs are left untouched.
+      # - Sibling keywords next to `$ref` are dropped, matching
+      #   draft-04..07 reference semantics.
+      def dereference(name)
+        schema = @schemas.fetch(name)
+        dereference_node(Yeptris::JSON.load(schema.to_json), schema, {})
+      end
+
       private
+
+      def dereference_node(node, context_schema, seen)
+        case node
+        when Array
+          node.map { |item| dereference_node(item, context_schema, seen) }
+        when Hash
+          dereference_hash(node, context_schema, seen)
+        else
+          node
+        end
+      end
+
+      def dereference_hash(node, context_schema, seen)
+        ref = node["$ref"]
+        return map_hash_values(node, context_schema, seen) unless
+          ref.is_a?(String) && ref.start_with?("#/") && !seen[ref]
+
+        target = resolve_ref(ref, context_schema)
+        return map_hash_values(node, context_schema, seen) unless target
+
+        resolved = Yeptris::JSON.load(target.to_json)
+        dereference_node(resolved, context_schema, seen.merge(ref => true))
+      end
+
+      def map_hash_values(node, context_schema, seen)
+        node.to_h do |key, value|
+          [key,
+           dereference_node(value, context_schema, seen)]
+        end
+      end
 
       def self.infer_base_dir(paths)
         return nil if paths.empty?

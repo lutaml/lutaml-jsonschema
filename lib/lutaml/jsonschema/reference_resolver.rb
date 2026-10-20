@@ -10,16 +10,23 @@ module Lutaml
         @schemas = schemas
       end
 
-      def resolve(ref, root_schema = nil)
+      # `seen` tracks the refs followed along the current chain so that
+      # cyclic references (a -> b -> a) terminate instead of recursing.
+      def resolve(ref, root_schema = nil, seen = nil)
         return nil unless ref
+
+        seen ||= {}
+        return nil if seen[ref]
         return root_schema if ref == "#"
-        return resolve_local(ref, root_schema) if ref.start_with?("#/")
+
+        seen = seen.merge(ref => true)
+        return resolve_local(ref, root_schema, seen) if ref.start_with?("#/")
         return resolve_anchor(ref.delete_prefix("#"), root_schema) if ref.start_with?("#")
 
-        resolve_remote(ref, root_schema)
+        resolve_remote(ref, root_schema, seen)
       end
 
-      def resolve_local(ref, schema)
+      def resolve_local(ref, schema, seen = {})
         parts = ref.delete_prefix("#/").split("/", -1)
         current = schema
 
@@ -29,7 +36,7 @@ module Lutaml
         end
 
         if current.is_a?(Schema) && current.dollar_ref
-          resolve(current.dollar_ref, schema)
+          resolve(current.dollar_ref, schema, seen)
         else
           current
         end
@@ -46,8 +53,8 @@ module Lutaml
       # Non-fragment refs resolve against the schema-set name map first,
       # then against the `$id` index built from the document tree
       # (relative ids join the nearest enclosing base, per RFC 3986).
-      def resolve_remote(ref, root_schema = nil)
-        mapped = schema_map_lookup(ref)
+      def resolve_remote(ref, root_schema = nil, seen = nil)
+        mapped = schema_map_lookup(ref, seen)
         return mapped if mapped
 
         id_lookup(ref, root_schema)
@@ -55,7 +62,7 @@ module Lutaml
 
       private
 
-      def schema_map_lookup(ref)
+      def schema_map_lookup(ref, seen = nil)
         return nil unless @schemas
 
         file_path, fragment = ref.split("#", 2)
@@ -66,7 +73,7 @@ module Lutaml
         schema = @schemas[key]
         return schema if fragment.nil? || fragment.empty?
 
-        resolve("##{fragment}", schema)
+        resolve("##{fragment}", schema, seen)
       end
 
       def id_lookup(ref, root_schema)

@@ -62,6 +62,17 @@ RSpec.describe Lutaml::Jsonschema::ReferenceResolver do
       expect(resolver.resolve("#/definitions/alias", schema).type).to eq("string")
     end
 
+    it "terminates on cyclic ref chains instead of recursing" do
+      schema = parse(
+        "definitions" => {
+          "a" => { "$ref" => "#/definitions/b" },
+          "b" => { "$ref" => "#/definitions/a" },
+        },
+      )
+
+      expect(resolver.resolve("#/definitions/a", schema)).to be_nil
+    end
+
     it "returns nil for unresolvable pointers" do
       expect(resolver.resolve("#/definitions/missing", schema)).to be_nil
     end
