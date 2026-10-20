@@ -57,26 +57,30 @@ module Lutaml
         abort "Error: #{e.message}"
       end
 
-      desc "export SCHEMA_FILES...", "Export schemas (cddl)"
+      EXPORT_FORMATS = %w[cddl openapi].freeze
+
+      desc "export SCHEMA_FILES...", "Export schemas (cddl|openapi)"
       option :format, aliases: "-f", type: :string, default: "cddl",
-                      desc: "Export format (cddl)"
+                      desc: "Export format (cddl, openapi)"
       option :output, aliases: "-o", type: :string, default: "-",
                       desc: "Output file path (use - for stdout)"
       def export(*schema_files)
         raise Error, "No schema files provided" if schema_files.empty?
-        unless options[:format] == "cddl"
-          raise Error,
-                "Unsupported export format: #{options[:format]} (supported: cddl)"
+
+        format = options[:format]
+        unless EXPORT_FORMATS.include?(format)
+          raise Error, "Unsupported export format: #{format} " \
+                       "(supported: #{EXPORT_FORMATS.join(', ')})"
         end
 
         schema_set = SchemaSet.load_from_files(*schema_files)
-        text = Exports::Cddl.new(schema_set).render
+        text = render_export(format, schema_set)
 
         if options[:output] == "-"
           $stdout.write(text)
         else
           File.write(options[:output], text)
-          puts "CDDL written to #{options[:output]}"
+          puts "#{format} written to #{options[:output]}"
         end
       rescue Errno::ENOENT => e
         abort "Error: #{e.message}"
@@ -143,6 +147,13 @@ module Lutaml
                "#{change.detail}"
         end
         puts "No changes" if changes.empty?
+      end
+
+      def render_export(format, schema_set)
+        case format
+        when "cddl" then Exports::Cddl.new(schema_set).render
+        when "openapi" then Exports::Openapi.new(schema_set).render
+        end
       end
 
       def validate_structure(json)
