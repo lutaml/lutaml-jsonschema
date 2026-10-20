@@ -204,6 +204,20 @@ RSpec.describe "Dialect-aware constraint rendering" do
     expect(schema.pattern_properties).to eq("^x-" => { "type" => "any" })
   end
 
+  it "projects x-enumDescriptions into the SPA" do
+    property = spa_property(
+      {},
+      {
+        "type" => "string",
+        "enum" => %w[active archived],
+        "x-enumDescriptions" => { "active" => "Currently active" },
+      },
+    )
+
+    expect(property.enum_descriptions).to eq("active" => "Currently active")
+    expect(property.enum).to eq(%w[active archived])
+  end
+
   it "exposes an OpenAPI discriminator and variant refs" do
     root = Lutaml::Jsonschema::Schema.from_json(Yeptris::JSON.dump({
                                                                      "type" => "object",

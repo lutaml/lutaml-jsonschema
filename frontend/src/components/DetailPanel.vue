@@ -251,7 +251,18 @@
                   <tr v-if="propertyItem.enum?.length">
                     <td class="constraint-key">Enum</td>
                     <td>
-                      <div class="enum-values-list">
+                      <table v-if="enumRowsFor(propertyItem).some(row => row.description)" class="table enum-table">
+                        <thead>
+                          <tr><th>Value</th><th>Description</th></tr>
+                        </thead>
+                        <tbody>
+                          <tr v-for="row in enumRowsFor(propertyItem)" :key="row.value">
+                            <td class="font-mono">{{ row.value }}</td>
+                            <td class="text-secondary">{{ row.description || '—' }}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                      <div v-else class="enum-values-list">
                         <span v-for="e in visibleEnumValues(propertyItem.name, propertyItem.enum)" :key="e" class="enum-value-chip">{{ e }}</span>
                         <button v-if="propertyItem.enum.length > 8 && !detailEnumExpanded.has(propertyItem.name)" class="enum-more-btn" @click="toggleDetailEnum(propertyItem.name)">+{{ propertyItem.enum.length - 8 }} more</button>
                       </div>
@@ -313,7 +324,18 @@
                   <tr v-if="definitionItem.enum?.length">
                     <td class="constraint-key">Enum</td>
                     <td>
-                      <div class="enum-values-list">
+                      <table v-if="enumRowsFor(definitionItem).some(row => row.description)" class="table enum-table">
+                        <thead>
+                          <tr><th>Value</th><th>Description</th></tr>
+                        </thead>
+                        <tbody>
+                          <tr v-for="row in enumRowsFor(definitionItem)" :key="row.value">
+                            <td class="font-mono">{{ row.value }}</td>
+                            <td class="text-secondary">{{ row.description || '—' }}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                      <div v-else class="enum-values-list">
                         <span v-for="e in visibleEnumValues(definitionItem.name, definitionItem.enum)" :key="e" class="enum-value-chip">{{ e }}</span>
                         <button v-if="definitionItem.enum.length > 8 && !detailEnumExpanded.has(definitionItem.name)" class="enum-more-btn" @click="toggleDetailEnum(definitionItem.name)">+{{ definitionItem.enum.length - 8 }} more</button>
                       </div>
@@ -483,7 +505,7 @@ import { useSchemaStore, type SelectedItem } from '../stores/schemaStore'
 import { useUiStore } from '../stores/uiStore'
 import { renderInlineMarkdown } from '../composables/useMarkdownLite'
 import { jsonToCollapsibleHtml } from '../composables/useJsonViewer'
-import { numberRange, stringRange, itemsRange, refLabel, patternPropertyRows as toPatternPropertyRows, conditionalSections as toConditionalSections, variantOptions as toVariantOptions, diffSections as toDiffSections } from '../composables/useSchemaTypes'
+import { numberRange, stringRange, itemsRange, refLabel, patternPropertyRows as toPatternPropertyRows, conditionalSections as toConditionalSections, variantOptions as toVariantOptions, diffSections as toDiffSections, enumRows as toEnumRows } from '../composables/useSchemaTypes'
 import type { SpaProperty } from '../types'
 
 const schemaStore = useSchemaStore()
@@ -496,6 +518,13 @@ const detailEnumExpanded = reactive(new Set<string>())
 function visibleEnumValues(name: string, enums: string[]): string[] {
   if (detailEnumExpanded.has(name) || enums.length <= 8) return enums
   return enums.slice(0, 8)
+}
+
+function enumRowsFor(holder: {
+  enum?: string[]
+  enumDescriptions?: Record<string, string>
+}) {
+  return toEnumRows(holder.enum, holder.enumDescriptions)
 }
 
 function toggleDetailEnum(name: string) {

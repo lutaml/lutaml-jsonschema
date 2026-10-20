@@ -86,6 +86,7 @@ module Lutaml
 
       # Enum / const
       attribute :enum, :string, collection: true
+      attribute :enum_descriptions, :hash
       attribute :const, :string
 
       # Composition (recursive)
@@ -177,6 +178,7 @@ module Lutaml
         map "contentEncoding", to: :content_encoding
         map "contentSchema", to: :content_schema
         map "enum", to: :enum
+        map "x-enumDescriptions", to: :enum_descriptions
         map "const", to: :const
         map "allOf", to: :all_of
         map "anyOf", to: :any_of

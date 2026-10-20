@@ -13,6 +13,7 @@ module Lutaml
         attribute :default, :string
         attribute :pattern, :string
         attribute :enum, :string, collection: true
+        attribute :enum_descriptions, :hash
         attribute :ref, :string
         attribute :min_length, :integer
         attribute :max_length, :integer
@@ -90,6 +91,7 @@ module Lutaml
           map "default", to: :default
           map "pattern", to: :pattern
           map "enum", to: :enum
+          map "enumDescriptions", to: :enum_descriptions
           map "$ref", to: :ref
           map "minLength", to: :min_length
           map "maxLength", to: :max_length

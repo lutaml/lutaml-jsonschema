@@ -140,6 +140,22 @@ export function diffSections(entries: SpaDiffEntry[]): DiffSection[] {
   })
 }
 
+export interface EnumRow {
+  value: string
+  description?: string
+}
+
+/** Enum values paired with x-enumDescriptions entries. */
+export function enumRows(
+  values?: string[],
+  descriptions?: Record<string, string>,
+): EnumRow[] {
+  return (values ?? []).map(value => ({
+    value,
+    description: descriptions?.[value],
+  }))
+}
+
 /** Whether the type string is a composition indicator from the backend. */
 export function isCompositionType(type?: string): boolean {
   const t = type || ''
