@@ -2,6 +2,7 @@
 
 require "thor"
 require "json"
+require "yeptris"
 
 module Lutaml
   module Jsonschema
@@ -44,7 +45,7 @@ module Lutaml
 
         schema_set = SchemaSet.load_from_files(*schema_files)
         combined = Combiner.new.combine(schema_set)
-        json = JSON.pretty_generate(JSON.parse(combined.to_json))
+        json = JSON.pretty_generate(Yeptris::JSON.load(combined.to_json))
 
         if options[:output] == "-"
           $stdout.write(json)
@@ -59,7 +60,7 @@ module Lutaml
       desc "validate SCHEMA_FILE", "Validate a JSON Schema file"
       def validate(schema_file)
         data = File.read(schema_file)
-        json = JSON.parse(data)
+        json = Yeptris::JSON.load(data)
         Schema.from_json(data)
 
         errors = validate_structure(json)
@@ -69,7 +70,7 @@ module Lutaml
           errors.each { |e| warn "  #{e}" }
           abort "#{schema_file}: #{errors.length} validation error(s)"
         end
-      rescue JSON::ParserError => e
+      rescue Yeptris::JSON::ParseError, JSON::ParserError => e
         abort "Invalid JSON: #{e.message}"
       rescue Errno::ENOENT => e
         abort "Error: #{e.message}"

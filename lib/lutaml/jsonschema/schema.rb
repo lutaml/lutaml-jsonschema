@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "yeptris"
+
 module Lutaml
   module Jsonschema
     class Schema < Base
@@ -158,7 +160,7 @@ module Lutaml
       def serialize_additional_properties(instance, hash)
         if instance.additional_properties_schema
           hash["additionalProperties"] =
-            JSON.parse(instance.additional_properties_schema.to_json)
+            Yeptris::JSON.load(instance.additional_properties_schema.to_json)
         elsif !instance.additional_properties.nil?
           hash["additionalProperties"] = instance.additional_properties
         end
