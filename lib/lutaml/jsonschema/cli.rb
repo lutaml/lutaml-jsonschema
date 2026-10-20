@@ -57,19 +57,20 @@ module Lutaml
         abort "Error: #{e.message}"
       end
 
-      desc "validate SCHEMA_FILE", "Validate a JSON Schema file"
+      desc "validate SCHEMA_FILE",
+           "Validate a JSON Schema file against its dialect meta-schema"
+      option :format, aliases: "-f", type: :string, default: "text",
+                      desc: "Output format (text/json)"
       def validate(schema_file)
         data = File.read(schema_file)
         json = Yeptris::JSON.load(data)
         Schema.from_json(data)
 
-        errors = validate_structure(json)
-        if errors.empty?
-          puts "#{schema_file}: valid"
-        else
-          errors.each { |e| warn "  #{e}" }
-          abort "#{schema_file}: #{errors.length} validation error(s)"
-        end
+        result = validation_result(json)
+        emit_validation_result(schema_file, result)
+        return if result[:errors].empty?
+
+        abort "#{schema_file}: #{result[:errors].length} validation error(s)"
       rescue Yeptris::JSON::ParseError, JSON::ParserError => e
         abort "Invalid JSON: #{e.message}"
       rescue Errno::ENOENT => e
@@ -101,6 +102,52 @@ module Lutaml
         errors << "required must be an array" if json.key?("required") && !json["required"].is_a?(Array)
 
         errors
+      end
+
+      def validation_result(json)
+        unless json.is_a?(Hash)
+          return {
+            dialect: :unspecified,
+            errors: ["schema document must be a JSON object " \
+                     "(boolean schemas are not supported)"],
+            warnings: [],
+          }
+        end
+
+        dialect = Dialect.detect(json["$schema"])
+        errors = validate_structure(json).dup
+        warnings = []
+
+        if Validator.supported?(dialect)
+          Validator.validate(json, dialect).each do |meta_error|
+            pointer = meta_error.pointer.empty? ? "/" : meta_error.pointer
+            errors << "#{pointer}: #{meta_error.message}"
+          end
+        else
+          warnings << "no $schema or unsupported dialect; meta-schema validation skipped"
+        end
+
+        { dialect: dialect, errors: errors, warnings: warnings }
+      end
+
+      def emit_validation_result(file, result)
+        if options[:format] == "json"
+          puts JSON.pretty_generate(
+            file: file,
+            dialect: result[:dialect].to_s,
+            valid: result[:errors].empty?,
+            errors: result[:errors],
+            warnings: result[:warnings],
+          )
+          return
+        end
+
+        result[:warnings].each { |warning| warn "  warning: #{warning}" }
+        if result[:errors].empty?
+          puts "#{file}: valid"
+        else
+          result[:errors].each { |error| warn "  #{error}" }
+        end
       end
     end
   end

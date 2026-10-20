@@ -81,6 +81,26 @@ RSpec.describe Lutaml::Jsonschema::Cli do
           .to raise_error(SystemExit)
       end
     end
+
+    it "reports meta-schema errors with JSON pointers" do
+      Dir.mktmpdir do |dir|
+        bad = File.join(dir, "bad_schema.json")
+        File.write(bad, '{"$schema":"http://json-schema.org/draft-07/schema#",' \
+                        '"type":5}')
+
+        expect do
+          described_class.start(["validate", bad])
+        rescue SystemExit
+          nil
+        end.to output(%r{/type:}).to_stderr
+      end
+    end
+
+    it "emits machine-readable results with --format json" do
+      expect do
+        described_class.start(["validate", person_schema, "--format", "json"])
+      end.to output(/"valid": true/).to_stdout
+    end
   end
 
   describe "version" do
