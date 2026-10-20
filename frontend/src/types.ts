@@ -58,6 +58,8 @@ export interface SpaProperty {
   compositionSource?: string
   patternProperties?: Record<string, { type?: string }>
   properties?: SpaProperty[]
+  oneOfVariants?: SpaProperty[]
+  anyOfVariants?: SpaProperty[]
 }
 
 export interface SpaDefinition {
@@ -97,6 +99,8 @@ export interface SpaDefinition {
   hasOneOf?: boolean
   compositionVariants?: string[]
   patternProperties?: Record<string, { type?: string }>
+  oneOfVariants?: SpaProperty[]
+  anyOfVariants?: SpaProperty[]
 }
 
 export interface SpaSchema {

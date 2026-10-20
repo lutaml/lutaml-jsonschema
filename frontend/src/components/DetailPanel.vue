@@ -131,6 +131,26 @@
                     <span v-for="name in section.required" :key="'required-' + name" class="badge badge-required-sm">{{ name }}</span>
                   </div>
                 </div>
+                <template v-if="variantOptions.length">
+                  <div class="meta-row">
+                    <span class="meta-label">Variants</span>
+                    <div class="meta-tags variant-tabs">
+                      <button v-for="(variant, index) in variantOptions" :key="variant.source + index" type="button" class="variant-tab" :class="{ active: activeVariant === index }" :aria-pressed="activeVariant === index" @click="activeVariant = index">{{ variant.label }}</button>
+                    </div>
+                  </div>
+                  <div v-if="activeVariantOption" class="meta-row">
+                    <span class="meta-label">{{ activeVariantOption.source }}</span>
+                    <div>
+                      <span v-if="activeVariantOption.type" class="prop-type-badge" :class="propTypeClass(activeVariantOption.type)">{{ activeVariantOption.type }}</span>
+                      <span v-if="activeVariantOption.format" class="prop-format">&lt;{{ activeVariantOption.format }}&gt;</span>
+                      <span v-for="value in activeVariantOption.enum ?? []" :key="value" class="enum-value-chip">{{ value }}</span>
+                      <div v-if="activeVariantOption.description" class="text-secondary md-content" v-html="renderInlineMarkdown(activeVariantOption.description)"></div>
+                      <div v-if="activeVariantOption.fields.length" class="meta-tags">
+                        <span v-for="field in activeVariantOption.fields" :key="field.name" class="badge badge-type">{{ field.name }}<template v-if="field.type">: {{ field.type }}</template></span>
+                      </div>
+                    </div>
+                  </div>
+                </template>
                 <div v-if="definitionItem && definitionItem.required?.length" class="meta-row">
                   <span class="meta-label">Required</span>
                   <div class="meta-tags">
@@ -425,12 +445,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, reactive, onMounted, onUnmounted } from 'vue'
+import { computed, ref, reactive, onMounted, onUnmounted, watch } from 'vue'
 import { useSchemaStore, type SelectedItem } from '../stores/schemaStore'
 import { useUiStore } from '../stores/uiStore'
 import { renderInlineMarkdown } from '../composables/useMarkdownLite'
 import { jsonToCollapsibleHtml } from '../composables/useJsonViewer'
-import { numberRange, stringRange, itemsRange, refLabel, patternPropertyRows as toPatternPropertyRows, conditionalSections as toConditionalSections } from '../composables/useSchemaTypes'
+import { numberRange, stringRange, itemsRange, refLabel, patternPropertyRows as toPatternPropertyRows, conditionalSections as toConditionalSections, variantOptions as toVariantOptions } from '../composables/useSchemaTypes'
 import type { SpaProperty } from '../types'
 
 const schemaStore = useSchemaStore()
@@ -682,6 +702,19 @@ const conditionalSections = computed(() => {
   if (item.value?.kind !== 'schema') return []
   return toConditionalSections(item.value.schema)
 })
+
+const activeVariant = ref(0)
+
+const variantOptions = computed(() => {
+  if (!item.value) return []
+  if (item.value.kind === 'property') return toVariantOptions(item.value.property)
+  if (item.value.kind === 'definition') return toVariantOptions(item.value.definition)
+  return []
+})
+
+const activeVariantOption = computed(() => variantOptions.value[activeVariant.value])
+
+watch(item, () => { activeVariant.value = 0 })
 
 function navigateToRef(ref: string | undefined) {
   if (!ref) return
