@@ -235,6 +235,11 @@ RSpec.describe "Schema dialect coverage" do
       expect(schema.definition_entries.first.schema_value).to be(false)
       expect(round_trip(hash)).to eq(hash)
     end
+
+    it "preserves an empty nested schema" do
+      expect(round_trip("properties" => { "x" => {} }))
+        .to eq("properties" => { "x" => {} })
+    end
   end
 
   describe "child traversal" do
