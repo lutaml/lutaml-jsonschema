@@ -43,6 +43,7 @@ module Lutaml
         # Nested structure for object-typed properties
         attribute :properties, SpaProperty, collection: true,
                                             initialize_empty: true
+        attribute :discriminator, :hash
         attribute :required_fields, :string, collection: true,
                                              initialize_empty: true
         attribute :definitions, SpaDefinition, collection: true,
@@ -114,6 +115,7 @@ module Lutaml
           map "minProperties", to: :min_properties
           map "maxProperties", to: :max_properties
           map "properties", to: :properties
+          map "discriminator", to: :discriminator
           map "requiredFields", to: :required_fields
           map "definitions", to: :definitions
           map "itemsProperties", to: :items_properties

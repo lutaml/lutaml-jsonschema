@@ -358,6 +358,17 @@ describe('SPA data completeness for complex schemas', () => {
       expect(variantOptions(prop())).toEqual([])
     })
 
+    it('variantOptions labels variants by discriminator mapping', () => {
+      const options = variantOptions({
+        oneOfVariants: [
+          prop({ title: 'Cat title', type: 'object', ref: '#/$defs/Cat' }),
+          prop({ type: 'object', ref: '#/$defs/Dog' }),
+        ],
+      }, { cat: '#/$defs/Cat', dog: '#/$defs/Dog' })
+
+      expect(options.map(o => o.label)).toEqual(['cat', 'dog'])
+    })
+
     it('displayType shows an open tuple tail', () => {
       const p = prop({ type: 'array', itemsTuple: ['string'], itemsTail: 'integer' })
       expect(displayType(p)).toBe('array of [string, *integer]')

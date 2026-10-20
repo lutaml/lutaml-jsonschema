@@ -131,6 +131,13 @@
                     <span v-for="name in section.required" :key="'required-' + name" class="badge badge-required-sm">{{ name }}</span>
                   </div>
                 </div>
+                <div v-if="discriminatorMeta" class="meta-row">
+                  <span class="meta-label">Discriminator</span>
+                  <div class="meta-tags">
+                    <span v-if="discriminatorMeta.propertyName" class="badge badge-type">{{ discriminatorMeta.propertyName }}</span>
+                    <span v-for="(ref, value) in discriminatorMeta.mapping" :key="value" class="enum-value-chip">{{ value }} → {{ refLabel(ref) }}</span>
+                  </div>
+                </div>
                 <template v-if="variantOptions.length">
                   <div class="meta-row">
                     <span class="meta-label">Variants</span>
@@ -705,11 +712,22 @@ const conditionalSections = computed(() => {
 
 const activeVariant = ref(0)
 
+const discriminatorMeta = computed(() => {
+  if (!item.value) return null
+  if (item.value.kind === 'property') return item.value.property.discriminator ?? null
+  if (item.value.kind === 'definition') return item.value.definition.discriminator ?? null
+  if (item.value.kind === 'schema') return item.value.schema.discriminator ?? null
+  return null
+})
+
 const variantOptions = computed(() => {
   if (!item.value) return []
-  if (item.value.kind === 'property') return toVariantOptions(item.value.property)
-  if (item.value.kind === 'definition') return toVariantOptions(item.value.definition)
-  return []
+  const holder = item.value.kind === 'property'
+    ? item.value.property
+    : item.value.kind === 'definition'
+      ? item.value.definition
+      : null
+  return holder ? toVariantOptions(holder, holder.discriminator?.mapping) : []
 })
 
 const activeVariantOption = computed(() => variantOptions.value[activeVariant.value])

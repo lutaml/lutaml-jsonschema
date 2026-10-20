@@ -25,6 +25,8 @@ module Lutaml
       attribute :read_only, :boolean
       attribute :write_only, :boolean
       attribute :external_docs, :hash
+      # OpenAPI discriminator: { propertyName:, mapping: { value: $ref } }
+      attribute :discriminator, :hash
 
       # Type keywords
       attribute :type, :string
@@ -123,6 +125,7 @@ module Lutaml
         map "readOnly", to: :read_only
         map "writeOnly", to: :write_only
         map "externalDocs", to: :external_docs
+        map "discriminator", to: :discriminator
         map "type", to: :type,
                     with: { from: :parse_type, to: :serialize_type }
         map "format", to: :format

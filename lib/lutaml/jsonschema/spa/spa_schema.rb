@@ -18,6 +18,7 @@ module Lutaml
         attribute :dollar_schema, :string
         attribute :dollar_id, :string
         attribute :external_docs, :hash
+        attribute :discriminator, :hash
         attribute :additional_properties, :boolean
         attribute :min_properties, :integer
         attribute :max_properties, :integer
@@ -73,6 +74,7 @@ module Lutaml
           map "$schema", to: :dollar_schema
           map "$id", to: :dollar_id
           map "externalDocs", to: :external_docs
+          map "discriminator", to: :discriminator
           map "additionalProperties", to: :additional_properties
           map "minProperties", to: :min_properties
           map "maxProperties", to: :max_properties

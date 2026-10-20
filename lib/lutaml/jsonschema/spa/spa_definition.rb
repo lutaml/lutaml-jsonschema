@@ -24,6 +24,7 @@ module Lutaml
         attribute :content_encoding, :string
         attribute :properties, SpaProperty, collection: true,
                                             initialize_empty: true
+        attribute :discriminator, :hash
         attribute :required, :string, collection: true
         attribute :examples, :string, collection: true
         attribute :min_properties, :integer
@@ -89,6 +90,7 @@ module Lutaml
           map "contentMediaType", to: :content_type
           map "contentEncoding", to: :content_encoding
           map "properties", to: :properties
+          map "discriminator", to: :discriminator
           map "required", to: :required
           map "examples", to: :examples
           map "minProperties", to: :min_properties

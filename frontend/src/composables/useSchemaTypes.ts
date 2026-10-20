@@ -82,27 +82,38 @@ export interface VariantOption {
   fields: ConditionalRow[]
 }
 
-/** oneOf/anyOf members as tab options, oneOf first. */
-export function variantOptions(holder: {
-  oneOfVariants?: SpaProperty[]
-  anyOfVariants?: SpaProperty[]
-}): VariantOption[] {
+/** oneOf/anyOf members as tab options, oneOf first. Discriminator values
+ * label the variants whose $ref appears in the mapping. */
+export function variantOptions(
+  holder: {
+    oneOfVariants?: SpaProperty[]
+    anyOfVariants?: SpaProperty[]
+  },
+  mapping?: Record<string, string>,
+): VariantOption[] {
   const build = (
     variants: SpaProperty[] | undefined,
     source: 'oneOf' | 'anyOf',
   ): VariantOption[] =>
-    (variants ?? []).map((variant, index) => ({
-      label: variant.title || variant.type || `Variant ${index + 1}`,
-      source,
-      type: variant.type,
-      format: variant.format,
-      description: variant.description,
-      enum: variant.enum,
-      fields: (variant.properties ?? []).map(p => ({
-        name: p.name,
-        type: p.type,
-      })),
-    }))
+    (variants ?? []).map((variant, index) => {
+      const discriminatorValue = variant.ref
+        ? Object.entries(mapping ?? {})
+          .find(([, ref]) => ref === variant.ref)?.[0]
+        : undefined
+      return {
+        label: discriminatorValue || variant.title || variant.type ||
+          `Variant ${index + 1}`,
+        source,
+        type: variant.type,
+        format: variant.format,
+        description: variant.description,
+        enum: variant.enum,
+        fields: (variant.properties ?? []).map(p => ({
+          name: p.name,
+          type: p.type,
+        })),
+      }
+    })
 
   return [
     ...build(holder.oneOfVariants, 'oneOf'),
