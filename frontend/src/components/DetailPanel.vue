@@ -12,11 +12,13 @@
         </button>
       </div>
 
-      <div v-if="item" class="panel-tabs">
+      <div v-if="item" class="panel-tabs" role="tablist">
         <button
           v-for="tab in currentTabs"
           :key="tab.id"
           class="panel-tab"
+          role="tab"
+          :aria-selected="uiStore.activePanelTab === tab.id"
           :class="{ active: uiStore.activePanelTab === tab.id }"
           @click="uiStore.setPanelTab(tab.id)"
         >
@@ -363,7 +365,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="prop in properties" :key="prop.name" class="prop-row" @click="navigateToProperty(prop.name)">
+                  <tr v-for="prop in properties" :key="prop.name" class="prop-row" role="link" tabindex="0" @click="navigateToProperty(prop.name)" @keydown.enter="navigateToProperty(prop.name)" @keydown.space.prevent="navigateToProperty(prop.name)">
                     <td>
                       <span class="font-mono">{{ prop.name }}</span>
                       <span v-if="prop.title && prop.title !== prop.name" class="prop-title">({{ prop.title }})</span>

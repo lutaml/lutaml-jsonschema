@@ -80,7 +80,7 @@
         <div v-else-if="debouncedQuery && !searchResults.length && searchQuery" class="search-no-results text-muted">
           No results found
         </div>
-        <div v-else class="schema-tree" ref="sidebarTreeRef">
+        <div v-else class="schema-tree" ref="sidebarTreeRef" role="tree" aria-label="Schemas">
           <div
             v-for="schema in schemaStore.schemas"
             :key="schema.name"
@@ -105,13 +105,17 @@
               <span class="schema-badge-count">{{ schema.definitions.length }}D</span>
             </div>
 
-            <div v-if="uiStore.isSchemaExpanded(schema.name)" class="schema-children">
+            <div v-if="uiStore.isSchemaExpanded(schema.name)" class="schema-children" role="group">
               <div
                 v-for="prop in schema.properties.slice(0, 10)"
                 :key="`p-${prop.name}`"
                 class="tree-item property-item"
                 :class="{ active: schema.name === schemaStore.selectedSchemaName && prop.name === schemaStore.selectedPropertyName }"
+                role="treeitem"
+                tabindex="0"
                 @click.stop="selectProperty(schema.name, prop.name)"
+                @keydown.enter="selectProperty(schema.name, prop.name)"
+                @keydown.space.prevent="selectProperty(schema.name, prop.name)"
               >
                 <span class="badge badge-property-sm">P</span>
                 <span class="tree-bullet" aria-hidden="true"></span>
@@ -126,7 +130,11 @@
                 :key="`d-${def.name}`"
                 class="tree-item definition-item"
                 :class="{ active: schema.name === schemaStore.selectedSchemaName && def.name === schemaStore.selectedDefinitionName }"
+                role="treeitem"
+                tabindex="0"
                 @click.stop="selectDefinition(schema.name, def.name)"
+                @keydown.enter="selectDefinition(schema.name, def.name)"
+                @keydown.space.prevent="selectDefinition(schema.name, def.name)"
               >
                 <span class="badge badge-definition-sm">D</span>
                 <span class="tree-bullet" aria-hidden="true"></span>
