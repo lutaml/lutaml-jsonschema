@@ -14,6 +14,7 @@ import {
   conditionalSections,
   variantOptions,
   diffSections,
+  enumRows,
 } from '../composables/useSchemaTypes'
 import { resolveSchemaRef } from '../composables/useDefinitionResolver'
 import { createField, buildDefaultJson } from '../composables/useBuilderField'
@@ -381,6 +382,18 @@ describe('SPA data completeness for complex schemas', () => {
       expect(sections.map(s => s.label)).toEqual(['breaking', 'additive', 'cosmetic'])
       expect(sections[0].rows.map(r => r.pointer))
         .toEqual(['/properties/b', '/properties/d'])
+    })
+
+    it('enumRows pairs values with x-enumDescriptions entries', () => {
+      expect(enumRows(['active', 'archived'], { active: 'Currently active' }))
+        .toEqual([
+          { value: 'active', description: 'Currently active' },
+          { value: 'archived', description: undefined },
+        ])
+    })
+
+    it('enumRows tolerates missing inputs', () => {
+      expect(enumRows(undefined)).toEqual([])
     })
 
     it('displayType shows an open tuple tail', () => {

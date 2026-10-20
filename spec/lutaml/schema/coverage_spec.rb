@@ -242,6 +242,26 @@ RSpec.describe "Schema dialect coverage" do
     end
   end
 
+  describe "x-enumDescriptions" do
+    it "round-trips per-value descriptions" do
+      hash = {
+        "type" => "string",
+        "enum" => %w[active archived],
+        "x-enumDescriptions" => {
+          "active" => "Currently active",
+          "archived" => "No longer active",
+        },
+      }
+      schema = parse(hash)
+
+      expect(schema.enum_descriptions).to eq(
+        "active" => "Currently active",
+        "archived" => "No longer active",
+      )
+      expect(round_trip(hash)).to eq(hash)
+    end
+  end
+
   describe "child traversal" do
     it "yields schemas inside every new schema-bearing keyword" do
       schema = parse(

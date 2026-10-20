@@ -10,6 +10,7 @@ module Lutaml
         attribute :type, :string
         attribute :format, :string
         attribute :enum, :string, collection: true
+        attribute :enum_descriptions, :hash
         attribute :const_value, :string
         attribute :pattern, :string
         attribute :default, :string
@@ -77,6 +78,7 @@ module Lutaml
           map "type", to: :type
           map "format", to: :format
           map "enum", to: :enum
+          map "enumDescriptions", to: :enum_descriptions
           map "const", to: :const_value
           map "pattern", to: :pattern
           map "default", to: :default

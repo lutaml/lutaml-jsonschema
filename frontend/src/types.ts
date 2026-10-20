@@ -30,6 +30,7 @@ export interface SpaProperty {
   default?: string
   pattern?: string
   enum?: string[]
+  enumDescriptions?: Record<string, string>
   /** Resolved $ref — normalized from backend's "$ref" key during loadFromWindow() */
   ref?: string
   /** Raw JSON Schema $ref — present in window.SCHEMA_DATA before normalization */
@@ -75,6 +76,7 @@ export interface SpaDefinition {
   type?: string
   format?: string
   enum?: string[]
+  enumDescriptions?: Record<string, string>
   const?: string
   pattern?: string
   default?: string
