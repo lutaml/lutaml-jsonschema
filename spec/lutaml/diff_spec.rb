@@ -98,6 +98,15 @@ RSpec.describe Lutaml::Jsonschema::Diff do
     expect(changes).not_to(be_any { |c| c.classification == :breaking })
   end
 
+  it "classifies retargeted $ref values as breaking" do
+    changes = diff(
+      { "definitions" => { "x" => { "$ref" => "#/definitions/a" } } },
+      { "definitions" => { "x" => { "$ref" => "#/definitions/b" } } },
+    )
+
+    expect(summary(changes)).to include(["/definitions/x/$ref", :breaking])
+  end
+
   it "reports breaking? correctly" do
     expect(described_class.new(schema({}), schema({}))).not_to be_breaking
 

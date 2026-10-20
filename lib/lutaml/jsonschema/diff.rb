@@ -57,11 +57,21 @@ module Lutaml
       def compare_keywords(old, new, pointer)
         compare_meta(old, new, pointer)
         compare_type(old, new, pointer)
+        compare_ref(old, new, pointer)
         compare_required(old, new, pointer)
         compare_enum(old, new, pointer)
         compare_min_bounds(old, new, pointer)
         compare_max_bounds(old, new, pointer)
         compare_scalar_constraints(old, new, pointer)
+      end
+
+      # A retargeted $ref changes what consumers must produce/accept even
+      # when the surrounding schema looks unchanged.
+      def compare_ref(old, new, pointer)
+        return if old.dollar_ref == new.dollar_ref
+
+        add(join(pointer, "$ref"), :changed, BREAKING,
+            "#{old.dollar_ref.inspect} -> #{new.dollar_ref.inspect}")
       end
 
       def compare_children(old, new, pointer)
