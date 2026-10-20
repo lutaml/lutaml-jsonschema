@@ -97,6 +97,7 @@ export interface SpaSchema {
   sourceJson?: string
   $schema?: string
   $id?: string
+  externalDocs?: { url?: string; description?: string }
   additionalProperties?: boolean
   minProperties?: number
   maxProperties?: number

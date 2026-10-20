@@ -24,6 +24,7 @@ module Lutaml
       attribute :deprecated, :boolean
       attribute :read_only, :boolean
       attribute :write_only, :boolean
+      attribute :external_docs, :hash
 
       # Type keywords
       attribute :type, :string
@@ -116,6 +117,7 @@ module Lutaml
         map "deprecated", to: :deprecated
         map "readOnly", to: :read_only
         map "writeOnly", to: :write_only
+        map "externalDocs", to: :external_docs
         map "type", to: :type,
                     with: { from: :parse_type, to: :serialize_type }
         map "format", to: :format
