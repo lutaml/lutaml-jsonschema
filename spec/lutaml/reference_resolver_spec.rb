@@ -1,0 +1,120 @@
+# frozen_string_literal: true
+
+require "spec_helper"
+
+RSpec.describe Lutaml::Jsonschema::ReferenceResolver do
+  let(:resolver) { described_class.new }
+
+  def parse(hash)
+    Lutaml::Jsonschema::Schema.from_json(Yeptris::JSON.dump(hash))
+  end
+
+  describe "JSON Pointer (RFC 6901)" do
+    let(:schema) do
+      parse(
+        "definitions" => {
+          "a/b" => { "type" => "string" },
+          "c~d" => { "type" => "integer" },
+          "with space" => { "type" => "boolean" },
+        },
+      )
+    end
+
+    it "unescapes ~1 to /" do
+      expect(resolver.resolve("#/definitions/a~1b", schema).type).to eq("string")
+    end
+
+    it "unescapes ~0 to ~" do
+      expect(resolver.resolve("#/definitions/c~0d", schema).type).to eq("integer")
+    end
+
+    it "decodes ~01 as the literal ~1" do
+      schema = parse("definitions" => { "x~1" => { "type" => "string" } })
+      expect(resolver.resolve("#/definitions/x~01", schema).type).to eq("string")
+    end
+
+    it "percent-decodes fragment segments" do
+      expect(resolver.resolve("#/definitions/with%20space", schema).type)
+        .to eq("boolean")
+    end
+
+    it "navigates array indices in composition keywords" do
+      schema = parse(
+        "allOf" => [{ "type" => "string" }, { "type" => "integer" }],
+      )
+
+      expect(resolver.resolve("#/allOf/1", schema).type).to eq("integer")
+      expect(resolver.resolve("#/allOf/9", schema)).to be_nil
+    end
+
+    it "resolves '#' to the root schema" do
+      expect(resolver.resolve("#", schema)).to equal(schema)
+    end
+
+    it "follows a $ref encountered at the pointer target" do
+      schema = parse(
+        "definitions" => {
+          "alias" => { "$ref" => "#/definitions/real" },
+          "real" => { "type" => "string" },
+        },
+      )
+
+      expect(resolver.resolve("#/definitions/alias", schema).type).to eq("string")
+    end
+
+    it "returns nil for unresolvable pointers" do
+      expect(resolver.resolve("#/definitions/missing", schema)).to be_nil
+    end
+  end
+
+  describe "anchors" do
+    it "resolves $anchor fragments anywhere in the document tree" do
+      schema = parse(
+        "properties" => {
+          "thing" => { "$anchor" => "thing", "type" => "string" },
+        },
+      )
+
+      expect(resolver.resolve("#thing", schema).type).to eq("string")
+    end
+
+    it "resolves draft-04 legacy id anchor fragments" do
+      schema = parse(
+        "properties" => {
+          "legacy" => { "id" => "#legacy", "type" => "integer" },
+        },
+      )
+
+      expect(resolver.resolve("#legacy", schema).type).to eq("integer")
+    end
+
+    it "returns nil for unknown anchors" do
+      schema = parse("type" => "object")
+
+      expect(resolver.resolve("#nope", schema)).to be_nil
+    end
+  end
+
+  describe "remote refs" do
+    let(:target) { parse("type" => "string") }
+    let(:resolver) { described_class.new("other.json" => target) }
+
+    it "resolves a bare file ref from the schema map" do
+      expect(resolver.resolve("other.json")).to equal(target)
+    end
+
+    it "resolves a file ref with a pointer fragment" do
+      target = parse("definitions" => { "x" => { "type" => "integer" } })
+      resolver = described_class.new("other.json" => target)
+
+      expect(resolver.resolve("other.json#/definitions/x").type).to eq("integer")
+    end
+
+    it "resolves a file ref with an anchor fragment" do
+      target = parse("properties" => { "p" => { "$anchor" => "a", "type" => "string" } })
+      resolver = described_class.new("other.json" => target)
+
+      expect(resolver.resolve("other.json#a").type).to eq("string")
+    end
+  end
+end
