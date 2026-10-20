@@ -26,6 +26,7 @@ module Lutaml
 
     module Exports
       autoload :Cddl, "lutaml/jsonschema/exports/cddl"
+      autoload :Adoc, "lutaml/jsonschema/exports/adoc"
       autoload :Openapi, "lutaml/jsonschema/exports/openapi"
       autoload :Xsd, "lutaml/jsonschema/exports/xsd"
     end
