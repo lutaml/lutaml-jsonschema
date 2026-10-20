@@ -84,4 +84,51 @@ describe('renderInlineMarkdown', () => {
     expect(result).toContain('target="_blank"')
     expect(result).toContain('rel="noopener"')
   })
+
+  describe('GFM tables', () => {
+    it('renders a header and body rows', () => {
+      const result = renderInlineMarkdown(
+        '| Name | Type |\n| --- | --- |\n| id | string |\n| age | integer |',
+      )
+
+      expect(result).toContain('<table class="md-table">')
+      expect(result).toContain('<thead><tr><th>Name</th><th>Type</th></tr></thead>')
+      expect(result).toContain('<tr><td>id</td><td>string</td></tr>')
+      expect(result).toContain('<tr><td>age</td><td>integer</td></tr>')
+    })
+
+    it('applies alignment from the separator row', () => {
+      const result = renderInlineMarkdown(
+        '| a | b | c |\n| :--- | :---: | ---: |\n| 1 | 2 | 3 |',
+      )
+
+      expect(result).toContain('<th class="md-align-left">a</th>')
+      expect(result).toContain('<th class="md-align-center">b</th>')
+      expect(result).toContain('<th class="md-align-right">c</th>')
+    })
+
+    it('formats inline markdown inside cells', () => {
+      const result = renderInlineMarkdown(
+        '| Name |\n| --- |\n| **bold** |',
+      )
+
+      expect(result).toContain('<td><strong>bold</strong></td>')
+    })
+
+    it('leaves pipe text without a separator as plain text', () => {
+      const result = renderInlineMarkdown('a | b without separator')
+
+      expect(result).not.toContain('<table')
+    })
+
+    it('stops the table at the first non-row line', () => {
+      const result = renderInlineMarkdown(
+        '| a |\n| --- |\n| 1 |\nafter',
+      )
+
+      expect(result).toContain('</table>')
+      expect(result).toContain('after')
+      expect(result.indexOf('</table>')).toBeLessThan(result.indexOf('after'))
+    })
+  })
 })

@@ -1,7 +1,7 @@
 /**
  * Lightweight inline Markdown renderer for schema descriptions.
  * Handles: **bold**, *italic*, `code`, [link](url), ```fenced code blocks```,
- * bullet lists (-, *, +), numbered lists (1.), headings (###).
+ * bullet lists (-, *, +), numbered lists (1.), headings (###), GFM tables.
  */
 export function renderInlineMarkdown(text: string): string {
   if (!text) return ''
@@ -26,6 +26,16 @@ export function renderInlineMarkdown(text: string): string {
       if (inUl) { result.push('</ul>'); inUl = false }
       if (inOl) { result.push('</ol>'); inOl = false }
       result.push(line)
+      continue
+    }
+
+    // GFM table: header row followed by a separator row
+    if (isTableRow(line) && i + 1 < lines.length && isSeparatorRow(lines[i + 1])) {
+      if (inUl) { result.push('</ul>'); inUl = false }
+      if (inOl) { result.push('</ol>'); inOl = false }
+      const table = renderTable(lines, i)
+      result.push(table.html)
+      i = table.next - 1
       continue
     }
 
@@ -84,8 +94,74 @@ export function renderInlineMarkdown(text: string): string {
   return html
 }
 
-function applyInline(html: string): string {
-  // Links: [text](url)
+function isTableRow(line: string): boolean {
+  return /^\s*\|.*\|\s*$/.test(line)
+}
+
+function isSeparatorRow(line: string): boolean {
+  return /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/.test(line)
+}
+
+function splitRow(line: string): string[] {
+  return line
+    .trim()
+    .replace(/^\|/, '')
+    .replace(/\|$/, '')
+    .split('|')
+    .map((cell) => cell.trim())
+}
+
+function alignmentClass(spec: string): string {
+  const left = spec.startsWith(':')
+  const right = spec.endsWith(':')
+  if (left && right) return 'md-align-center'
+  if (right) return 'md-align-right'
+  if (left) return 'md-align-left'
+  return ''
+}
+
+function cellTag(tag: 'th' | 'td', content: string, align: string): string {
+  const cls = align ? ` class="${align}"` : ''
+  return `<${tag}${cls}>${content}</${tag}>`
+}
+
+/**
+ * Renders a GFM table starting at `start` (header row; `start + 1` is the
+ * separator). Cell content is already HTML-escaped by the caller and is
+ * formatted by the final applyInline pass, like any other line.
+ */
+function renderTable(
+  lines: string[],
+  start: number,
+): { html: string; next: number } {
+  const header = splitRow(lines[start])
+  const alignments = splitRow(lines[start + 1]).map(alignmentClass)
+
+  const body: string[][] = []
+  let i = start + 2
+  while (i < lines.length && isTableRow(lines[i]) && !isSeparatorRow(lines[i])) {
+    body.push(splitRow(lines[i]))
+    i += 1
+  }
+
+  const head = header
+    .map((cell, idx) => cellTag('th', cell, alignments[idx] ?? ''))
+    .join('')
+  const rows = body
+    .map((row) => {
+      const cells = row
+        .map((cell, idx) => cellTag('td', cell, alignments[idx] ?? ''))
+        .join('')
+      return `<tr>${cells}</tr>`
+    })
+    .join('')
+
+  const html = `<table class="md-table"><thead><tr>${head}</tr></thead>` +
+    `<tbody>${rows}</tbody></table>`
+  return { html, next: i }
+}
+
+function applyInline(html: string): string {  // Links: [text](url)
   html = html.replace(
     /\[([^\]]+)\]\(([^)]+)\)/g,
     '<a href="$2" target="_blank" rel="noopener" class="md-link">$1</a>',
