@@ -56,6 +56,7 @@ export interface SpaProperty {
   contentMediaType?: string
   contentEncoding?: string
   compositionSource?: string
+  patternProperties?: Record<string, { type?: string }>
 }
 
 export interface SpaDefinition {
@@ -94,6 +95,7 @@ export interface SpaDefinition {
   hasAnyOf?: boolean
   hasOneOf?: boolean
   compositionVariants?: string[]
+  patternProperties?: Record<string, { type?: string }>
 }
 
 export interface SpaSchema {
@@ -120,6 +122,7 @@ export interface SpaSchema {
   itemsTuple?: string[]
   itemsTail?: string
   itemsClosed?: boolean
+  patternProperties?: Record<string, { type?: string }>
 }
 
 export interface SpaSearchEntry {

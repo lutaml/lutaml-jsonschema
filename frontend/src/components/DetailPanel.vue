@@ -317,7 +317,7 @@
           <!-- Properties/Definition tab -->
           <template v-if="uiStore.activePanelTab === 'properties'">
             <div class="detail-section">
-              <table v-if="properties.length" class="table">
+              <table v-if="properties.length || patternPropertyRows.length || additionalPropertyRow" class="table">
                 <thead>
                   <tr>
                     <th>Name</th>
@@ -360,6 +360,26 @@
                       </div>
                     </td>
                   </tr>
+                  <tr v-for="row in patternPropertyRows" :key="'pattern-' + row.pattern" class="prop-row">
+                    <td>
+                      <span class="font-mono">{{ row.pattern }}</span>
+                      <span class="text-muted"> (pattern)</span>
+                    </td>
+                    <td>
+                      <span class="prop-type-badge" :class="propTypeClass(row.type)">{{ row.type || 'any' }}</span>
+                    </td>
+                    <td class="text-muted">—</td>
+                    <td class="text-muted">Matches property names against this pattern.</td>
+                  </tr>
+                  <tr v-if="additionalPropertyRow" class="prop-row">
+                    <td><span class="font-mono">*</span> <span class="text-muted">(additional)</span></td>
+                    <td>
+                      <span v-if="additionalPropertyRow.ref" class="prop-ref-link" role="button" tabindex="0" @click.stop="navigateToRef(additionalPropertyRow.ref)">{{ additionalPropertyRow.type || 'object' }} → {{ refName(additionalPropertyRow.ref) }}</span>
+                      <span v-else class="prop-type-badge" :class="propTypeClass(additionalPropertyRow.type)">{{ additionalPropertyRow.type || 'any' }}</span>
+                    </td>
+                    <td class="text-muted">—</td>
+                    <td class="text-muted">Matches property names not listed above.</td>
+                  </tr>
                 </tbody>
               </table>
               <p v-else class="text-muted">No properties defined.</p>
@@ -401,7 +421,7 @@ import { useSchemaStore, type SelectedItem } from '../stores/schemaStore'
 import { useUiStore } from '../stores/uiStore'
 import { renderInlineMarkdown } from '../composables/useMarkdownLite'
 import { jsonToCollapsibleHtml } from '../composables/useJsonViewer'
-import { numberRange, stringRange, itemsRange, refLabel } from '../composables/useSchemaTypes'
+import { numberRange, stringRange, itemsRange, refLabel, patternPropertyRows as toPatternPropertyRows } from '../composables/useSchemaTypes'
 import type { SpaProperty } from '../types'
 
 const schemaStore = useSchemaStore()
@@ -630,6 +650,23 @@ const propertyItem = computed<SpaProperty | null>(() => {
 const definitionItem = computed(() => {
   if (item.value?.kind !== 'definition') return null
   return item.value.definition
+})
+
+const patternPropertyRows = computed(() => {
+  if (!item.value) return []
+  const map = item.value.kind === 'schema'
+    ? item.value.schema.patternProperties
+    : item.value.kind === 'definition'
+      ? item.value.definition.patternProperties
+      : item.value.property.patternProperties
+  return toPatternPropertyRows(map)
+})
+
+const additionalPropertyRow = computed<{ type?: string; ref?: string } | null>(() => {
+  if (item.value?.kind !== 'definition') return null
+  const d = item.value.definition
+  if (!d.additionalPropertiesType && !d.additionalPropertiesRef) return null
+  return { type: d.additionalPropertiesType, ref: d.additionalPropertiesRef }
 })
 
 function navigateToRef(ref: string | undefined) {

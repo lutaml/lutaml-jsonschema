@@ -21,6 +21,21 @@ export function refLabel(ref: string): string {
   return parts[parts.length - 1]
 }
 
+export interface PatternPropertyRow {
+  pattern: string
+  type?: string
+}
+
+/** Flatten a patternProperties map into table rows, preserving document order. */
+export function patternPropertyRows(
+  map?: Record<string, { type?: string }>,
+): PatternPropertyRow[] {
+  return Object.entries(map ?? {}).map(([pattern, info]) => ({
+    pattern,
+    type: info?.type,
+  }))
+}
+
 /** Whether the type string is a composition indicator from the backend. */
 export function isCompositionType(type?: string): boolean {
   const t = type || ''
