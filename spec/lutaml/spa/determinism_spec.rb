@@ -53,4 +53,13 @@ RSpec.describe "SPA artifact determinism" do
       expect(html).not_to match(%r{<link rel="stylesheet" href=})
     end
   end
+
+  it "ships the print stylesheet for the print/PDF path" do
+    Dir.mktmpdir do |dir|
+      html = build_into(dir)
+      inline_css = html[%r{<style>(.*?)</style>}m, 1]
+
+      expect(inline_css).to include("@media print")
+    end
+  end
 end
