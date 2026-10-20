@@ -9,7 +9,17 @@ require "rubocop/rake_task"
 
 RuboCop::RakeTask.new
 
-task default: %i[spec rubocop]
+task default: %i[spec rubocop perf]
+
+namespace :perf do
+  desc "Pipeline performance harness with regression caps (TODO.sota/08)"
+  task :profile do
+    ruby "benchmark/pipeline_profile.rb"
+  end
+end
+
+desc "Run the pipeline performance regression gate"
+task perf: "perf:profile"
 
 namespace :frontend do
   desc "Build the Vue frontend"
