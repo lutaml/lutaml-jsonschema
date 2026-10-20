@@ -8,6 +8,7 @@ module Lutaml
     class Error < StandardError; end
 
     autoload :VERSION, "lutaml/jsonschema/version"
+    autoload :Dialect, "lutaml/jsonschema/dialect"
     autoload :Base, "lutaml/jsonschema/base"
     autoload :Link, "lutaml/jsonschema/link"
     autoload :PropertyEntry, "lutaml/jsonschema/property_entry"
