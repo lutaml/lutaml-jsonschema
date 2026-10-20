@@ -15,6 +15,7 @@ export const useSchemaStore = defineStore('schema', () => {
   const metadata = computed(() => data.value?.metadata)
   const schemas = computed(() => data.value?.schemas ?? [])
   const searchIndex = computed(() => data.value?.searchIndex ?? [])
+  const changes = computed(() => data.value?.diff ?? [])
 
   const selectedSchema = computed<SpaSchema | undefined>(() =>
     schemas.value.find(s => s.name === selectedSchemaName.value)
@@ -138,6 +139,7 @@ export const useSchemaStore = defineStore('schema', () => {
     metadata,
     schemas,
     searchIndex,
+    changes,
     selectedSchema,
     selectedDefinitionName,
     selectedPropertyName,

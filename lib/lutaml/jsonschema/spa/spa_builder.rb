@@ -4,9 +4,10 @@ module Lutaml
   module Jsonschema
     module Spa
       class SpaBuilder
-        def initialize(schema_set, metadata: nil)
+        def initialize(schema_set, metadata: nil, baseline: nil)
           @schema_set = schema_set
           @metadata = metadata || Metadata.new
+          @baseline = baseline
         end
 
         def build
@@ -19,6 +20,7 @@ module Lutaml
             metadata: @metadata,
             schemas: schemas,
             search_index: search_index,
+            diff: build_diff,
           )
         end
 
@@ -32,6 +34,24 @@ module Lutaml
         def build_schemas
           @schema_set.schemas.to_a.map do |name, schema|
             build_spa_schema(name, schema)
+          end
+        end
+
+        # Changes against a baseline set, per schema name, classified by
+        # consumer impact (Diff's breaking/additive/cosmetic).
+        def build_diff
+          return [] unless @baseline
+
+          @schema_set.schemas.flat_map do |name, schema|
+            previous = @baseline.schemas[name]
+            next [] unless previous
+
+            Diff.between(previous, schema).map do |change|
+              SpaDiffEntry.new(schema_name: name,
+                               pointer: change.pointer,
+                               classification: change.classification.to_s,
+                               detail: change.detail)
+            end
           end
         end
 

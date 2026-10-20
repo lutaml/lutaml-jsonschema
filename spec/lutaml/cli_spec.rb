@@ -41,6 +41,24 @@ RSpec.describe Lutaml::Jsonschema::Cli do
       end
     end
 
+    it "reports changes against a baseline schema" do
+      Dir.mktmpdir do |dir|
+        baseline_hash = Yeptris::JSON.load(File.read(person_schema))
+        baseline_hash["properties"]["golden_removed"] = { "type" => "string" }
+        baseline = File.join(dir, "person.json")
+        File.write(baseline, Yeptris::JSON.dump(baseline_hash))
+        out = File.join(dir, "out")
+
+        described_class.start(["spa", person_schema, "-o", out,
+                               "--diff", baseline])
+        html = File.read(File.join(out, "index.html"))
+
+        expect(html).to include('"schemaName":"person"')
+        expect(html).to include('"classification":"breaking"')
+        expect(html).to include("golden_removed")
+      end
+    end
+
     it "raises error with no schema files" do
       expect do
         described_class.start(["spa"])

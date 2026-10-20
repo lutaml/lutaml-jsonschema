@@ -13,6 +13,7 @@ import {
   patternPropertyRows,
   conditionalSections,
   variantOptions,
+  diffSections,
 } from '../composables/useSchemaTypes'
 import { resolveSchemaRef } from '../composables/useDefinitionResolver'
 import { createField, buildDefaultJson } from '../composables/useBuilderField'
@@ -367,6 +368,19 @@ describe('SPA data completeness for complex schemas', () => {
       }, { cat: '#/$defs/Cat', dog: '#/$defs/Dog' })
 
       expect(options.map(o => o.label)).toEqual(['cat', 'dog'])
+    })
+
+    it('diffSections groups changes by impact, most severe first', () => {
+      const sections = diffSections([
+        { schemaName: 's', pointer: '/properties/a', classification: 'cosmetic' },
+        { schemaName: 's', pointer: '/properties/b', classification: 'breaking' },
+        { schemaName: 's', pointer: '/properties/c', classification: 'additive' },
+        { schemaName: 's', pointer: '/properties/d', classification: 'breaking' },
+      ])
+
+      expect(sections.map(s => s.label)).toEqual(['breaking', 'additive', 'cosmetic'])
+      expect(sections[0].rows.map(r => r.pointer))
+        .toEqual(['/properties/b', '/properties/d'])
     })
 
     it('displayType shows an open tuple tail', () => {

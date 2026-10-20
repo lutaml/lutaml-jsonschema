@@ -36,6 +36,7 @@ module Lutaml
       autoload :SpaDefinition, "lutaml/jsonschema/spa/spa_definition"
       autoload :SpaSchema, "lutaml/jsonschema/spa/spa_schema"
       autoload :SpaSearchEntry, "lutaml/jsonschema/spa/spa_search_entry"
+      autoload :SpaDiffEntry, "lutaml/jsonschema/spa/spa_diff_entry"
       autoload :SpaLink, "lutaml/jsonschema/spa/spa_link"
       autoload :SpaBuilder, "lutaml/jsonschema/spa/spa_builder"
       autoload :SpaDocument, "lutaml/jsonschema/spa/spa_document"
