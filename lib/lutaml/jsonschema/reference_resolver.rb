@@ -16,7 +16,7 @@ module Lutaml
         return resolve_local(ref, root_schema) if ref.start_with?("#/")
         return resolve_anchor(ref.delete_prefix("#"), root_schema) if ref.start_with?("#")
 
-        resolve_remote(ref)
+        resolve_remote(ref, root_schema)
       end
 
       def resolve_local(ref, schema)
@@ -43,22 +43,79 @@ module Lutaml
         find_anchor(schema, decode_segment(name), {}.compare_by_identity)
       end
 
-      def resolve_remote(ref)
-        return nil unless @schemas
+      # Non-fragment refs resolve against the schema-set name map first,
+      # then against the `$id` index built from the document tree
+      # (relative ids join the nearest enclosing base, per RFC 3986).
+      def resolve_remote(ref, root_schema = nil)
+        mapped = schema_map_lookup(ref)
+        return mapped if mapped
 
-        if ref.include?("#")
-          file_path, fragment = ref.split("#", 2)
-          schema = @schemas[file_path]
-          return nil unless schema
-          return schema if fragment.empty?
-
-          resolve("##{fragment}", schema)
-        else
-          @schemas[ref]
-        end
+        id_lookup(ref, root_schema)
       end
 
       private
+
+      def schema_map_lookup(ref)
+        return nil unless @schemas
+
+        file_path, fragment = ref.split("#", 2)
+        candidates = [file_path, file_path.delete_prefix("./")]
+        key = candidates.find { |candidate| @schemas[candidate] }
+        return nil unless key
+
+        schema = @schemas[key]
+        return schema if fragment.nil? || fragment.empty?
+
+        resolve("##{fragment}", schema)
+      end
+
+      def id_lookup(ref, root_schema)
+        return nil unless root_schema
+
+        index = id_index(root_schema)
+        base = root_schema.dollar_id
+        [ref, ref.delete_prefix("./")].each do |candidate|
+          found = index[absolutize(candidate, base)] || index[candidate]
+          return found if found
+        end
+        nil
+      end
+
+      def id_index(root)
+        @id_indexes ||= {}.compare_by_identity
+        @id_indexes[root] ||= begin
+          index = {}
+          collect_ids(root, index, root.dollar_id)
+          index
+        end
+      end
+
+      def collect_ids(schema, index, base)
+        return unless schema.is_a?(Schema)
+
+        id = schema.dollar_id
+        if id && !id.start_with?("#")
+          absolute = absolutize(id, base)
+          index[absolute] ||= schema
+          index[id] ||= schema
+          base = absolute
+        end
+
+        schema.each_child { |child, _segment| collect_ids(child, index, base) }
+      end
+
+      # RFC 3986 relative reference against a document base: keep the
+      # base's directory, drop its last segment.
+      def absolutize(id, base)
+        return id if id.match?(%r{\A[a-z][a-z0-9+.-]*:}i)
+        return id if base.nil? || base.empty?
+
+        base_directory(base) + id
+      end
+
+      def base_directory(base)
+        base.sub(%r{[^/]*\z}, "")
+      end
 
       def navigate(current, part)
         case current
