@@ -57,11 +57,11 @@ module Lutaml
         abort "Error: #{e.message}"
       end
 
-      EXPORT_FORMATS = %w[cddl openapi].freeze
+      EXPORT_FORMATS = %w[cddl openapi xsd].freeze
 
-      desc "export SCHEMA_FILES...", "Export schemas (cddl|openapi)"
+      desc "export SCHEMA_FILES...", "Export schemas (cddl|openapi|xsd)"
       option :format, aliases: "-f", type: :string, default: "cddl",
-                      desc: "Export format (cddl, openapi)"
+                      desc: "Export format (cddl, openapi, xsd)"
       option :output, aliases: "-o", type: :string, default: "-",
                       desc: "Output file path (use - for stdout)"
       def export(*schema_files)
@@ -153,6 +153,7 @@ module Lutaml
         case format
         when "cddl" then Exports::Cddl.new(schema_set).render
         when "openapi" then Exports::Openapi.new(schema_set).render
+        when "xsd" then Exports::Xsd.new(schema_set).render
         end
       end
 
