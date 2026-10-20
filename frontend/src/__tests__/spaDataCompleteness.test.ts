@@ -10,6 +10,7 @@ import {
   refLabel,
   humanizeConstraints,
   hasConstraints,
+  patternPropertyRows,
 } from '../composables/useSchemaTypes'
 import { resolveSchemaRef } from '../composables/useDefinitionResolver'
 import { createField, buildDefaultJson } from '../composables/useBuilderField'
@@ -291,6 +292,20 @@ describe('SPA data completeness for complex schemas', () => {
     it('displayType keeps an open tuple open', () => {
       const p = prop({ type: 'array', itemsTuple: ['string'] })
       expect(displayType(p)).toBe('array of [string]')
+    })
+
+    it('patternPropertyRows flattens a patternProperties map in order', () => {
+      expect(patternPropertyRows({
+        '^S_': { type: 'string' },
+        '^I_': {},
+      })).toEqual([
+        { pattern: '^S_', type: 'string' },
+        { pattern: '^I_', type: undefined },
+      ])
+    })
+
+    it('patternPropertyRows tolerates an absent map', () => {
+      expect(patternPropertyRows(undefined)).toEqual([])
     })
 
     it('displayType shows an open tuple tail', () => {
