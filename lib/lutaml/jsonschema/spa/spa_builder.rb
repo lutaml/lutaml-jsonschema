@@ -63,6 +63,7 @@ module Lutaml
             dollar_schema: schema.dollar_schema,
             dollar_id: schema.dollar_id,
             external_docs: schema.external_docs,
+            discriminator: schema.discriminator,
             additional_properties: schema.additional_properties,
             min_properties: schema.min_properties,
             max_properties: schema.max_properties,
@@ -231,6 +232,7 @@ module Lutaml
               not_type: features[:not_type],
               one_of_variants: build_variant_list(resolved.one_of, root_schema),
               any_of_variants: build_variant_list(resolved.any_of, root_schema),
+              discriminator: resolved.discriminator || s.discriminator,
               links: features[:links],
             )
           end
@@ -426,6 +428,7 @@ module Lutaml
                              else
                                []
                              end,
+            discriminator: source_schema.discriminator || resolved.discriminator,
             not_type: original_not_type,
             links: features[:links],
           )
@@ -705,6 +708,7 @@ module Lutaml
               title: resolved.title,
               description: resolved.description,
               type: resolved.type,
+              ref: sub.dollar_ref || resolved.dollar_ref,
               const_value: resolved.const,
               enum: resolved.enum,
               format: resolved.format,

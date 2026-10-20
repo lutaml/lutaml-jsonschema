@@ -15,6 +15,11 @@ export interface SpaMetadata {
   }
 }
 
+export interface SpaDiscriminator {
+  propertyName?: string
+  mapping?: Record<string, string>
+}
+
 export interface SpaProperty {
   name: string
   title?: string
@@ -60,6 +65,7 @@ export interface SpaProperty {
   properties?: SpaProperty[]
   oneOfVariants?: SpaProperty[]
   anyOfVariants?: SpaProperty[]
+  discriminator?: SpaDiscriminator
 }
 
 export interface SpaDefinition {
@@ -101,6 +107,7 @@ export interface SpaDefinition {
   patternProperties?: Record<string, { type?: string }>
   oneOfVariants?: SpaProperty[]
   anyOfVariants?: SpaProperty[]
+  discriminator?: SpaDiscriminator
 }
 
 export interface SpaSchema {
@@ -132,6 +139,7 @@ export interface SpaSchema {
   thenRequired?: string[]
   thenProperties?: SpaProperty[]
   elseProperties?: SpaProperty[]
+  discriminator?: SpaDiscriminator
 }
 
 export interface SpaSearchEntry {

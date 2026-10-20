@@ -203,4 +203,40 @@ RSpec.describe "Dialect-aware constraint rendering" do
     expect(schema.definitions.first.type).to eq("never")
     expect(schema.pattern_properties).to eq("^x-" => { "type" => "any" })
   end
+
+  it "exposes an OpenAPI discriminator and variant refs" do
+    root = Lutaml::Jsonschema::Schema.from_json(Yeptris::JSON.dump({
+                                                                     "type" => "object",
+                                                                     "$defs" => {
+                                                                       "Cat" => { "type" => "object", "title" => "Cat" },
+                                                                       "Dog" => { "type" => "object", "title" => "Dog" },
+                                                                     },
+                                                                     "properties" => {
+                                                                       "pet" => {
+                                                                         "oneOf" => [
+                                                                           { "$ref" => "#/$defs/Cat" },
+                                                                           { "$ref" => "#/$defs/Dog" },
+                                                                         ],
+                                                                         "discriminator" => {
+                                                                           "propertyName" => "petType",
+                                                                           "mapping" => {
+                                                                             "cat" => "#/$defs/Cat",
+                                                                             "dog" => "#/$defs/Dog",
+                                                                           },
+                                                                         },
+                                                                       },
+                                                                     },
+                                                                   }))
+    set = Lutaml::Jsonschema::SchemaSet.new
+    set.add("demo", root)
+    property = Lutaml::Jsonschema::Spa::SpaBuilder.new(set)
+      .build.schemas.first.properties.first
+
+    expect(property.discriminator)
+      .to eq("propertyName" => "petType",
+             "mapping" => { "cat" => "#/$defs/Cat",
+                            "dog" => "#/$defs/Dog" })
+    expect(property.one_of_variants.map(&:ref))
+      .to eq(["#/$defs/Cat", "#/$defs/Dog"])
+  end
 end
