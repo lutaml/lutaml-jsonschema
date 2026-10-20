@@ -45,10 +45,11 @@ Two distinct paths, both engine-backed:
 
 - **Direct parsing** in this gem (`Cli#combine`, `Cli#validate`, `Schema.serialize_additional_properties`) uses `Yeptris::JSON.load` — strict RFC 8259, exact-`JSON.parse` semantics, raises `Yeptris::JSON::ParseError`. JSON **generation** stays on the stdlib `json` gem (`JSON.pretty_generate`); yeptris's JSON surface is load-only.
 - **Model serialization** (`Schema.from_json`/`to_json`, `Configuration.from_yaml`, lutaml-store I/O) goes through lutaml-model, whose `AdapterResolver` auto-detects yeptris from the bundle and routes both `:json` and `:yaml` to its `YeptrisAdapter`. That adapter re-raises parse failures as `JSON::ParserError`, so error handling must cover **both** exception types — see the rescue in `Cli#validate`.
-- Raw-parse speed depends on the resolved yeptris build shipping a **native materializer for the running Ruby version**; without one it falls back to a pure-Ruby tape engine that is several times slower than `JSON.parse` on large documents (yeptris-ruby#278). Check with `defined?(Yeptris::Native)` (0.6.28.x shipped only Ruby 3.3; 3.4-native starts at 0.6.29.1). As of 2026-10-19 the 3.4-native builds (tested at 0.6.32.1) **segfault** on large real-world schemas (yeptris-ruby#279 — GC-pressure heisenbug, canary spec at yeptris-ruby#280), so the safe local lock is a tape-engine version until #279 is fixed.
+- Raw-parse speed depends on the resolved yeptris build shipping a **native materializer for the running Ruby version**; without one it falls back to a pure-Ruby tape engine that is several times slower than `JSON.parse` on large documents (yeptris-ruby#278). Check with `defined?(Yeptris::Native)` (0.6.28.x shipped only Ruby 3.3; 3.4-native starts at 0.6.29.1).
+- The GC-pressure SIGSEGV in the native JSON materializer (yeptris-ruby#279) is fixed in the yeptris **0.6.34 line** (staged pairs made GC-visible); the gemspec floors at `~> 0.6.34`, excluding the crashy 0.6.29.x–0.6.33.x native builds. Env-gated canary: yeptris-ruby#280.
 
 ## Repo notes
 
 - `README.md` is unreplaced gem-template boilerplate — don't treat it as documentation.
-- `TODO.redoc/`, `TODO.refactor/`, `TODO.store/` are untracked, numbered working notes (known gaps and planned refactors), not code.
+- `TODO.redoc/`, `TODO.refactor/`, `TODO.store/` are untracked, numbered working notes (known gaps and planned refactors), not code. `TODO.sota/` holds the SOTA program (purpose, per-area tasks with done-when criteria, and the goal prompt).
 - CI is metanorma/ci's `generic-rake` workflow; releases run through `.github/workflows/release.yml`.
