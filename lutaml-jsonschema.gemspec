@@ -33,5 +33,5 @@ Gem::Specification.new do |spec|
   spec.add_dependency "lutaml-model", "~> 0.8.0"
   spec.add_dependency "lutaml-store", "~> 0.3"
   spec.add_dependency "thor", "~> 1.3"
-  spec.add_dependency "yeptris", "~> 0.6"
+  spec.add_dependency "yeptris", "~> 0.6.34"
 end
