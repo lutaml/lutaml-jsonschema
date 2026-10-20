@@ -73,6 +73,28 @@ RSpec.describe Lutaml::Jsonschema::ReferenceResolver do
       expect(resolver.resolve("#/definitions/a", schema)).to be_nil
     end
 
+    it "follows $dynamicRef through the dynamic anchor index" do
+      schema = parse(
+        "definitions" => {
+          "node" => { "$dynamicAnchor" => "node", "type" => "object" },
+          "alias" => { "$dynamicRef" => "#node" },
+        },
+      )
+
+      expect(resolver.resolve("#/definitions/alias", schema).type)
+        .to eq("object")
+    end
+
+    it "follows $recursiveRef '#' to the root schema" do
+      schema = parse(
+        "definitions" => {
+          "alias" => { "$recursiveRef" => "#" },
+        },
+      )
+
+      expect(resolver.resolve("#/definitions/alias", schema)).to equal(schema)
+    end
+
     it "returns nil for unresolvable pointers" do
       expect(resolver.resolve("#/definitions/missing", schema)).to be_nil
     end

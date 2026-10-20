@@ -35,11 +35,15 @@ module Lutaml
           return nil unless current
         end
 
-        if current.is_a?(Schema) && current.dollar_ref
-          resolve(current.dollar_ref, schema, seen)
-        else
-          current
-        end
+        return current unless current.is_a?(Schema)
+
+        # Follow reference-form keywords at the target. `$dynamicRef` is
+        # resolved statically against the document's anchors — an
+        # approximation of dynamic scope that covers the common
+        # meta-schema self-reference pattern.
+        chained = current.dollar_ref || current.dollar_dynamic_ref ||
+          current.dollar_recursive_ref
+        chained ? resolve(chained, schema, seen) : current
       end
 
       # A non-pointer fragment names an anchor: `$anchor` (2019-09+), or
@@ -146,6 +150,7 @@ module Lutaml
 
         seen[schema] = true
         return schema if schema.dollar_anchor == name
+        return schema if schema.dollar_dynamic_anchor == name
         return schema if schema.dollar_id == "##{name}"
 
         schema.each_child do |child, _segment|
