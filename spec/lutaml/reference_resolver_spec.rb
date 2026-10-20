@@ -117,4 +117,57 @@ RSpec.describe Lutaml::Jsonschema::ReferenceResolver do
       expect(resolver.resolve("other.json#a").type).to eq("string")
     end
   end
+
+  describe "$id resolution (RFC 3986)" do
+    it "resolves a ref to a nested absolute $id" do
+      schema = parse(
+        "properties" => {
+          "p" => { "$id" => "https://example.org/person.json",
+                   "type" => "object" },
+        },
+      )
+
+      expect(resolver.resolve("https://example.org/person.json", schema).type)
+        .to eq("object")
+    end
+
+    it "joins relative $ids to the root base and accepts ./ prefixes" do
+      schema = parse(
+        "$id" => "https://example.org/root.json",
+        "properties" => {
+          "p" => { "$id" => "person.json", "type" => "integer" },
+        },
+      )
+
+      expect(resolver.resolve("https://example.org/person.json", schema).type)
+        .to eq("integer")
+      expect(resolver.resolve("person.json", schema).type).to eq("integer")
+      expect(resolver.resolve("./person.json", schema).type).to eq("integer")
+    end
+
+    it "resolves nested $ids relative to the nearest enclosing $id" do
+      schema = parse(
+        "$id" => "https://example.org/root.json",
+        "properties" => {
+          "a" => { "$id" => "sub/a.json", "type" => "string" },
+          "b" => { "$id" => "sub/b.json", "type" => "integer" },
+        },
+      )
+
+      expect(resolver.resolve("https://example.org/sub/b.json", schema).type)
+        .to eq("integer")
+      expect(resolver.resolve("sub/a.json", schema).type).to eq("string")
+    end
+
+    it "prefers the schema-set name map over $id matches" do
+      target = parse("type" => "string")
+      resolver = described_class.new("other.json" => target)
+      schema = parse(
+        "properties" => { "p" => { "$id" => "other.json",
+                                   "type" => "integer" } },
+      )
+
+      expect(resolver.resolve("other.json", schema)).to equal(target)
+    end
+  end
 end
