@@ -368,6 +368,22 @@ button { font-family: inherit; font-size: inherit; cursor: pointer; border: none
 .md-content .md-heading { font-weight: 600; margin: var(--space-2) 0 var(--space-1); color: var(--text-primary); font-size: inherit; }
 .md-content .md-list { margin: var(--space-1) 0; padding-left: var(--space-5); font-size: inherit; }
 .md-content .md-list li { margin-bottom: 2px; }
+.md-content .md-table {
+  width: 100%; border-collapse: collapse; margin: var(--space-2) 0;
+  font-size: var(--text-xs); display: block; overflow-x: auto;
+}
+.md-content .md-table th,
+.md-content .md-table td {
+  border: 1px solid var(--border-light);
+  padding: var(--space-1) var(--space-2);
+  text-align: left; vertical-align: top;
+}
+.md-content .md-table th {
+  background: var(--bg-secondary); font-weight: 600;
+  color: var(--text-primary); white-space: nowrap;
+}
+.md-content .md-align-center { text-align: center; }
+.md-content .md-align-right { text-align: right; }
 .md-content .md-pre {
   background: var(--bg-secondary); border: 1px solid var(--border-light);
   border-radius: var(--radius-sm); padding: var(--space-2); margin: var(--space-2) 0;
