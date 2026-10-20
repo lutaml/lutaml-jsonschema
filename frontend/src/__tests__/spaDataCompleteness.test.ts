@@ -11,6 +11,7 @@ import {
   humanizeConstraints,
   hasConstraints,
   patternPropertyRows,
+  conditionalSections,
 } from '../composables/useSchemaTypes'
 import { resolveSchemaRef } from '../composables/useDefinitionResolver'
 import { createField, buildDefaultJson } from '../composables/useBuilderField'
@@ -306,6 +307,31 @@ describe('SPA data completeness for complex schemas', () => {
 
     it('patternPropertyRows tolerates an absent map', () => {
       expect(patternPropertyRows(undefined)).toEqual([])
+    })
+
+    it('conditionalSections builds If/Then/Else sections', () => {
+      const schema = {
+        name: 'demo',
+        properties: [],
+        definitions: [],
+        required: [],
+        ifSchema: prop({ properties: [prop({ name: 'kind', type: 'string' })] }),
+        thenRequired: ['id'],
+        thenProperties: [prop({ name: 'id', type: 'integer' })],
+        elseProperties: [prop({ name: 'reason', type: 'string' })],
+      } as SpaSchema
+
+      expect(conditionalSections(schema)).toEqual([
+        { label: 'If', rows: [{ name: 'kind', type: 'string' }], required: [] },
+        { label: 'Then', rows: [{ name: 'id', type: 'integer' }], required: ['id'] },
+        { label: 'Else', rows: [{ name: 'reason', type: 'string' }], required: [] },
+      ])
+    })
+
+    it('conditionalSections is empty for unconditional schemas', () => {
+      expect(conditionalSections({
+        name: 'plain', properties: [], definitions: [], required: [],
+      })).toEqual([])
     })
 
     it('displayType shows an open tuple tail', () => {

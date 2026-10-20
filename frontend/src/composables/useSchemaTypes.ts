@@ -1,4 +1,4 @@
-import type { SpaProperty } from '../types'
+import type { SpaProperty, SpaSchema } from '../types'
 
 /**
  * Extract the primary JSON Schema type from a type string.
@@ -34,6 +34,42 @@ export function patternPropertyRows(
     pattern,
     type: info?.type,
   }))
+}
+
+export interface ConditionalRow {
+  name: string
+  type?: string
+}
+
+export interface ConditionalSection {
+  label: 'If' | 'Then' | 'Else'
+  rows: ConditionalRow[]
+  required: string[]
+}
+
+/** if/then/else as display sections; empty when the schema is unconditional. */
+export function conditionalSections(schema: SpaSchema): ConditionalSection[] {
+  const sections: ConditionalSection[] = []
+  const toRows = (props?: SpaProperty[]): ConditionalRow[] =>
+    (props ?? []).map(p => ({ name: p.name, type: p.type }))
+
+  if (schema.ifSchema) {
+    sections.push({
+      label: 'If',
+      rows: toRows(schema.ifSchema.properties),
+      required: [],
+    })
+  }
+  const thenRows = toRows(schema.thenProperties)
+  const thenRequired = schema.thenRequired ?? []
+  if (thenRows.length || thenRequired.length) {
+    sections.push({ label: 'Then', rows: thenRows, required: thenRequired })
+  }
+  const elseRows = toRows(schema.elseProperties)
+  if (elseRows.length) {
+    sections.push({ label: 'Else', rows: elseRows, required: [] })
+  }
+  return sections
 }
 
 /** Whether the type string is a composition indicator from the backend. */

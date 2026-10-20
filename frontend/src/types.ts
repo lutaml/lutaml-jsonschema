@@ -57,6 +57,7 @@ export interface SpaProperty {
   contentEncoding?: string
   compositionSource?: string
   patternProperties?: Record<string, { type?: string }>
+  properties?: SpaProperty[]
 }
 
 export interface SpaDefinition {
@@ -123,6 +124,10 @@ export interface SpaSchema {
   itemsTail?: string
   itemsClosed?: boolean
   patternProperties?: Record<string, { type?: string }>
+  ifSchema?: SpaProperty
+  thenRequired?: string[]
+  thenProperties?: SpaProperty[]
+  elseProperties?: SpaProperty[]
 }
 
 export interface SpaSearchEntry {
