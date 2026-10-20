@@ -198,26 +198,26 @@ RSpec.describe "Integration: Reference fixture schemas" do
       contact = schema.property_entries.find { |p| p.name == "contact" }
       expect(contact.schema.all_of.length).to eq(2)
       # First element is a $ref
-      expect(contact.schema.all_of[0].dollar_ref).to eq("#/$defs/email")
+      expect(contact.schema.all_of_values[0].dollar_ref).to eq("#/$defs/email")
       # Second element has its own properties
-      expect(contact.schema.all_of[1].property_entries.map(&:name)).to include("phone")
+      expect(contact.schema.all_of_values[1].property_entries.map(&:name)).to include("phone")
     end
 
     it "parses anyOf" do
       alt = schema.property_entries.find { |p| p.name == "alternative_contact" }
       expect(alt.schema.any_of.length).to eq(2)
-      expect(alt.schema.any_of[0].dollar_ref).to eq("#/$defs/email")
-      expect(alt.schema.any_of[1].dollar_ref).to eq("#/$defs/phone")
+      expect(alt.schema.any_of_values[0].dollar_ref).to eq("#/$defs/email")
+      expect(alt.schema.any_of_values[1].dollar_ref).to eq("#/$defs/phone")
     end
 
     it "parses oneOf" do
       shipping = schema.property_entries.find { |p| p.name == "shipping" }
       expect(shipping.schema.one_of.length).to eq(2)
-      expect(shipping.schema.one_of[0].property_entries.find do |p|
+      expect(shipping.schema.one_of_values[0].property_entries.find do |p|
         p.name == "method"
       end
                                      &.schema&.const).to eq("standard")
-      expect(shipping.schema.one_of[1].property_entries.find do |p|
+      expect(shipping.schema.one_of_values[1].property_entries.find do |p|
         p.name == "method"
       end
                                      &.schema&.const).to eq("express")

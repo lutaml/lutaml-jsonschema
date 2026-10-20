@@ -94,9 +94,9 @@ module Lutaml
       attribute :const, :string
 
       # Composition (recursive)
-      attribute :all_of, Schema, collection: true, initialize_empty: true
-      attribute :any_of, Schema, collection: true, initialize_empty: true
-      attribute :one_of, Schema, collection: true, initialize_empty: true
+      attribute :all_of, TupleItem, collection: true, initialize_empty: true
+      attribute :any_of, TupleItem, collection: true, initialize_empty: true
+      attribute :one_of, TupleItem, collection: true, initialize_empty: true
       attribute :not_schema, Schema
       attribute :not_boolean, :boolean
 
@@ -195,9 +195,12 @@ module Lutaml
         map "enum", to: :enum
         map "x-enumDescriptions", to: :enum_descriptions
         map "const", to: :const
-        map "allOf", to: :all_of
-        map "anyOf", to: :any_of
-        map "oneOf", to: :one_of
+        map "allOf", to: :all_of,
+                     with: { from: :parse_all_of, to: :serialize_all_of }
+        map "anyOf", to: :any_of,
+                     with: { from: :parse_any_of, to: :serialize_any_of }
+        map "oneOf", to: :one_of,
+                     with: { from: :parse_one_of, to: :serialize_one_of }
         map "not", to: :not_schema,
                    with: { from: :parse_not, to: :serialize_not }
         map "if", to: :if_schema,
@@ -276,6 +279,41 @@ module Lutaml
 
       def tuple_item_json(item)
         item.boolean? ? item.boolean_value : Yeptris::JSON.load(item.schema.to_json)
+      end
+
+      def parse_all_of(instance, value)
+        instance.all_of = composition_items(value)
+      end
+
+      def serialize_all_of(instance, hash)
+        serialize_composition(instance.all_of, hash, "allOf")
+      end
+
+      def parse_any_of(instance, value)
+        instance.any_of = composition_items(value)
+      end
+
+      def serialize_any_of(instance, hash)
+        serialize_composition(instance.any_of, hash, "anyOf")
+      end
+
+      def parse_one_of(instance, value)
+        instance.one_of = composition_items(value)
+      end
+
+      def serialize_one_of(instance, hash)
+        serialize_composition(instance.one_of, hash, "oneOf")
+      end
+
+      def composition_items(value)
+        return [] unless value.is_a?(Array)
+
+        value.map { |item| tuple_item(item) }
+      end
+
+      def serialize_composition(items, hash, key)
+        hash[key] = items.map { |item| tuple_item_json(item) } unless
+          items.empty?
       end
 
       # Entry maps (properties, patternProperties, dependentSchemas, $defs)
@@ -372,7 +410,9 @@ module Lutaml
 
       def all_property_entries
         result = property_entries.dup
-        all_of.each { |s| result.concat(s.all_property_entries) }
+        all_of.each do |item|
+          result.concat(item.schema.all_property_entries) if item.schema
+        end
         result
       end
 
@@ -390,9 +430,9 @@ module Lutaml
         when "unevaluatedProperties" then unevaluated_properties_schema
         when "propertyNames" then property_names
         when "contentSchema" then content_schema
-        when "allOf" then all_of
-        when "anyOf" then any_of
-        when "oneOf" then one_of
+        when "allOf" then all_of.map(&:value)
+        when "anyOf" then any_of.map(&:value)
+        when "oneOf" then one_of.map(&:value)
         when "not" then not_schema
         when "if" then if_schema
         when "then" then then_schema
@@ -421,9 +461,15 @@ module Lutaml
           yield e.schema_value, "dependentSchemas/#{e.name}" if
             e.schema_value.is_a?(Schema)
         end
-        all_of.each_with_index { |s, i| yield s, "allOf[#{i}]" }
-        any_of.each_with_index { |s, i| yield s, "anyOf[#{i}]" }
-        one_of.each_with_index { |s, i| yield s, "oneOf[#{i}]" }
+        all_of.each_with_index do |item, i|
+          yield item.value, "allOf[#{i}]" if item.schema
+        end
+        any_of.each_with_index do |item, i|
+          yield item.value, "anyOf[#{i}]" if item.schema
+        end
+        one_of.each_with_index do |item, i|
+          yield item.value, "oneOf[#{i}]" if item.schema
+        end
         prefix_items.each_with_index do |item, i|
           yield item.value, "prefixItems[#{i}]" if item.schema
         end
@@ -494,6 +540,20 @@ module Lutaml
         return additional_items == false if tuple_items
 
         false
+      end
+
+      # Composition members as schema-or-boolean values (the collection
+      # attributes hold TupleItem wrappers so booleans can round-trip).
+      def all_of_values
+        all_of.map(&:value)
+      end
+
+      def any_of_values
+        any_of.map(&:value)
+      end
+
+      def one_of_values
+        one_of.map(&:value)
       end
 
       # Schema-or-boolean keyword values (`true` = anything, `false` =

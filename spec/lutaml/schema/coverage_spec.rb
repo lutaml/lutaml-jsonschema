@@ -277,6 +277,22 @@ RSpec.describe "Schema dialect coverage" do
       expect(schema.content_schema_value).to be(true)
       expect(round_trip(hash)).to eq(hash)
     end
+
+    it "round-trips booleans in composition arrays" do
+      hash = {
+        "allOf" => [true, { "type" => "object" }],
+        "anyOf" => [false, { "type" => "string" }],
+        "oneOf" => [true, false],
+      }
+      schema = parse(hash)
+
+      expect(schema.all_of_values.map do |value|
+        value.is_a?(Lutaml::Jsonschema::Schema) ? value.type : value
+      end).to eq([true, "object"])
+      expect(schema.any_of_values.first).to be(false)
+      expect(schema.one_of_values).to eq([true, false])
+      expect(round_trip(hash)).to eq(hash)
+    end
   end
 
   describe "x-enumDescriptions" do
