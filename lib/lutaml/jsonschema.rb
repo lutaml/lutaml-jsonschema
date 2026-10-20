@@ -9,6 +9,7 @@ module Lutaml
 
     autoload :VERSION, "lutaml/jsonschema/version"
     autoload :Dialect, "lutaml/jsonschema/dialect"
+    autoload :Validator, "lutaml/jsonschema/validator"
     autoload :Base, "lutaml/jsonschema/base"
     autoload :Link, "lutaml/jsonschema/link"
     autoload :PropertyEntry, "lutaml/jsonschema/property_entry"

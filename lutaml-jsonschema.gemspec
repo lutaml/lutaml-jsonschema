@@ -30,6 +30,7 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   spec.add_dependency "json"
+  spec.add_dependency "json_schemer", "~> 2.5"
   spec.add_dependency "lutaml-model", "~> 0.8.114"
   spec.add_dependency "lutaml-store", "~> 0.3"
   spec.add_dependency "thor", "~> 1.3"
