@@ -25,6 +25,7 @@ module Lutaml
 
     module Exports
       autoload :Cddl, "lutaml/jsonschema/exports/cddl"
+      autoload :Openapi, "lutaml/jsonschema/exports/openapi"
     end
 
     module Spa
