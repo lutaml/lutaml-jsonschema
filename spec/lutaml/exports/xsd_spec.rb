@@ -60,6 +60,18 @@ RSpec.describe Lutaml::Jsonschema::Exports::Xsd do
     expect(element.attributes["type"]).to be_nil
   end
 
+  it "leaves boolean property schemas untyped" do
+    doc = parse_xml(render(
+                      "type" => "object",
+                      "properties" => { "flag" => true },
+                    ))
+    element = doc.root.get_elements("//xs:element").find do |e|
+      e.attributes["name"] == "flag"
+    end
+
+    expect(element.attributes["type"]).to be_nil
+  end
+
   it "renders arrays as unbounded repeated items" do
     doc = parse_xml(render(
                       "type" => "object",

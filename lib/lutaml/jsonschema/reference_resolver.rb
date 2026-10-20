@@ -32,7 +32,8 @@ module Lutaml
 
         parts.each do |part|
           current = navigate(current, decode_segment(part))
-          return nil unless current
+          # `false` is a valid boolean-schema target, so only nil is absent.
+          return nil if current.nil?
         end
 
         return current unless current.is_a?(Schema)
@@ -139,7 +140,7 @@ module Lutaml
             entry = current.find do |e|
               e.is_a?(PropertyEntry) && e.name == part
             end
-            entry&.schema
+            entry&.schema_value
           end
         end
       end

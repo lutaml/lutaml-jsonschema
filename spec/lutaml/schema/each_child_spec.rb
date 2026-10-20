@@ -65,6 +65,15 @@ RSpec.describe Lutaml::Jsonschema::Schema, "#each_child" do
     expect(schema.child_at("items").map(&:type)).to eq(%w[string integer])
   end
 
+  it "skips boolean schemas, which have no children" do
+    schema = described_class.from_json(JSON.generate({
+                                                       "properties" => { "a" => true },
+                                                       "$defs" => { "b" => false },
+                                                     }))
+
+    expect(schema.each_child.to_a).to eq([])
+  end
+
   it "yields conditional schemas" do
     schema = described_class.from_json(JSON.generate({
                                                        "if" => { "properties" => { "x" => { "type" => "string" } } },

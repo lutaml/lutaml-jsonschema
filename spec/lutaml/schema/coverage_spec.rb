@@ -179,7 +179,7 @@ RSpec.describe "Schema dialect coverage" do
       schema = parse(hash)
 
       expect(schema.items).to be_nil
-      expect(schema.items_tuple.map(&:type)).to eq(%w[string integer])
+      expect(schema.tuple_items.map(&:type)).to eq(%w[string integer])
       expect(schema.items_closed?).to be(true)
       expect(round_trip(hash)).to include(
         "items" => [{ "type" => "string" }, { "type" => "integer" }],
@@ -195,11 +195,11 @@ RSpec.describe "Schema dialect coverage" do
 
     it "round-trips boolean items (draft-06+ and the 2020-12 tail)" do
       closed = parse("items" => false)
-      expect(closed.items).to be(false)
+      expect(closed.items_boolean).to be(false)
       expect(closed.items_closed?).to be(true)
 
       open = parse("items" => true)
-      expect(open.items).to be(true)
+      expect(open.items_boolean).to be(true)
       expect(open.items_closed?).to be(false)
     end
 
@@ -216,6 +216,29 @@ RSpec.describe "Schema dialect coverage" do
         "items" => false,
         "prefixItems" => [{ "type" => "string" }],
       )
+    end
+  end
+
+  describe "boolean schemas" do
+    it "round-trips boolean property, pattern, dependency and definition schemas" do
+      hash = {
+        "properties" => { "a" => true, "b" => false },
+        "patternProperties" => { "^x-" => true },
+        "dependentSchemas" => { "a" => false },
+        "$defs" => { "c" => false },
+      }
+      schema = parse(hash)
+
+      expect(schema.property_entries.map(&:schema_value)).to eq([true, false])
+      expect(schema.pattern_property_entries.first.schema_value).to be(true)
+      expect(schema.dependent_schemas_entries.first.schema_value).to be(false)
+      expect(schema.definition_entries.first.schema_value).to be(false)
+      expect(round_trip(hash)).to eq(hash)
+    end
+
+    it "preserves an empty nested schema" do
+      expect(round_trip("properties" => { "x" => {} }))
+        .to eq("properties" => { "x" => {} })
     end
   end
 

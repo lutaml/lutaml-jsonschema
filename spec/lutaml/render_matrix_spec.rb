@@ -184,4 +184,23 @@ RSpec.describe "Dialect-aware constraint rendering" do
 
     expect(schema.items_type).to eq("integer")
   end
+
+  it "renders boolean property schemas as any/never" do
+    expect(spa_property({}, true).type).to eq("any")
+    expect(spa_property({}, false).type).to eq("never")
+  end
+
+  it "renders boolean definitions and pattern properties" do
+    root = Lutaml::Jsonschema::Schema.from_json(Yeptris::JSON.dump(
+                                                  "type" => "object",
+                                                  "$defs" => { "flag" => false },
+                                                  "patternProperties" => { "^x-" => true },
+                                                ))
+    set = Lutaml::Jsonschema::SchemaSet.new
+    set.add("demo", root)
+    schema = Lutaml::Jsonschema::Spa::SpaBuilder.new(set).build.schemas.first
+
+    expect(schema.definitions.first.type).to eq("never")
+    expect(schema.pattern_properties).to eq("^x-" => { "type" => "any" })
+  end
 end

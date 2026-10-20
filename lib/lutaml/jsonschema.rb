@@ -13,6 +13,7 @@ module Lutaml
     autoload :Base, "lutaml/jsonschema/base"
     autoload :Link, "lutaml/jsonschema/link"
     autoload :PropertyEntry, "lutaml/jsonschema/property_entry"
+    autoload :TupleItem, "lutaml/jsonschema/tuple_item"
     autoload :Schema, "lutaml/jsonschema/schema"
     autoload :ReferenceResolver, "lutaml/jsonschema/reference_resolver"
     autoload :SchemaSet, "lutaml/jsonschema/schema_set"

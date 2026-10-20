@@ -50,10 +50,11 @@ module Lutaml
 
       # Array keywords
       # Tuple form (draft-04..2019-09 `items` array, 2020-12 `prefixItems`)
-      # lives in `items_tuple`; `items` holds the single-schema or boolean form
-      # (2020-12 uses it as the prefixItems tail).
-      attribute :items, [Schema, :boolean]
-      attribute :items_tuple, [Schema, :boolean], collection: true
+      # lives in `items_tuple`; `items` holds the single-schema form,
+      # `items_boolean` the boolean form (2020-12 uses it as the tail).
+      attribute :items, Schema
+      attribute :items_boolean, :boolean
+      attribute :items_tuple, TupleItem, collection: true
       attribute :prefix_items, Schema, collection: true, initialize_empty: true
       attribute :additional_items, :boolean
       attribute :additional_items_schema, Schema
@@ -126,9 +127,11 @@ module Lutaml
                     with: { from: :parse_type, to: :serialize_type }
         map "format", to: :format
         map "properties", to: :property_entries,
-                          child_mappings: { name: :key, schema: :value }
+                          with: { from: :parse_property_entries,
+                                  to: :serialize_property_entries }
         map "patternProperties", to: :pattern_property_entries,
-                                 child_mappings: { name: :key, schema: :value }
+                                 with: { from: :parse_pattern_property_entries,
+                                         to: :serialize_pattern_property_entries }
         map "required", to: :required
         map "additionalProperties", to: :additional_properties,
                                     with: { from: :parse_additional_properties,
@@ -139,7 +142,8 @@ module Lutaml
         map "propertyNames", to: :property_names
         map "dependentRequired", to: :dependent_required
         map "dependentSchemas", to: :dependent_schemas_entries,
-                                child_mappings: { name: :key, schema: :value }
+                                with: { from: :parse_dependent_schema_entries,
+                                        to: :serialize_dependent_schema_entries }
         map "dependencies", to: :dependencies
         map "minProperties", to: :min_properties
         map "maxProperties", to: :max_properties
@@ -179,7 +183,8 @@ module Lutaml
         map "then", to: :then_schema
         map "else", to: :else_schema
         map "$defs", to: :definition_entries,
-                     child_mappings: { name: :key, schema: :value }
+                     with: { from: :parse_definitions,
+                             to: :serialize_definitions }
         map "definitions", to: :definition_entries,
                            with: { from: :parse_legacy_definitions, to: :suppress_output }
         map "links", to: :links
@@ -204,9 +209,15 @@ module Lutaml
       def parse_items(instance, value)
         case value
         when Array
-          instance.items_tuple = value.map { |item| schema_or_boolean(item) }
+          instance.items_tuple = value.map do |item|
+            if [true, false].include?(item)
+              TupleItem.new(boolean_value: item)
+            else
+              TupleItem.new(schema: Schema.from_json(item.to_json))
+            end
+          end
         when true, false
-          instance.items = value
+          instance.items_boolean = value
         when Hash
           instance.items = Schema.from_json(value.to_json)
         end
@@ -215,21 +226,73 @@ module Lutaml
       def serialize_items(instance, hash)
         if instance.items_tuple
           hash["items"] = instance.items_tuple.map do |item|
-            schema_or_boolean_json(item)
+            if item.boolean?
+              item.boolean_value
+            else
+              Yeptris::JSON.load(item.schema.to_json)
+            end
           end
-        elsif !instance.items.nil?
-          hash["items"] = schema_or_boolean_json(instance.items)
+        elsif !instance.items_boolean.nil?
+          hash["items"] = instance.items_boolean
+        elsif instance.items
+          hash["items"] = Yeptris::JSON.load(instance.items.to_json)
         end
       end
 
-      def schema_or_boolean(value)
-        return value if [true, false].include?(value)
-
-        Schema.from_json(value.to_json)
+      # Entry maps (properties, patternProperties, dependentSchemas, $defs)
+      # accept boolean schemas as values; child_mappings-based collection
+      # serialization drops a nil `schema` attribute, so these are mapped
+      # through attribute serializers instead.
+      def parse_property_entries(instance, value)
+        instance.property_entries = entry_list(value)
       end
 
-      def schema_or_boolean_json(value)
-        value.is_a?(Schema) ? Yeptris::JSON.load(value.to_json) : value
+      def serialize_property_entries(instance, hash)
+        entries = instance.property_entries
+        hash["properties"] = entries_json(entries) unless entries.empty?
+      end
+
+      def parse_pattern_property_entries(instance, value)
+        instance.pattern_property_entries = entry_list(value)
+      end
+
+      def serialize_pattern_property_entries(instance, hash)
+        entries = instance.pattern_property_entries
+        unless entries.empty?
+          hash["patternProperties"] = entries_json(entries)
+        end
+      end
+
+      def parse_dependent_schema_entries(instance, value)
+        instance.dependent_schemas_entries = entry_list(value)
+      end
+
+      def serialize_dependent_schema_entries(instance, hash)
+        entries = instance.dependent_schemas_entries
+        unless entries.empty?
+          hash["dependentSchemas"] = entries_json(entries)
+        end
+      end
+
+      def parse_definitions(instance, value)
+        instance.definition_entries = entry_list(value)
+      end
+
+      def serialize_definitions(instance, hash)
+        entries = instance.definition_entries
+        hash["$defs"] = entries_json(entries) unless entries.empty?
+      end
+
+      def entry_list(value)
+        return [] unless value.is_a?(Hash)
+
+        value.map do |name, schema_value|
+          PropertyEntry.from_schema_value(name, schema_value)
+        end
+      end
+
+      def entries_json(entries)
+        entries.to_h { |entry| [entry.name, entry.schema_json] }
       end
 
       def parse_additional_properties(instance, value)
@@ -281,7 +344,7 @@ module Lutaml
         when "patternProperties" then pattern_property_entries
         when "dependentSchemas" then dependent_schemas_entries
         when "items"
-          items_tuple || (items if items.is_a?(Schema))
+          items_tuple ? items_tuple.map(&:value) : items
         when "prefixItems" then prefix_items
         when "additionalItems" then additional_items_schema
         when "unevaluatedItems" then unevaluated_items_schema
@@ -296,7 +359,7 @@ module Lutaml
         when "then" then then_schema
         when "else" then else_schema
         else
-          definition_entries.find { |e| e.name == segment }&.schema
+          definition_entries.find { |e| e.name == segment }&.schema_value
         end
       end
 
@@ -304,25 +367,29 @@ module Lutaml
         return enum_for(:each_child) unless block_given?
 
         property_entries.each do |e|
-          yield e.schema, "properties/#{e.name}" if e.schema
+          yield e.schema_value, "properties/#{e.name}" if
+            e.schema_value.is_a?(Schema)
         end
         definition_entries.each do |e|
-          yield e.schema, "$defs/#{e.name}" if e.schema
+          yield e.schema_value, "$defs/#{e.name}" if
+            e.schema_value.is_a?(Schema)
         end
         pattern_property_entries.each do |e|
-          yield e.schema, "patternProperties/#{e.name}" if e.schema
+          yield e.schema_value, "patternProperties/#{e.name}" if
+            e.schema_value.is_a?(Schema)
         end
         dependent_schemas_entries.each do |e|
-          yield e.schema, "dependentSchemas/#{e.name}" if e.schema
+          yield e.schema_value, "dependentSchemas/#{e.name}" if
+            e.schema_value.is_a?(Schema)
         end
         all_of.each_with_index { |s, i| yield s, "allOf[#{i}]" }
         any_of.each_with_index { |s, i| yield s, "anyOf[#{i}]" }
         one_of.each_with_index { |s, i| yield s, "oneOf[#{i}]" }
         prefix_items.each_with_index { |s, i| yield s, "prefixItems[#{i}]" }
         items_tuple&.each_with_index do |item, i|
-          yield item, "items[#{i}]" if item.is_a?(Schema)
+          yield item.value, "items[#{i}]" if item.schema
         end
-        yield items, "items" if items.is_a?(Schema)
+        yield items, "items" if items
         yield additional_items_schema, "additionalItems" if additional_items_schema
         yield unevaluated_items_schema, "unevaluatedItems" if unevaluated_items_schema
         if unevaluated_properties_schema
@@ -363,7 +430,11 @@ module Lutaml
       # `items`, 2020-12 as `prefixItems`. An explicitly empty tuple (`items:
       # []`) is distinct from an absent one, hence no empty-array default.
       def tuple_items
-        items_tuple || (prefix_items.any? ? prefix_items : nil)
+        if items_tuple
+          items_tuple.map(&:value)
+        elsif prefix_items.any?
+          prefix_items
+        end
       end
 
       # Schema for items past the tuple positions: the 2020-12 `items` tail
@@ -378,7 +449,7 @@ module Lutaml
       # Whether the schema forbids items past the tuple positions: the tuple
       # drafts say `additionalItems: false`, 2020-12 says `items: false`.
       def items_closed?
-        return true if items == false
+        return true if items_boolean == false
         return additional_items == false if tuple_items
 
         false
@@ -448,14 +519,11 @@ module Lutaml
       def parse_legacy_definitions(instance, value)
         return unless value.is_a?(Hash)
 
-        value.each do |name, schema_hash|
+        value.each do |name, schema_value|
           next if instance.definition_entries.any? { |e| e.name == name }
 
           instance.definition_entries.push(
-            PropertyEntry.new(
-              name: name,
-              schema: Schema.from_json(schema_hash.to_json),
-            ),
+            PropertyEntry.from_schema_value(name, schema_value),
           )
         end
       end
