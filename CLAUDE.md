@@ -21,7 +21,10 @@ bundle exec rake                           # spec + rubocop (what CI runs)
 bundle exec rake frontend:build            # npm install + vite build → frontend/dist
 cd frontend && npm test                    # vitest (frontend unit tests)
 
-bundle exec exe/lutaml-jsonschema spa|combine|validate SCHEMA_FILES...
+bundle exec exe/lutaml-jsonschema spa SCHEMA_FILES... [--diff BASELINE...]
+bundle exec exe/lutaml-jsonschema combine|validate SCHEMA_FILES...
+bundle exec exe/lutaml-jsonschema export SCHEMA_FILES... -f cddl|openapi|xsd|adoc
+bundle exec exe/lutaml-jsonschema diff OLD NEW [--format json]
 ```
 
 `frontend/dist/` and `Gemfile.lock` are gitignored. `frontend/dist/` must exist (run `rake frontend:build`) for the `spa` command and for packaging — the gemspec ships it via `Dir.glob("frontend/dist/*")`.
@@ -34,10 +37,11 @@ Data flow: schema files → `SchemaSet.load_from_files` → `Spa::SpaBuilder` �
 - **`Schema`** — the central model of a JSON Schema document. Every `$`-prefixed keyword is a `dollar_`-prefixed attribute (`$schema` → `dollar_schema`) via json mappings. `Schema.from_json` / `to_json` are lutaml-model serialization.
 - **`SchemaSet`** — in-memory named collection of schemas plus `$ref` resolution (local `#/...` pointers and relative `./file.json` refs through `ReferenceResolver`) and validation.
 - **`SchemaStore`** — `SchemaSet` subclass that adds on-disk persistence through **lutaml-store** (`PackageStore`, package shape from `LjrPackageDefinition`).
-- **`Combiner`** — merges a `SchemaSet` into one document: hoists all definitions, adds a top-level `$ref` property per source schema, rewrites `#/definitions/` → `#/$defs/`.
+- **`Combiner`** — compatibility facade; bundling lives in `SchemaSet#bundle` (hoists definitions, adds a top-level `$ref` property per source schema, rewrites `#/definitions/` → `#/$defs/`).
 - **`Spa::*`** — `SpaBuilder` flattens a `SchemaSet` into a `SpaDocument` (metadata, `SpaSchema` list, flat `search_index` for FlexSearch). `Spa::Generator` renders through an `OutputStrategy`; `VueInlinedStrategy` is the only implementation.
 - **`Configuration`** — YAML config for the SPA (title, theme, appearance…), loaded by `Cli#spa -c`.
-- **`Cli`** — Thor commands: `spa` (generate docs), `combine` (merge schemas), `validate` (parse + shallow structural checks).
+- **`Cli`** — Thor commands: `spa` (generate docs; `--diff` embeds a classified change set), `combine` (merge schemas), `export` (cddl/openapi/xsd/adoc), `diff` (exits 1 on breaking changes), `validate` (meta-schema checks), `version`.
+- **`TupleItem`** — schema-or-boolean wrapper used by `items`/`prefixItems` arrays and composition collections; models that accept `true`/`false` store booleans in companion `*_boolean` attributes and expose `*_value` helpers.
 
 ## JSON engine: yeptris
 
