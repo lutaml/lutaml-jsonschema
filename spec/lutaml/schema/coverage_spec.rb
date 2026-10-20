@@ -240,6 +240,28 @@ RSpec.describe "Schema dialect coverage" do
       expect(round_trip("properties" => { "x" => {} }))
         .to eq("properties" => { "x" => {} })
     end
+
+    it "round-trips booleans in singular schema keywords" do
+      hash = {
+        "not" => false,
+        "if" => true,
+        "then" => false,
+        "else" => { "type" => "string" },
+        "contains" => true,
+        "propertyNames" => false,
+        "contentSchema" => true,
+      }
+      schema = parse(hash)
+
+      expect(schema.not_value).to be(false)
+      expect(schema.if_value).to be(true)
+      expect(schema.then_value).to be(false)
+      expect(schema.else_value).to be_a(Lutaml::Jsonschema::Schema)
+      expect(schema.contains_value).to be(true)
+      expect(schema.property_names_value).to be(false)
+      expect(schema.content_schema_value).to be(true)
+      expect(round_trip(hash)).to eq(hash)
+    end
   end
 
   describe "x-enumDescriptions" do
