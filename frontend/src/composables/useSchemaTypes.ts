@@ -1,4 +1,4 @@
-import type { SpaProperty, SpaSchema } from '../types'
+import type { SpaProperty, SpaSchema, SpaDiffEntry } from '../types'
 
 /**
  * Extract the primary JSON Schema type from a type string.
@@ -119,6 +119,25 @@ export function variantOptions(
     ...build(holder.oneOfVariants, 'oneOf'),
     ...build(holder.anyOfVariants, 'anyOf'),
   ]
+}
+
+const DIFF_ORDER: SpaDiffEntry['classification'][] = [
+  'breaking',
+  'additive',
+  'cosmetic',
+]
+
+export interface DiffSection {
+  label: string
+  rows: SpaDiffEntry[]
+}
+
+/** Changes grouped by consumer impact, most severe first. */
+export function diffSections(entries: SpaDiffEntry[]): DiffSection[] {
+  return DIFF_ORDER.flatMap(label => {
+    const rows = entries.filter(entry => entry.classification === label)
+    return rows.length ? [{ label, rows }] : []
+  })
 }
 
 /** Whether the type string is a composition indicator from the backend. */

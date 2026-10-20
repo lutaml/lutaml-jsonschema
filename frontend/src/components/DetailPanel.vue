@@ -441,6 +441,30 @@
               <p v-if="!examples.length && !generatedExample" class="text-muted">No examples available.</p>
             </div>
           </template>
+
+          <!-- Changes tab (schema selected, baseline provided) -->
+          <template v-if="uiStore.activePanelTab === 'changes'">
+            <div class="detail-section">
+              <div v-for="section in diffSectionsForItem" :key="section.label">
+                <h4 class="example-label">{{ section.label }}</h4>
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th>Location</th>
+                      <th>Change</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="row in section.rows" :key="row.pointer + (row.detail || '')">
+                      <td class="font-mono">{{ row.pointer || '/' }}</td>
+                      <td class="text-secondary">{{ row.detail || row.classification }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <p v-if="!diffSectionsForItem.length" class="text-muted">No changes against the baseline.</p>
+            </div>
+          </template>
         </template>
 
         <div v-else class="panel-empty">
@@ -457,7 +481,7 @@ import { useSchemaStore, type SelectedItem } from '../stores/schemaStore'
 import { useUiStore } from '../stores/uiStore'
 import { renderInlineMarkdown } from '../composables/useMarkdownLite'
 import { jsonToCollapsibleHtml } from '../composables/useJsonViewer'
-import { numberRange, stringRange, itemsRange, refLabel, patternPropertyRows as toPatternPropertyRows, conditionalSections as toConditionalSections, variantOptions as toVariantOptions } from '../composables/useSchemaTypes'
+import { numberRange, stringRange, itemsRange, refLabel, patternPropertyRows as toPatternPropertyRows, conditionalSections as toConditionalSections, variantOptions as toVariantOptions, diffSections as toDiffSections } from '../composables/useSchemaTypes'
 import type { SpaProperty } from '../types'
 
 const schemaStore = useSchemaStore()
@@ -553,6 +577,14 @@ const properties = computed<SpaProperty[]>(() => {
   }
 })
 
+const itemChanges = computed(() => {
+  const current = item.value
+  if (current?.kind !== 'schema') return []
+  return schemaStore.changes.filter(change => change.schemaName === current.schema.name)
+})
+
+const diffSectionsForItem = computed(() => toDiffSections(itemChanges.value))
+
 function formatExample(value: unknown): string {
   if (typeof value === 'string') {
     try { return JSON.stringify(JSON.parse(value), null, 2) } catch { return value }
@@ -610,7 +642,7 @@ const defStringRange = computed(() => {
   return stringRange(d as any) ?? ''
 })
 
-type TabId = 'overview' | 'properties' | 'examples'
+type TabId = 'overview' | 'properties' | 'examples' | 'changes'
 
 const examples = computed(() => {
   if (!item.value) return []
@@ -675,6 +707,9 @@ const currentTabs = computed<{ id: TabId; label: string }[]>(() => {
     const count = examples.value.length || 1
     tabs.push({ id: 'examples', label: `Examples (${count})` })
   }
+  if (itemChanges.value.length > 0) {
+    tabs.push({ id: 'changes', label: `Changes (${itemChanges.value.length})` })
+  }
   return tabs
 })
 
@@ -732,7 +767,12 @@ const variantOptions = computed(() => {
 
 const activeVariantOption = computed(() => variantOptions.value[activeVariant.value])
 
-watch(item, () => { activeVariant.value = 0 })
+watch(item, () => {
+  activeVariant.value = 0
+  if (!currentTabs.value.some(tab => tab.id === uiStore.activePanelTab)) {
+    uiStore.setPanelTab('overview')
+  }
+})
 
 function navigateToRef(ref: string | undefined) {
   if (!ref) return

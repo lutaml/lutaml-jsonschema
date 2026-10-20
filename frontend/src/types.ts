@@ -150,10 +150,18 @@ export interface SpaSearchEntry {
   schemaName: string
 }
 
+export interface SpaDiffEntry {
+  schemaName: string
+  pointer: string
+  classification: 'breaking' | 'additive' | 'cosmetic'
+  detail?: string
+}
+
 export interface SpaDocument {
   metadata: SpaMetadata
   schemas: SpaSchema[]
   searchIndex: SpaSearchEntry[]
+  diff?: SpaDiffEntry[]
 }
 
 declare global {

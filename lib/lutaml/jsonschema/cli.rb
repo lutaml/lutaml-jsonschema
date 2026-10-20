@@ -17,6 +17,8 @@ module Lutaml
       option :theme, type: :string, desc: "Theme (light/dark)"
       option :logo, type: :string, desc: "Sidebar header logo URL"
       option :subtitle, type: :string, desc: "Sidebar subtitle text"
+      option :diff, type: :array, default: [],
+                    desc: "Baseline schema file(s) to report changes against"
       def spa(*schema_files)
         raise Error, "No schema files provided" if schema_files.empty?
 
@@ -28,8 +30,10 @@ module Lutaml
                                           subtitle: options[:subtitle])
 
         schema_set = SchemaSet.load_from_files(*schema_files)
+        baseline = load_baseline(options[:diff])
         generator = Spa::Generator.new(schema_set, config.output_path,
-                                       metadata: config.to_metadata)
+                                       metadata: config.to_metadata,
+                                       baseline: baseline)
         generator.generate
         puts "SPA documentation generated at #{config.output_path}/index.html"
       rescue Errno::ENOENT => e
@@ -134,6 +138,12 @@ module Lutaml
         Configuration.load_from_file(path)
       rescue Errno::ENOENT
         abort "Configuration file not found: #{path}"
+      end
+
+      def load_baseline(files)
+        return nil if files.empty?
+
+        SchemaSet.load_from_files(*files)
       end
 
       def emit_diff(changes)
