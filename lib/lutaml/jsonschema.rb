@@ -18,6 +18,7 @@ module Lutaml
     autoload :SchemaSet, "lutaml/jsonschema/schema_set"
     autoload :SchemaStore, "lutaml/jsonschema/schema_store"
     autoload :Combiner, "lutaml/jsonschema/combiner"
+    autoload :Diff, "lutaml/jsonschema/diff"
     autoload :Configuration, "lutaml/jsonschema/configuration"
     autoload :LjrPackageDefinition, "lutaml/jsonschema/ljr_package_definition"
     autoload :Cli, "lutaml/jsonschema/cli"

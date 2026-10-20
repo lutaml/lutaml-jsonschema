@@ -82,6 +82,21 @@ module Lutaml
         abort "Error: #{e.message}"
       end
 
+      desc "diff OLD_SCHEMA NEW_SCHEMA",
+           "Compare two schema documents (exits 1 on breaking changes)"
+      option :format, aliases: "-f", type: :string, default: "text",
+                      desc: "Output format (text/json)"
+      def diff(old_file, new_file)
+        old_schema = Schema.from_json(File.read(old_file))
+        new_schema = Schema.from_json(File.read(new_file))
+        changes = Diff.between(old_schema, new_schema)
+
+        emit_diff(changes)
+        exit(1) if changes.any? { |c| c.classification == Diff::BREAKING }
+      rescue Errno::ENOENT => e
+        abort "Error: #{e.message}"
+      end
+
       desc "validate SCHEMA_FILE",
            "Validate a JSON Schema file against its dialect meta-schema"
       option :format, aliases: "-f", type: :string, default: "text",
@@ -115,6 +130,19 @@ module Lutaml
         Configuration.load_from_file(path)
       rescue Errno::ENOENT
         abort "Configuration file not found: #{path}"
+      end
+
+      def emit_diff(changes)
+        if options[:format] == "json"
+          puts JSON.pretty_generate(changes.map(&:to_h))
+          return
+        end
+
+        changes.each do |change|
+          puts "#{change.classification.to_s.upcase} #{change.pointer}: " \
+               "#{change.detail}"
+        end
+        puts "No changes" if changes.empty?
       end
 
       def validate_structure(json)
