@@ -22,6 +22,10 @@ module Lutaml
     autoload :LjrPackageDefinition, "lutaml/jsonschema/ljr_package_definition"
     autoload :Cli, "lutaml/jsonschema/cli"
 
+    module Exports
+      autoload :Cddl, "lutaml/jsonschema/exports/cddl"
+    end
+
     module Spa
       autoload :Metadata, "lutaml/jsonschema/spa/metadata"
       autoload :SpaProperty, "lutaml/jsonschema/spa/spa_property"
