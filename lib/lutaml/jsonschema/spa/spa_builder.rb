@@ -418,6 +418,7 @@ module Lutaml
                           []
                         end
 
+          ap_info = resolve_additional_properties(resolved, root_schema)
           SpaProperty.new(
             **extract_schema_constraints(resolved),
             name: entry.name,
@@ -433,6 +434,8 @@ module Lutaml
             properties: nested,
             required_fields: nested_required,
             definitions: nested_defs,
+            additional_properties_ref: ap_info[:ref],
+            additional_properties_type: ap_info[:type],
             **property_items_fields(features),
             contains_type: features[:contains_type],
             contains_ref: features[:contains_ref],

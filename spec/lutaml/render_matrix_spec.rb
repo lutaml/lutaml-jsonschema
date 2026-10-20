@@ -204,6 +204,21 @@ RSpec.describe "Dialect-aware constraint rendering" do
     expect(schema.pattern_properties).to eq("^x-" => { "type" => "any" })
   end
 
+  it "projects nested object fields and additional properties" do
+    property = spa_property(
+      { "$defs" => { "Extra" => { "type" => "integer" } } },
+      {
+        "type" => "object",
+        "properties" => { "id" => { "type" => "string" } },
+        "additionalProperties" => { "$ref" => "#/$defs/Extra" },
+      },
+    )
+
+    expect(property.properties.map(&:name)).to eq(["id"])
+    expect(property.additional_properties_ref).to eq("#/$defs/Extra")
+    expect(property.additional_properties_type).to eq("integer")
+  end
+
   it "projects x-enumDescriptions into the SPA" do
     property = spa_property(
       {},

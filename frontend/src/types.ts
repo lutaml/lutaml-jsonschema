@@ -59,6 +59,8 @@ export interface SpaProperty {
   exclusiveMinimum?: number
   exclusiveMaximum?: number
   additionalProperties?: boolean
+  additionalPropertiesRef?: string
+  additionalPropertiesType?: string
   contentMediaType?: string
   contentEncoding?: string
   compositionSource?: string

@@ -33,6 +33,8 @@ module Lutaml
         attribute :exclusive_minimum, :float
         attribute :exclusive_maximum, :float
         attribute :additional_properties, :boolean
+        attribute :additional_properties_ref, :string
+        attribute :additional_properties_type, :string
         attribute :content_type, :string
         attribute :content_encoding, :string
         attribute :composition_source, :string
@@ -111,6 +113,8 @@ module Lutaml
           map "exclusiveMinimum", to: :exclusive_minimum
           map "exclusiveMaximum", to: :exclusive_maximum
           map "additionalProperties", to: :additional_properties
+          map "additionalPropertiesRef", to: :additional_properties_ref
+          map "additionalPropertiesType", to: :additional_properties_type
           map "contentMediaType", to: :content_type
           map "contentEncoding", to: :content_encoding
           map "compositionSource", to: :composition_source
