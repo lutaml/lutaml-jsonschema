@@ -62,6 +62,7 @@ module Lutaml
             source_json: @schema_set.source_json(name) || "",
             dollar_schema: schema.dollar_schema,
             dollar_id: schema.dollar_id,
+            external_docs: schema.external_docs,
             additional_properties: schema.additional_properties,
             min_properties: schema.min_properties,
             max_properties: schema.max_properties,

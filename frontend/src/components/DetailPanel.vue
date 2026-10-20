@@ -94,6 +94,10 @@
                   <span class="meta-label">$id</span>
                   <span class="font-mono text-secondary" style="font-size: var(--text-xs); word-break: break-all;">{{ schema.$id }}</span>
                 </div>
+                <div v-if="item.kind === 'schema' && schema.externalDocs?.url" class="meta-row">
+                  <span class="meta-label">Docs</span>
+                  <a :href="schema.externalDocs.url" target="_blank" rel="noopener" class="font-mono text-secondary" style="font-size: var(--text-xs); word-break: break-all;">{{ schema.externalDocs.description || schema.externalDocs.url }}</a>
+                </div>
                 <div v-if="item.kind === 'schema' && (schema.hasAllOf || schema.hasAnyOf || schema.hasOneOf)" class="meta-row">
                   <span class="meta-label">Composition</span>
                   <div class="meta-tags">

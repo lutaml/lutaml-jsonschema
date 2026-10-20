@@ -17,6 +17,7 @@ module Lutaml
         attribute :source_json, :string, default: -> { "" }
         attribute :dollar_schema, :string
         attribute :dollar_id, :string
+        attribute :external_docs, :hash
         attribute :additional_properties, :boolean
         attribute :min_properties, :integer
         attribute :max_properties, :integer
@@ -58,6 +59,7 @@ module Lutaml
           map "sourceJson", to: :source_json
           map "$schema", to: :dollar_schema
           map "$id", to: :dollar_id
+          map "externalDocs", to: :external_docs
           map "additionalProperties", to: :additional_properties
           map "minProperties", to: :min_properties
           map "maxProperties", to: :max_properties
