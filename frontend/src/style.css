@@ -390,3 +390,19 @@ button { font-family: inherit; font-size: inherit; cursor: pointer; border: none
   overflow-x: auto; font-size: var(--text-xs);
 }
 .md-content .md-pre code { font-family: var(--font-mono); font-size: inherit; }
+
+/* Composition variant tabs (oneOf/anyOf) */
+.variant-tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.variant-tab {
+  border: 1px solid var(--border-light); background: transparent;
+  color: var(--text-secondary); border-radius: 4px; padding: 2px 8px;
+  font-size: var(--text-xs); cursor: pointer;
+}
+.variant-tab:hover { border-color: var(--border-medium); }
+.variant-tab.active {
+  border-color: var(--color-primary); color: var(--text-primary);
+  background: var(--color-primary-alpha);
+}
+.variant-tab:focus-visible {
+  outline: 2px solid var(--color-primary); outline-offset: 1px;
+}

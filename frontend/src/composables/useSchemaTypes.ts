@@ -72,6 +72,44 @@ export function conditionalSections(schema: SpaSchema): ConditionalSection[] {
   return sections
 }
 
+export interface VariantOption {
+  label: string
+  source: 'oneOf' | 'anyOf'
+  type?: string
+  format?: string
+  description?: string
+  enum?: string[]
+  fields: ConditionalRow[]
+}
+
+/** oneOf/anyOf members as tab options, oneOf first. */
+export function variantOptions(holder: {
+  oneOfVariants?: SpaProperty[]
+  anyOfVariants?: SpaProperty[]
+}): VariantOption[] {
+  const build = (
+    variants: SpaProperty[] | undefined,
+    source: 'oneOf' | 'anyOf',
+  ): VariantOption[] =>
+    (variants ?? []).map((variant, index) => ({
+      label: variant.title || variant.type || `Variant ${index + 1}`,
+      source,
+      type: variant.type,
+      format: variant.format,
+      description: variant.description,
+      enum: variant.enum,
+      fields: (variant.properties ?? []).map(p => ({
+        name: p.name,
+        type: p.type,
+      })),
+    }))
+
+  return [
+    ...build(holder.oneOfVariants, 'oneOf'),
+    ...build(holder.anyOfVariants, 'anyOf'),
+  ]
+}
+
 /** Whether the type string is a composition indicator from the backend. */
 export function isCompositionType(type?: string): boolean {
   const t = type || ''

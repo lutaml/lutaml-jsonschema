@@ -12,6 +12,7 @@ import {
   hasConstraints,
   patternPropertyRows,
   conditionalSections,
+  variantOptions,
 } from '../composables/useSchemaTypes'
 import { resolveSchemaRef } from '../composables/useDefinitionResolver'
 import { createField, buildDefaultJson } from '../composables/useBuilderField'
@@ -332,6 +333,29 @@ describe('SPA data completeness for complex schemas', () => {
       expect(conditionalSections({
         name: 'plain', properties: [], definitions: [], required: [],
       })).toEqual([])
+    })
+
+    it('variantOptions labels oneOf and anyOf members with their fields', () => {
+      const options = variantOptions({
+        oneOfVariants: [
+          prop({ title: 'Date', type: 'string' }),
+          prop({ type: 'integer' }),
+        ],
+        anyOfVariants: [
+          prop({ title: 'Extended', properties: [prop({ name: 'id', type: 'string' })] }),
+        ],
+      })
+
+      expect(options.map(o => [o.label, o.source])).toEqual([
+        ['Date', 'oneOf'],
+        ['integer', 'oneOf'],
+        ['Extended', 'anyOf'],
+      ])
+      expect(options[2].fields).toEqual([{ name: 'id', type: 'string' }])
+    })
+
+    it('variantOptions is empty without variants', () => {
+      expect(variantOptions(prop())).toEqual([])
     })
 
     it('displayType shows an open tuple tail', () => {
