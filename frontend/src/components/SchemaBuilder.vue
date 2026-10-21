@@ -7,28 +7,28 @@
             v-model="filterQuery"
             type="text"
             class="filter-input"
-            placeholder="Filter properties..."
-            aria-label="Filter properties"
+            :placeholder="t('builder.filterPlaceholder')"
+            :aria-label="t('builder.filterProperties')"
           />
-          <button v-if="filterQuery" class="filter-clear" aria-label="Clear filter" @click="filterQuery = ''">
+          <button v-if="filterQuery" class="filter-clear" :aria-label="t('builder.clearFilter')" @click="filterQuery = ''">
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
               <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
             </svg>
           </button>
         </div>
         <div class="toolbar-actions">
-          <button class="toolbar-btn" :class="{ active: sortAlpha }" :title="sortAlpha ? 'Sorted A-Z' : 'Sorted by required first'" @click="sortAlpha = !sortAlpha">
+          <button class="toolbar-btn" :class="{ active: sortAlpha }" :title="sortAlpha ? t('builder.sortedAlpha') : t('builder.sortedRequired')" @click="sortAlpha = !sortAlpha">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
               <path d="M3 2v10M3 12l-2-2M3 12l2-2M11 2v10M11 12l-2-2M11 12l2-2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
             {{ sortAlpha ? 'A-Z' : 'Req' }}
           </button>
-          <button v-if="hasExpandableFields" class="toolbar-btn" title="Expand all nested objects" @click="expandAllFields">
+          <button v-if="hasExpandableFields" class="toolbar-btn" :title="t('builder.expandAllTitle')" @click="expandAllFields">
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
               <path d="M2 6h8M6 2v8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
             </svg>
           </button>
-          <button v-if="hasExpandedFields" class="toolbar-btn" title="Collapse all nested objects" @click="collapseAllFields">
+          <button v-if="hasExpandedFields" class="toolbar-btn" :title="t('builder.collapseAllTitle')" @click="collapseAllFields">
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
               <path d="M2 6h8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
             </svg>
@@ -47,7 +47,7 @@
             @change="toggleField(field, ($event.target as HTMLInputElement).checked)"
           />
           <span class="field-bullet" aria-hidden="true"></span>
-          <button class="field-name" :class="{ dimmed: !field.included, deprecated: field.prop.deprecated, expandable: !!field.resolvedDef }" :aria-label="field.resolvedDef ? `${field.expanded ? 'Collapse' : 'Expand'} ${field.prop.name}` : `View details for ${field.prop.name}`" @click="field.resolvedDef && field.included ? (field.expanded = !field.expanded) : openPropertyDetail(field.prop)">
+          <button class="field-name" :class="{ dimmed: !field.included, deprecated: field.prop.deprecated, expandable: !!field.resolvedDef }" :aria-label="field.resolvedDef ? `${field.expanded ? t('builder.collapse') : t('builder.expand')} ${field.prop.name}` : tf('builder.viewDetails', { name: field.prop.name })" @click="field.resolvedDef && field.included ? (field.expanded = !field.expanded) : openPropertyDetail(field.prop)">
             <span v-if="field.prop.title && field.prop.title !== field.prop.name" class="field-human-title">{{ field.prop.title }}</span>
             <span class="font-mono">{{ field.prop.name }}</span>
             <span v-if="field.resolvedDef" class="field-expand-icon" :class="{ expanded: field.expanded }">&#9654;</span>
@@ -60,11 +60,11 @@
           <span v-if="field.prop.contentEncoding" class="field-format-badge">encoding: {{ field.prop.contentEncoding }}</span>
           <span v-if="field.prop.const != null" class="const-badge font-mono">const: {{ field.prop.const }}</span>
           <span v-else-if="field.prop.default != null" class="default-badge font-mono">default: {{ field.prop.default }}</span>
-          <span v-if="field.isRequired" class="req-badge">required</span>
-          <span v-if="field.prop.deprecated" class="deprecated-badge">deprecated</span>
-          <span v-if="field.prop.readOnly" class="readonly-badge">read-only</span>
-          <span v-if="field.prop.writeOnly" class="writeonly-badge">write-only</span>
-          <span v-if="isNullableType(field.prop.type)" class="nullable-badge">nullable</span>
+          <span v-if="field.isRequired" class="req-badge">{{ t('builder.required') }}</span>
+          <span v-if="field.prop.deprecated" class="deprecated-badge">{{ t('builder.deprecated') }}</span>
+          <span v-if="field.prop.readOnly" class="readonly-badge">{{ t('builder.readOnly') }}</span>
+          <span v-if="field.prop.writeOnly" class="writeonly-badge">{{ t('builder.writeOnly') }}</span>
+          <span v-if="isNullableType(field.prop.type)" class="nullable-badge">{{ t('builder.nullable') }}</span>
           <span v-if="field.prop.compositionSource" class="composition-badge">{{ field.prop.compositionSource }}</span>
 
           <div class="field-control">
@@ -74,7 +74,7 @@
               class="btn btn-ghost ctrl-expand"
               :disabled="!field.included"
               :aria-expanded="field.expanded"
-              :aria-label="`${field.expanded ? 'Collapse' : 'Expand'} ${field.resolvedDef.title || field.resolvedDef.name}`"
+              :aria-label="`${field.expanded ? t('builder.collapse') : t('builder.expand')} ${field.resolvedDef.title || field.resolvedDef.name}`"
               @click="field.expanded = !field.expanded"
             >
               <span class="chevron" :class="{ expanded: field.expanded }" aria-hidden="true">&#9654;</span>
@@ -154,14 +154,14 @@
                   class="btn btn-ghost btn-xs"
                   :disabled="!field.included"
                   @click="field.arrayItems.splice(idx, 1)"
-                  title="Remove item"
+                  :title="t('builder.remove')"
                 >x</button>
               </div>
               <button
                 class="btn btn-ghost btn-xs"
                 :disabled="!field.included"
                 @click="field.arrayItems.push(arrayDefaultValue(field.prop.itemsType))"
-              >+ Add</button>
+              >{{ t('builder.add') }}</button>
             </div>
 
             <!-- String (default) -->
@@ -192,7 +192,7 @@
           <span v-if="field.prop.ref" class="constraint-chip chip-ref" role="button" tabindex="0" @click.stop="navigateToRef(field.prop.ref)" @keydown.enter.stop="navigateToRef(field.prop.ref)">ref → {{ field.resolvedDef?.title || field.resolvedDef?.name || field.prop.ref }}</span>
           <template v-if="field.prop.enum?.length && !isObjectProperty(field.prop)">
             <span v-for="e in visibleEnums(field.prop.name, field.prop.enum)" :key="e" class="enum-chip" :class="{ 'enum-chip-active': field.rawValue === e }">{{ e }}</span>
-            <button v-if="field.prop.enum.length > MAX_ENUM_SHOW && !enumExpanded.has(field.prop.name)" class="btn-see-more" @click.stop="toggleEnum(field.prop.name)">+{{ field.prop.enum.length - MAX_ENUM_SHOW }} more</button>
+            <button v-if="field.prop.enum.length > MAX_ENUM_SHOW && !enumExpanded.has(field.prop.name)" class="btn-see-more" @click.stop="toggleEnum(field.prop.name)">+{{ field.prop.enum.length - MAX_ENUM_SHOW }} {{ t('panel.more') }}</button>
           </template>
           <span v-else-if="field.prop.enum?.length && isObjectProperty(field.prop)" class="constraint-chip">enum: {{ field.prop.enum.join(' | ') }}</span>
           <span v-for="(chip, idx) in humanizeConstraints(field.prop)" :key="idx" class="constraint-chip" :class="chip.class">
@@ -204,9 +204,9 @@
             </template>
             <template v-else>{{ chip.label }}</template>
           </span>
-          <span v-if="field.prop.additionalProperties === false" class="constraint-chip chip-locked">no additional properties</span>
+          <span v-if="field.prop.additionalProperties === false" class="constraint-chip chip-locked">{{ t('builder.noAdditional') }}</span>
           <template v-if="field.prop.examples?.length">
-            <span class="constraint-chip chip-example">example:</span>
+            <span class="constraint-chip chip-example">{{ t('builder.example') }}</span>
             <span v-for="(ex, exi) in field.prop.examples" :key="exi" class="example-chip">{{ typeof ex === 'object' ? JSON.stringify(ex) : ex }}</span>
           </template>
         </div>
@@ -238,34 +238,34 @@
 
         <!-- Circular reference label -->
         <div v-if="field.expanded && field.included && field.resolvedDef && isCircular(field, visited)" class="circular-ref-label">
-          <span class="circular-badge">Recursive</span>
+          <span class="circular-badge">{{ t('builder.recursive') }}</span>
           <span class="circular-type">{{ field.resolvedDef?.type || 'object' }}</span>
           <span class="circular-name font-mono">{{ field.resolvedDef?.name }}</span>
-          <span class="circular-hint text-muted">This schema references itself</span>
+          <span class="circular-hint text-muted">{{ t('builder.recursiveHint') }}</span>
         </div>
       </div>
 
       <div v-if="!sortedFields.length" class="empty-hint">
-        <p class="text-muted">No properties defined.</p>
+        <p class="text-muted">{{ t('builder.noProperties') }}</p>
       </div>
     </div>
 
     <div class="builder-preview">
       <div class="preview-inner">
         <div class="preview-toolbar">
-          <span class="toolbar-label">JSON Preview</span>
+          <span class="toolbar-label">{{ t('builder.jsonPreview') }}</span>
           <div class="toolbar-actions">
-            <button class="btn btn-sm btn-dark-panel" @click="expandAllJson">Expand all</button>
-            <button class="btn btn-sm btn-dark-panel" @click="collapseAllJson">Collapse all</button>
+            <button class="btn btn-sm btn-dark-panel" @click="expandAllJson">{{ t('builder.expandAll') }}</button>
+            <button class="btn btn-sm btn-dark-panel" @click="collapseAllJson">{{ t('builder.collapseAll') }}</button>
             <button class="btn btn-sm btn-dark-panel copy-btn-wrap" @click="copyJson">
               Copy
-              <span v-if="copied" class="copy-tooltip">Copied!</span>
+              <span v-if="copied" class="copy-tooltip">{{ t('builder.copied') }}</span>
             </button>
           </div>
         </div>
         <pre ref="jsonBlockRef" class="json-block" @click="handleJsonClick" @keydown="handleJsonKey" @dblclick="selectJsonBlock" v-html="highlightedJson"></pre>
         <div v-if="!hasIncludedFields" class="json-empty-hint">
-          <span class="text-muted">Check fields to build JSON</span>
+          <span class="text-muted">{{ t('builder.checkFields') }}</span>
         </div>
       </div>
     </div>
@@ -277,6 +277,7 @@ import { ref, computed, watch } from 'vue'
 import type { SpaProperty, SpaSchema } from '../types'
 import { useSchemaStore } from '../stores/schemaStore'
 import { useUiStore } from '../stores/uiStore'
+import { t, tf } from '../i18n'
 import {
   primaryType,
   displayType,

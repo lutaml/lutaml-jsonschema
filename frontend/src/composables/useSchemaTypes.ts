@@ -1,4 +1,5 @@
 import type { SpaProperty, SpaSchema, SpaDiffEntry } from '../types'
+import { t } from '../i18n'
 
 /**
  * Extract the primary JSON Schema type from a type string.
@@ -42,7 +43,7 @@ export interface ConditionalRow {
 }
 
 export interface ConditionalSection {
-  label: 'If' | 'Then' | 'Else'
+  label: string
   rows: ConditionalRow[]
   required: string[]
 }
@@ -55,7 +56,7 @@ export function conditionalSections(schema: SpaSchema): ConditionalSection[] {
 
   if (schema.ifSchema) {
     sections.push({
-      label: 'If',
+      label: t('panel.if'),
       rows: toRows(schema.ifSchema.properties),
       required: [],
     })
@@ -63,11 +64,11 @@ export function conditionalSections(schema: SpaSchema): ConditionalSection[] {
   const thenRows = toRows(schema.thenProperties)
   const thenRequired = schema.thenRequired ?? []
   if (thenRows.length || thenRequired.length) {
-    sections.push({ label: 'Then', rows: thenRows, required: thenRequired })
+    sections.push({ label: t('panel.then'), rows: thenRows, required: thenRequired })
   }
   const elseRows = toRows(schema.elseProperties)
   if (elseRows.length) {
-    sections.push({ label: 'Else', rows: elseRows, required: [] })
+    sections.push({ label: t('panel.else'), rows: elseRows, required: [] })
   }
   return sections
 }

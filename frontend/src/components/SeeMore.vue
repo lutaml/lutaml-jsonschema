@@ -12,13 +12,14 @@
       class="see-more-toggle"
       @click="expanded = !expanded"
     >
-      {{ expanded ? 'Show less' : 'Show more' }}
+      {{ expanded ? t('seeMore.showLess') : t('seeMore.showMore') }}
     </button>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
+import { t } from '../i18n'
 
 const TOLERANCE_PX = 20
 const MAX_HEIGHT = '3.6em'
