@@ -9,7 +9,7 @@ require "rubocop/rake_task"
 
 RuboCop::RakeTask.new
 
-task default: %i[spec rubocop perf]
+task default: %i[spec rubocop perf frontend:audit]
 
 namespace :perf do
   desc "Pipeline performance harness with regression caps (TODO.sota/08)"
