@@ -3,19 +3,37 @@
 module Lutaml
   module Jsonschema
     class SchemaSet
-      attr_reader :schemas
       attr_accessor :base_dir
+      attr_reader :schemas, :remote_errors
 
-      def initialize(base_dir: nil)
+      # Network access is opt-in; a disk cache lets air-gapped runs reuse
+      # previously fetched documents.
+      DEFAULT_REMOTE_LOADER = lambda do |uri|
+        require "net/http"
+
+        Net::HTTP.get(URI(uri))
+      end
+
+      def initialize(base_dir: nil, allow_remote: false,
+                     remote_cache_dir: nil, remote_loader: nil)
         @schemas = {}
         @base_dir = base_dir
         @file_paths = {}
         @source_jsons = {}
         @resolver = ReferenceResolver.new(@schemas)
+        @allow_remote = allow_remote
+        @remote_cache_dir = remote_cache_dir
+        @remote_loader = remote_loader
+        @remote_documents = {}
+        @remote_errors = {}
       end
 
-      def self.load_from_files(*paths, base_dir: nil)
-        set = new(base_dir: base_dir || infer_base_dir(paths))
+      def self.load_from_files(*paths, base_dir: nil, allow_remote: false,
+                               remote_cache_dir: nil, remote_loader: nil)
+        set = new(base_dir: base_dir || infer_base_dir(paths),
+                  allow_remote: allow_remote,
+                  remote_cache_dir: remote_cache_dir,
+                  remote_loader: remote_loader)
         paths.each do |path|
           data = File.read(path, encoding: "utf-8")
           schema = Schema.from_json(data)
@@ -25,9 +43,9 @@ module Lutaml
         set
       end
 
-      def self.load_from_directory(dir)
+      def self.load_from_directory(dir, **)
         paths = Dir.glob(File.join(dir, "*.json"))
-        load_from_files(*paths, base_dir: dir)
+        load_from_files(*paths, base_dir: dir, **)
       end
 
       def add(name, schema, file_path = nil, source_json = nil)
@@ -138,6 +156,60 @@ module Lutaml
         end
       end
 
+      def remote_schema(base)
+        @remote_documents[base] ||= begin
+          document = fetch_remote_document(base)
+          document && register_remote(base, document)
+        end
+      end
+
+      def register_remote(base, document)
+        name = remote_name(base)
+        return @schemas[name] if @schemas[name]
+
+        schema = Schema.from_json(document)
+        add(name, schema)
+        schema
+      end
+
+      def fetch_remote_document(uri)
+        cache_path = remote_cache_path(uri)
+        return File.read(cache_path) if cache_path && File.exist?(cache_path)
+
+        unless @allow_remote
+          @remote_errors[uri] = "remote refs disabled (pass allow_remote " \
+                                "or provide a remote cache)"
+          return nil
+        end
+
+        document = (@remote_loader || DEFAULT_REMOTE_LOADER).call(uri)
+        if cache_path
+          require "fileutils"
+
+          FileUtils.mkdir_p(@remote_cache_dir)
+          File.write(cache_path, document)
+        end
+        document
+      rescue StandardError => e
+        @remote_errors[uri] = e.message
+        nil
+      end
+
+      def remote_cache_path(uri)
+        return nil unless @remote_cache_dir
+
+        require "digest"
+
+        File.join(@remote_cache_dir, "#{Digest::SHA256.hexdigest(uri)}.json")
+      end
+
+      def remote_name(uri)
+        base = uri.split("#", 2).first
+        File.basename(URI.parse(base).path, ".*").then do |name|
+          name.empty? ? URI.parse(base).host : name
+        end
+      end
+
       def dereference_node(node, context_schema, seen)
         case node
         when Array
@@ -194,10 +266,18 @@ module Lutaml
         nil
       end
 
-      def resolve_remote_ref(_ref)
-        nil
+      # Remote documents: network access only when `allow_remote`; the
+      # disk cache is consulted first so air-gapped runs reuse previously
+      # fetched documents. Fragments (`uri#/definitions/x` or `uri#anchor`)
+      # resolve inside the fetched document.
+      def resolve_remote_ref(ref)
+        base, fragment = ref.split("#", 2)
+        document = remote_schema(base)
+        return nil if document.nil?
 
-        # Remote refs are not resolved — would need HTTP fetching
+        return document if fragment.nil? || fragment.empty?
+
+        @resolver.resolve("##{fragment}", document)
       end
 
       def resolve_anchor_ref(anchor, context_schema)
@@ -233,9 +313,10 @@ module Lutaml
         if ref && !seen_refs.include?("#{source_name}:#{path}:#{ref}")
           seen_refs.add("#{source_name}:#{path}:#{ref}")
           resolved = resolve_ref(ref, @schemas[source_name])
-          errors << "#{source_name}#{path}: unresolvable $ref '#{ref}'" if resolved.nil? && ref.start_with?(
-            "#/", "./"
-          )
+          unresolvable = resolved.nil? &&
+            ref.start_with?("#/", "./", "http://", "https://")
+          errors << "#{source_name}#{path}: unresolvable $ref '#{ref}'" if
+            unresolvable
         end
 
         schema.each_child do |child, segment|

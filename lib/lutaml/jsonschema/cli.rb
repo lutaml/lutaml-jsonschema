@@ -19,6 +19,10 @@ module Lutaml
       option :subtitle, type: :string, desc: "Sidebar subtitle text"
       option :diff, type: :array, default: [],
                     desc: "Baseline schema file(s) to report changes against"
+      option :remote, type: :boolean, default: false,
+                      desc: "Allow fetching remote HTTP(S) $refs"
+      option :remote_cache, type: :string,
+                            desc: "Directory for caching remote documents"
       def spa(*schema_files)
         raise Error, "No schema files provided" if schema_files.empty?
 
@@ -29,7 +33,7 @@ module Lutaml
         config.apply_appearance_overrides(logo: options[:logo],
                                           subtitle: options[:subtitle])
 
-        schema_set = SchemaSet.load_from_files(*schema_files)
+        schema_set = SchemaSet.load_from_files(*schema_files, **remote_options)
         baseline = load_baseline(options[:diff])
         generator = Spa::Generator.new(schema_set, config.output_path,
                                        metadata: config.to_metadata,
@@ -44,11 +48,15 @@ module Lutaml
            "Combine multiple JSON Schema files into one"
       option :output, aliases: "-o", type: :string, default: "-",
                       desc: "Output file path (use - for stdout)"
+      option :remote, type: :boolean, default: false,
+                      desc: "Allow fetching remote HTTP(S) $refs"
+      option :remote_cache, type: :string,
+                            desc: "Directory for caching remote documents"
       def combine(*schema_files)
         raise Error, "No schema files provided" if schema_files.empty?
 
-        schema_set = SchemaSet.load_from_files(*schema_files)
-        combined = Combiner.new.combine(schema_set)
+        schema_set = SchemaSet.load_from_files(*schema_files, **remote_options)
+        combined = schema_set.bundle
         json = JSON.pretty_generate(Yeptris::JSON.load(combined.to_json))
 
         if options[:output] == "-"
@@ -140,10 +148,17 @@ module Lutaml
         abort "Configuration file not found: #{path}"
       end
 
+      def remote_options
+        {
+          allow_remote: options[:remote],
+          remote_cache_dir: options[:remote_cache],
+        }.compact
+      end
+
       def load_baseline(files)
         return nil if files.empty?
 
-        SchemaSet.load_from_files(*files)
+        SchemaSet.load_from_files(*files, **remote_options)
       end
 
       def emit_diff(changes)
