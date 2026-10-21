@@ -829,7 +829,9 @@ function truncateDesc(desc: string): string {
 }
 
 .footer-text a {
-  color: var(--color-primary);
+  /* the primary blue fails AA at --text-xs; the audit-approved accent
+     token (PR #68) carries small links */
+  color: var(--text-accent);
   text-decoration: none;
 }
 

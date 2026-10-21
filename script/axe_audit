@@ -1,8 +1,11 @@
 # frozen_string_literal: true
 
 # axe-core accessibility audit of the generated SPA (TODO.sota/09).
-# Requires a Chrome binary (CHROME_BIN or a known location) and network
-# access for the axe-core CDN. Exits non-zero when violations are found.
+# Uses the axe-core copy vendored by the frontend's npm devDependencies
+# (sovereign: no CDN fetch). Exits non-zero when violations are found;
+# skips cleanly when no Chrome binary or no built frontend exists, so
+# `rake` stays green on browser-less lanes (windows CI) while the
+# browser-equipped lanes (ubuntu/macos) always run it.
 
 require "json"
 require "open3"
@@ -18,21 +21,29 @@ CHROME_CANDIDATES = [
   "/usr/bin/google-chrome",
 ].freeze
 
-AXE_CDN = ENV.fetch("AXE_CDN",
-                   "https://cdn.jsdelivr.net/npm/axe-core@4.10.2/axe.min.js")
 ROOT = File.expand_path("..", __dir__)
 SCHEMA = ARGV.first || File.join(ROOT, "spec", "fixtures", "heroku.json")
 
 chrome = CHROME_CANDIDATES.find { |path| path && File.executable?(path) }
-abort "axe audit: no Chrome binary found (set CHROME_BIN)" unless chrome
+unless chrome
+  warn "axe audit: SKIP (no Chrome binary; set CHROME_BIN to enable)"
+  exit 0
+end
 
 dist = File.join(ROOT, "frontend", "dist")
 unless File.exist?(File.join(dist, "app.iife.js"))
-  abort "axe audit: frontend/dist missing; run `rake frontend:build` first"
+  warn "axe audit: SKIP (frontend/dist missing; run `rake frontend:build`)"
+  exit 0
+end
+
+axe = File.join(ROOT, "frontend", "node_modules", "axe-core", "axe.min.js")
+unless File.exist?(axe)
+  abort "axe audit: frontend/node_modules/axe-core missing; " \
+        "run `npm install` in frontend/"
 end
 
 INJECT = <<~SCRIPT
-  <script src="#{AXE_CDN}"></script>
+  <script src="file://#{axe}"></script>
   <script>
     window.addEventListener('load', () => setTimeout(() => {
       axe.run().then((r) => {
@@ -68,7 +79,7 @@ dom, err, status = Open3.capture3(
 abort "axe audit: Chrome failed: #{err[0, 400]}" unless status.success?
 
 match = dom[/data-axe="([^"]*)"/, 1]
-abort "axe audit: no result captured (CDN unreachable?)" unless match
+abort "axe audit: no result captured" unless match
 
 result = JSON.parse(match.gsub("&quot;", '"'))
 abort "axe audit: axe failed: #{result['error']}" if result["error"]

@@ -10,7 +10,7 @@
     </div>
     <DetailPanel v-if="uiStore.detailPanelOpen" />
     <SearchModal v-if="uiStore.searchOpen" />
-    <button v-if="showBackToTop" class="back-to-top" @click="scrollToTop" title="Back to top" aria-label="Scroll to top">
+    <button v-if="showBackToTop" class="back-to-top" @click="scrollToTop" :title="t('app.backToTop')" :aria-label="t('app.backToTopAria')">
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
         <path d="M8 13V3M4 7l4-4 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
@@ -23,7 +23,7 @@ import { onMounted, ref } from 'vue'
 import { useSchemaStore } from './stores/schemaStore'
 import { useUiStore } from './stores/uiStore'
 import AppHeader from './components/AppHeader.vue'
-import { applyDocumentLocale } from './i18n'
+import { t, initLocaleFromUrl } from './i18n'
 import AppSidebar from './components/AppSidebar.vue'
 import DetailPanel from './components/DetailPanel.vue'
 import SearchModal from './components/SearchModal.vue'
@@ -45,7 +45,7 @@ function scrollToTop() {
 }
 
 onMounted(() => {
-  applyDocumentLocale()
+  initLocaleFromUrl()
   uiStore.initTheme()
   schemaStore.loadFromWindow()
 

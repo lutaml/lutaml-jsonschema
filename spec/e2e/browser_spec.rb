@@ -77,4 +77,44 @@ RSpec.describe "Headless-browser render and PDF output", :browser do
       expect(File.binread(pdf, 5)).to start_with("%PDF")
     end
   end
+
+  it "renders mirrored and overflow-free under RTL (?locale=ar)" do
+    Dir.mktmpdir do |dir|
+      page = generate_site(dir)
+      probe = <<~SCRIPT
+        <script>
+          window.addEventListener('load', () => setTimeout(() => {
+            const sidebar = document.querySelector('.sidebar').getBoundingClientRect();
+            document.body.setAttribute('data-rtl-probe', JSON.stringify({
+              dir: document.documentElement.dir,
+              lang: document.documentElement.lang,
+              overflow: document.documentElement.scrollWidth > window.innerWidth + 2,
+              sidebarOnRight: sidebar.left > window.innerWidth / 2,
+              arabic: document.body.textContent.includes('\\u0627\\u0644\\u062E\\u0635\\u0627\\u0626\\u0635'),
+            }));
+            document.title = 'RTL-DONE';
+          }, 3000));
+        </script>
+      SCRIPT
+      File.write(File.join(dir, "rtl.html"),
+                 File.read(page).sub("</body>", "#{probe}\n</body>"))
+      dom, _err, status = run_chrome(
+        "--virtual-time-budget=15000", "--dump-dom",
+        "file://#{File.join(dir, 'rtl.html')}?locale=ar"
+      )
+
+      expect(status.success?).to be(true)
+      raw = dom[/data-rtl-probe="([^"]*)"/, 1]
+      expect(raw).not_to be_nil
+      result = JSON.parse(raw.gsub("&quot;", '"'))
+      # the Arabic locale took over the document, the layout mirrored
+      # (the flex-first sidebar sits on the right), nothing overflows
+      # horizontally, and UI strings render in Arabic
+      expect(result["dir"]).to eq("rtl")
+      expect(result["lang"]).to eq("ar")
+      expect(result["overflow"]).to be(false)
+      expect(result["sidebarOnRight"]).to be(true)
+      expect(result["arabic"]).to be(true)
+    end
+  end
 end
