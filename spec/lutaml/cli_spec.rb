@@ -73,6 +73,15 @@ RSpec.describe Lutaml::Jsonschema::Cli do
         .to output(/"\$defs"/).to_stdout
     end
 
+    it "accepts remote access flags" do
+      expect { described_class.start(["combine", person_schema, "--remote"]) }
+        .to output(/"\$defs"/).to_stdout
+      expect do
+        described_class.start(["combine", person_schema, "--remote-cache",
+                               File.join(Dir.mktmpdir, "cache")])
+      end.to output(/"\$defs"/).to_stdout
+    end
+
     it "combines schemas to file" do
       Dir.mktmpdir do |dir|
         output = File.join(dir, "combined.json")

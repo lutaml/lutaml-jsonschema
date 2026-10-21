@@ -14,8 +14,8 @@ module Lutaml
     class SchemaStore < SchemaSet
       attr_reader :package
 
-      def initialize(package: nil)
-        super()
+      def initialize(package: nil, **)
+        super(**)
         @package = package || Lutaml::Store::PackageStore.new(LjrPackageDefinition.definition)
       end
 
@@ -31,8 +31,8 @@ module Lutaml
         store
       end
 
-      def self.load_from_files(*paths, base_dir: nil)
-        store = new
+      def self.load_from_files(*paths, base_dir: nil, **)
+        store = new(**)
         paths.each do |path|
           data = File.read(path, encoding: "utf-8")
           schema = Schema.from_json(data)
