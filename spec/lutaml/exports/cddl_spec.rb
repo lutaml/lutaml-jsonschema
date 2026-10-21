@@ -128,4 +128,19 @@ RSpec.describe Lutaml::Jsonschema::Exports::Cddl do
 
     expect(output).to include("person = {")
   end
+
+  # RFC 8610 round trip: the generated rules must be accepted by the
+  # reference CDDL parser (real-world corpus, the done-when bar).
+  it "produces CDDL the RFC 8610 reference parser accepts (real-world corpus)" do
+    require "cddl"
+
+    set = Lutaml::Jsonschema::SchemaSet.load_from_files(
+      fixture_path("heroku.json"),
+      fixture_path("interagent_simple.json"),
+      fixture_path("person.json"),
+    )
+    output = described_class.new(set).render
+
+    expect { CDDL::Parser.new(output) }.not_to raise_error
+  end
 end

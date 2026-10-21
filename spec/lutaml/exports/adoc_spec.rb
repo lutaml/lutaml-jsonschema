@@ -20,6 +20,28 @@ RSpec.describe Lutaml::Jsonschema::Exports::Adoc do
     expect(output).to include("== Pet")
   end
 
+  it "embeds into a Metanorma document: no title, namespaced anchors" do
+    hash = {
+      "title" => "Pet",
+      "type" => "object",
+      "properties" => {
+        "friend" => { "$ref" => "#/definitions/pet" },
+      },
+      "definitions" => {
+        "pet" => { "type" => "object", "properties" => { "name" => { "type" => "string" } } },
+      },
+    }
+    output = described_class.new(schema_set_from(hash), embeddable: true).render
+
+    expect(output).not_to start_with("= ")
+    expect(output).to start_with("== Pet")
+    expect(output).to include("[#def-demo-pet]")
+    expect(output).to include("<<def-demo-pet,pet>>")
+    # the standalone anchors stay unnamespaced
+    standalone = render(hash)
+    expect(standalone).to include("[#def-pet]")
+  end
+
   it "renders a properties table with required flags and constraints" do
     output = render(
       "title" => "Pet",
