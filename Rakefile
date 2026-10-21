@@ -29,6 +29,11 @@ namespace :frontend do
       sh "npm run build"
     end
   end
+
+  desc "axe-core accessibility audit of the generated SPA (needs Chrome)"
+  task :audit do
+    ruby "script/axe_audit"
+  end
 end
 
 task :build_frontend do

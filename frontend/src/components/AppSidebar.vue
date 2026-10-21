@@ -427,7 +427,7 @@ function truncateDesc(desc: string): string {
 
 .overview-btn.active {
   background: var(--color-primary-alpha);
-  color: var(--color-primary);
+  color: var(--text-accent);
 }
 
 .sidebar-section {
@@ -521,7 +521,7 @@ function truncateDesc(desc: string): string {
 .schema-badge-count {
   font-size: 10px;
   font-weight: 500;
-  color: var(--color-primary);
+  color: var(--text-accent);
   background: var(--color-primary-alpha);
   padding: 1px 5px;
   border-radius: 10px;
