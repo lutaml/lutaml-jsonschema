@@ -218,7 +218,7 @@
     </div>
 
     <!-- Landing Page -->
-    <div v-else class="landing-page">
+    <main v-else class="landing-page">
       <div class="landing-header">
         <div>
           <div class="landing-title-row">
@@ -279,7 +279,7 @@
             </svg>
           </div>
           <div class="schema-card-content">
-            <h3>{{ schema.title || schema.name }}</h3>
+            <h2>{{ schema.title || schema.name }}</h2>
             <span v-if="schema.title && schema.title !== schema.name" class="schema-card-name font-mono text-muted">{{ schema.name }}</span>
             <p v-if="schema.description" class="schema-card-desc text-secondary md-content" v-html="renderInlineMarkdown(schema.description)"></p>
             <div class="schema-card-meta">
@@ -304,7 +304,7 @@
           <button class="btn btn-ghost btn-sm" @click="landingSearch = ''">Clear search</button>
         </div>
       </div>
-    </div>
+    </main>
   </div>
 </template>
 
