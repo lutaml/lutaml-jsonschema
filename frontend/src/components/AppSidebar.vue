@@ -346,7 +346,7 @@ function truncateDesc(desc: string): string {
   width: 280px;
   flex-shrink: 0;
   background: var(--bg-secondary);
-  border-right: 1px solid var(--border-light);
+  border-inline-end: 1px solid var(--border-light);
   display: flex;
   flex-direction: column;
   transition: width var(--transition-slow);
@@ -528,9 +528,9 @@ function truncateDesc(desc: string): string {
 }
 
 .schema-children {
-  margin-left: var(--space-4);
-  padding-left: var(--space-2);
-  border-left: 1px solid var(--schema-lines);
+  margin-inline-start: var(--space-4);
+  padding-inline-start: var(--space-2);
+  border-inline-start: 1px solid var(--schema-lines);
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -643,7 +643,7 @@ function truncateDesc(desc: string): string {
 
 .search-icon {
   position: absolute;
-  left: 8px;
+  inset-inline-start: 8px;
   top: 50%;
   transform: translateY(-50%);
   color: var(--text-muted);
@@ -672,7 +672,7 @@ function truncateDesc(desc: string): string {
 
 .search-clear {
   position: absolute;
-  right: 6px;
+  inset-inline-end: 6px;
   top: 50%;
   transform: translateY(-50%);
   color: var(--text-muted);
@@ -690,7 +690,7 @@ function truncateDesc(desc: string): string {
 
 .search-kbd {
   position: absolute;
-  right: 8px;
+  inset-inline-end: 8px;
   top: 50%;
   transform: translateY(-50%);
   font-family: var(--font-mono);
@@ -719,7 +719,7 @@ function truncateDesc(desc: string): string {
   gap: 2px;
   padding: 4px 6px;
   font-size: var(--text-xs);
-  text-align: left;
+  text-align: start;
   background: var(--bg-primary);
   border: none;
   border-radius: var(--radius-sm);
@@ -766,7 +766,7 @@ function truncateDesc(desc: string): string {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  padding-left: 30px;
+  padding-inline-start: 30px;
 }
 
 .stats-section {
@@ -841,7 +841,7 @@ function truncateDesc(desc: string): string {
   .sidebar {
     position: fixed;
     top: 0;
-    left: 0;
+    inset-inline-start: 0;
     bottom: 0;
     z-index: 40;
     box-shadow: var(--shadow-lg);
@@ -849,6 +849,9 @@ function truncateDesc(desc: string): string {
   .sidebar.collapsed {
     transform: translateX(-100%);
     width: 280px;
+  }
+  :root[dir="rtl"] .sidebar.collapsed {
+    transform: translateX(100%);
   }
 }
 </style>

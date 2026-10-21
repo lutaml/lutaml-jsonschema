@@ -52,8 +52,11 @@ RSpec.describe "Headless-browser render and PDF output", :browser do
       )
 
       expect(status.success?).to be(true)
-      # The Vue app mounted: sidebar tree and rendered property names exist,
-      # not just the raw embedded JSON.
+      # The app mirrors the locale onto the document element (TODO.sota/09:
+      # layout direction follows the locale), and the Vue app mounted —
+      # sidebar tree and rendered property names exist, not just the raw
+      # embedded JSON.
+      expect(dom).to match(/<html[^>]*lang="en"[^>]*dir="ltr"/m)
       expect(dom).to include("schema-node")
       expect(dom).to include("dyno")
       expect(dom).to include("Heroku")

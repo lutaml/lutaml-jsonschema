@@ -659,7 +659,7 @@ async function copyJson() {
 
 .filter-clear {
   position: absolute;
-  right: 6px;
+  inset-inline-end: 6px;
   top: 50%;
   transform: translateY(-50%);
   color: var(--text-muted);
@@ -678,13 +678,13 @@ async function copyJson() {
 .field-row {
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
-  border-left: 2px solid transparent;
+  border-inline-start: 2px solid transparent;
   transition: all var(--transition-fast);
 }
 
 .field-row:hover {
   background: var(--bg-hover);
-  border-left-color: var(--schema-lines);
+  border-inline-start-color: var(--schema-lines);
 }
 
 .field-row-alt {
@@ -693,7 +693,7 @@ async function copyJson() {
 
 .field-row-alt:hover {
   background: var(--bg-hover);
-  border-left-color: var(--schema-lines);
+  border-inline-start-color: var(--schema-lines);
 }
 
 .field-row-last {
@@ -721,7 +721,7 @@ async function copyJson() {
 .field-bullet {
   color: var(--schema-lines);
   font-family: var(--font-mono);
-  margin-right: 6px;
+  margin-inline-end: 6px;
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
@@ -762,7 +762,7 @@ async function copyJson() {
   flex-direction: column;
   gap: 0;
   line-height: 20px;
-  text-align: left;
+  text-align: start;
   cursor: pointer;
   padding: 0;
   border: none;
@@ -803,7 +803,7 @@ async function copyJson() {
   font-size: var(--schema-arrow-size);
   color: var(--schema-arrow-color);
   transition: transform var(--transition-fast);
-  margin-left: 2px;
+  margin-inline-start: 2px;
 }
 
 .field-expand-icon.expanded {
@@ -839,7 +839,7 @@ async function copyJson() {
   padding: 1px 5px;
   border-radius: 2px;
   flex-shrink: 0;
-  margin-left: 20px;
+  margin-inline-start: 20px;
 }
 
 .field-format-badge {
@@ -992,7 +992,7 @@ async function copyJson() {
   font-size: var(--text-xs);
   color: var(--color-red);
   margin-top: 2px;
-  margin-left: 22px;
+  margin-inline-start: 22px;
 }
 
 .ctrl-toggle {
@@ -1066,7 +1066,7 @@ async function copyJson() {
 
 .field-desc-wrap {
   margin-top: var(--space-1);
-  margin-left: 22px;
+  margin-inline-start: 22px;
 }
 
 .field-desc {
@@ -1101,7 +1101,7 @@ async function copyJson() {
 
 .field-desc :deep(.md-list) {
   margin: var(--space-1) 0;
-  padding-left: var(--space-5);
+  padding-inline-start: var(--space-5);
   font-size: inherit;
 }
 
@@ -1129,7 +1129,7 @@ async function copyJson() {
   flex-wrap: wrap;
   gap: var(--space-1);
   margin-top: var(--space-1);
-  margin-left: 22px;
+  margin-inline-start: 22px;
 }
 
 .constraint-chip {
@@ -1159,7 +1159,7 @@ async function copyJson() {
   font-size: 10px;
   cursor: pointer;
   padding: 0 2px;
-  margin-left: 4px;
+  margin-inline-start: 4px;
   text-decoration: underline;
 }
 
@@ -1207,7 +1207,7 @@ async function copyJson() {
   background: transparent;
   padding: 0;
   border: none;
-  margin-right: 0;
+  margin-inline-end: 0;
 }
 
 .example-chip {
@@ -1263,7 +1263,7 @@ async function copyJson() {
 }
 
 .nested-section {
-  margin-left: 22px;
+  margin-inline-start: 22px;
   margin-top: var(--space-2);
   padding: var(--space-3);
   border: 1px solid var(--border-light);
@@ -1276,7 +1276,7 @@ async function copyJson() {
 .nested-section::before {
   content: '';
   position: absolute;
-  left: -11px;
+  inset-inline-start: -11px;
   top: 0;
   bottom: 0;
   width: 1px;
@@ -1286,7 +1286,7 @@ async function copyJson() {
 .nested-section::after {
   content: '';
   position: absolute;
-  left: -11px;
+  inset-inline-start: -11px;
   top: 14px;
   width: 10px;
   height: 1px;
@@ -1389,7 +1389,7 @@ async function copyJson() {
 
 .json-block :deep(ul) {
   list-style: none;
-  padding-left: var(--space-4);
+  padding-inline-start: var(--space-4);
   margin: 0;
 }
 
@@ -1411,7 +1411,7 @@ async function copyJson() {
   justify-content: center;
   color: var(--text-muted);
   padding: 0;
-  margin-right: 4px;
+  margin-inline-end: 4px;
   vertical-align: middle;
   transition: background var(--transition-fast);
 }
@@ -1428,7 +1428,7 @@ async function copyJson() {
   color: var(--panel-dark-muted);
   font-size: var(--text-xs);
   font-style: italic;
-  margin-left: 4px;
+  margin-inline-start: 4px;
 }
 
 .json-block :deep(.jv-children.jv-collapsed) {
@@ -1571,7 +1571,7 @@ async function copyJson() {
   font-size: var(--text-sm);
   color: var(--text-muted);
   padding: var(--space-2) var(--space-3);
-  margin-left: 22px;
+  margin-inline-start: 22px;
 }
 
 .circular-badge {

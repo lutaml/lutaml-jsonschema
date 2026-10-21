@@ -1007,7 +1007,7 @@ function handleExampleKey(event: KeyboardEvent) {
   content: '';
   position: absolute;
   bottom: -1px;
-  left: 0;
+  inset-inline-start: 0;
   width: 32px;
   height: 2px;
   background: var(--color-primary);
@@ -1061,7 +1061,7 @@ function handleExampleKey(event: KeyboardEvent) {
 .prop-format {
   font-size: var(--text-xs);
   color: var(--color-accent);
-  margin-left: var(--space-1);
+  margin-inline-start: var(--space-1);
   font-family: var(--font-mono);
 }
 
@@ -1185,7 +1185,7 @@ function handleExampleKey(event: KeyboardEvent) {
   font-size: 10px;
   padding: 1px 4px;
   border-radius: 2px;
-  margin-left: 4px;
+  margin-inline-start: 4px;
 }
 
 .badge-composition-detail {
@@ -1359,7 +1359,7 @@ function handleExampleKey(event: KeyboardEvent) {
 
 /* Dark mode overrides *//* Dark mode overrides */
 :root[data-theme="dark"] .detail-panel {
-  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  border-inline-start: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 :root[data-theme="dark"] .enum-value-chip {

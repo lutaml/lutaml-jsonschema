@@ -2,12 +2,27 @@ import { messages, type Locale, type MessageKey } from './messages'
 
 let activeLocale: Locale = 'en'
 
+/** Writing direction per locale — RTL locales must mirror the layout. */
+const RTL_LOCALES: readonly string[] = ['ar', 'he', 'fa', 'ur']
+
 export function locale(): Locale {
   return activeLocale
 }
 
+export function directionFor(id: Locale): 'ltr' | 'rtl' {
+  return RTL_LOCALES.includes(id) ? 'rtl' : 'ltr'
+}
+
+/** Mirror <html lang/dir> so layout, fonts and scrollbars follow the locale. */
+export function applyDocumentLocale(id: Locale = activeLocale): void {
+  if (typeof document === 'undefined') return
+  document.documentElement.lang = id
+  document.documentElement.dir = directionFor(id)
+}
+
 export function setLocale(next: Locale): void {
   activeLocale = next
+  applyDocumentLocale(next)
 }
 
 /** Look up a UI string in the active locale, falling back to English. */
