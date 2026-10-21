@@ -734,7 +734,7 @@ watch(() => schemaStore.selectedItemKey, (key) => {
 }
 
 .toggle-btn:not(:last-child) {
-  border-right: 1px solid var(--border-medium);
+  border-inline-end: 1px solid var(--border-medium);
 }
 
 .toggle-btn.active {
@@ -931,7 +931,7 @@ watch(() => schemaStore.selectedItemKey, (key) => {
   content: '';
   position: absolute;
   bottom: -1px;
-  left: 0;
+  inset-inline-start: 0;
   width: 40px;
   height: 2px;
   background: var(--color-primary);
@@ -952,7 +952,7 @@ watch(() => schemaStore.selectedItemKey, (key) => {
   content: '';
   position: absolute;
   bottom: -1px;
-  left: 0;
+  inset-inline-start: 0;
   width: 40px;
   height: 2px;
   background: var(--color-primary);
@@ -1417,7 +1417,7 @@ watch(() => schemaStore.selectedItemKey, (key) => {
   content: '';
   position: absolute;
   bottom: -1px;
-  left: 0;
+  inset-inline-start: 0;
   width: 32px;
   height: 2px;
   background: var(--color-primary);
@@ -1578,7 +1578,7 @@ watch(() => schemaStore.selectedItemKey, (key) => {
 
 .landing-search-clear {
   position: absolute;
-  right: 6px;
+  inset-inline-end: 6px;
   top: 50%;
   transform: translateY(-50%);
   color: var(--text-muted);

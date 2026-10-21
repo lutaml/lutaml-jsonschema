@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { t, tf, setLocale, locale } from '../i18n'
+// @vitest-environment jsdom
+import { t, tf, setLocale, locale, directionFor, applyDocumentLocale } from '../i18n'
 import { messages } from '../i18n/messages'
 
 describe('i18n', () => {
@@ -23,5 +24,15 @@ describe('i18n', () => {
   it('switches locales', () => {
     setLocale('en')
     expect(locale()).toBe('en')
+  })
+
+  it('maps locales to writing directions', () => {
+    expect(directionFor('en')).toBe('ltr')
+  })
+
+  it('mirrors lang and dir onto the document element', () => {
+    applyDocumentLocale('en')
+    expect(document.documentElement.lang).toBe('en')
+    expect(document.documentElement.dir).toBe('ltr')
   })
 })

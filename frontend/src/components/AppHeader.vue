@@ -177,7 +177,7 @@ function goSchema() {
 
 .search-placeholder {
   flex: 1;
-  text-align: left;
+  text-align: start;
 }
 
 .search-kbd {

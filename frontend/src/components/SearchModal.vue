@@ -281,6 +281,6 @@ function highlightMatch(text: string): string {
   background: var(--bg-elevated);
   border: 1px solid var(--border-medium);
   border-radius: var(--radius-sm);
-  margin-right: 2px;
+  margin-inline-end: 2px;
 }
 </style>

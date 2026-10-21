@@ -23,6 +23,7 @@ import { onMounted, ref } from 'vue'
 import { useSchemaStore } from './stores/schemaStore'
 import { useUiStore } from './stores/uiStore'
 import AppHeader from './components/AppHeader.vue'
+import { applyDocumentLocale } from './i18n'
 import AppSidebar from './components/AppSidebar.vue'
 import DetailPanel from './components/DetailPanel.vue'
 import SearchModal from './components/SearchModal.vue'
@@ -44,6 +45,7 @@ function scrollToTop() {
 }
 
 onMounted(() => {
+  applyDocumentLocale()
   uiStore.initTheme()
   schemaStore.loadFromWindow()
 
@@ -131,7 +133,7 @@ function isInputFocused(): boolean {
 .back-to-top {
   position: fixed;
   bottom: 24px;
-  right: 24px;
+  inset-inline-end: 24px;
   width: 36px;
   height: 36px;
   border-radius: 50%;
@@ -171,7 +173,7 @@ function isInputFocused(): boolean {
 
   .back-to-top {
     bottom: 16px;
-    right: 16px;
+    inset-inline-end: 16px;
   }
 }
 </style>
