@@ -37,6 +37,9 @@
     </div>
 
     <div class="header-right">
+      <button class="btn btn-ghost locale-btn" @click="switchLocale" :title="t('app.switchLocale')">
+        {{ localeLabel(nextLocale()) }}
+      </button>
       <button class="btn btn-ghost theme-btn" @click="uiStore.toggleTheme" :title="uiStore.isDark ? t('header.lightMode') : t('header.darkMode')">
         <svg v-if="uiStore.isDark" width="18" height="18" viewBox="0 0 18 18" fill="none">
           <path d="M9 3V2M9 16v-1M3 9H2M16 9h-1M4.22 4.22l-.7-.7M14.48 14.48l-.7-.7M4.22 13.78l-.7.7M14.48 3.52l-.7.7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
@@ -55,7 +58,7 @@
 import { computed } from 'vue'
 import { useSchemaStore } from '../stores/schemaStore'
 import { useUiStore } from '../stores/uiStore'
-import { t } from '../i18n'
+import { localeLabel, nextLocale, setLocale } from '../i18n'
 
 const schemaStore = useSchemaStore()
 const uiStore = useUiStore()
@@ -64,6 +67,10 @@ const activeDef = computed(() => {
   if (!schemaStore.selectedDefinitionName || !schemaStore.selectedSchema) return null
   return schemaStore.selectedSchema.definitions.find(d => d.name === schemaStore.selectedDefinitionName)
 })
+
+function switchLocale() {
+  setLocale(nextLocale())
+}
 
 function goHome() {
   schemaStore.selectSchema(null)
@@ -199,5 +206,13 @@ function goSchema() {
   width: 32px;
   height: 32px;
   padding: 0;
+}
+
+.locale-btn {
+  height: 32px;
+  padding: 0 var(--space-2);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text-secondary);
 }
 </style>
