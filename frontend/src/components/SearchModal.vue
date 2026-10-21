@@ -11,7 +11,7 @@
           v-model="search.query.value"
           type="text"
           class="search-input"
-          placeholder="Search schemas, properties, definitions..."
+          :placeholder="t('search.placeholder')"
           @keydown="handleKeydown"
         />
         <button v-if="search.query.value" class="clear-btn" @click="search.query.value = ''">
@@ -23,10 +23,10 @@
 
       <div class="search-results" v-if="search.query.value">
         <div v-if="search.isSearching.value" class="search-loading">
-          Searching...
+          {{ t('search.searching') }}
         </div>
         <div v-else-if="!search.hasResults.value" class="search-empty">
-          No results found for "{{ search.query.value }}"
+          {{ tf('search.noResultsFor', { query: search.query.value }) }}
         </div>
         <div v-else class="search-results-list">
           <div
@@ -73,6 +73,7 @@
 <script setup lang="ts">
 import { ref, onMounted, nextTick } from 'vue'
 import { useSearch } from '../composables/useSearch'
+import { t, tf } from '../i18n'
 
 const search = useSearch()
 const inputRef = ref<HTMLInputElement | null>(null)

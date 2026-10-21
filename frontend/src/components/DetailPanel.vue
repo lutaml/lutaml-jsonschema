@@ -33,67 +33,67 @@
             <div class="detail-section">
               <div class="detail-meta">
                 <div v-if="item.kind === 'schema' || item.kind === 'definition'" class="meta-row">
-                  <span class="meta-label">Type</span>
+                  <span class="meta-label">{{ t('panel.type') }}</span>
                   <span class="badge badge-type">{{ itemType }}</span>
                 </div>
                 <div v-if="propertyItem?.format" class="meta-row">
-                  <span class="meta-label">Format</span>
+                  <span class="meta-label">{{ t('panel.format') }}</span>
                   <span class="badge badge-format">{{ propertyItem.format }}</span>
                 </div>
                 <div v-if="itemDescription" class="meta-row">
-                  <span class="meta-label">Description</span>
+                  <span class="meta-label">{{ t('panel.description') }}</span>
                   <span class="text-secondary md-content" v-html="renderInlineMarkdown(itemDescription)"></span>
                 </div>
                 <div v-if="propertyItem" class="meta-row">
-                  <span class="meta-label">Required</span>
+                  <span class="meta-label">{{ t('panel.required') }}</span>
                   <span :class="['badge', propertyItem.required ? 'badge-required' : 'badge-optional']">
-                    {{ propertyItem.required ? 'Yes' : 'No' }}
+                    {{ propertyItem.required ? t('panel.requiredYesBadge') : t('panel.requiredNoBadge') }}
                   </span>
                 </div>
                 <div v-if="propertyItem?.deprecated" class="meta-row">
-                  <span class="meta-label">Status</span>
-                  <span class="badge badge-deprecated">Deprecated</span>
+                  <span class="meta-label">{{ t('panel.status') }}</span>
+                  <span class="badge badge-deprecated">{{ t('panel.deprecated') }}</span>
                 </div>
                 <div v-if="propertyItem?.readOnly" class="meta-row">
-                  <span class="meta-label">Access</span>
-                  <span class="badge badge-readonly-detail">Read-only</span>
+                  <span class="meta-label">{{ t('panel.access') }}</span>
+                  <span class="badge badge-readonly-detail">{{ t('panel.readOnly') }}</span>
                 </div>
                 <div v-if="propertyItem?.writeOnly" class="meta-row">
-                  <span class="meta-label">Access</span>
-                  <span class="badge badge-writeonly-detail">Write-only</span>
+                  <span class="meta-label">{{ t('panel.access') }}</span>
+                  <span class="badge badge-writeonly-detail">{{ t('panel.writeOnly') }}</span>
                 </div>
                 <div v-if="propertyItem?.ref" class="meta-row">
-                  <span class="meta-label">Reference</span>
+                  <span class="meta-label">{{ t('panel.reference') }}</span>
                   <span class="ref-link font-mono" role="button" tabindex="0" @click="navigateToRef(propertyItem.ref)" @keydown.enter="navigateToRef(propertyItem.ref)">{{ propertyItem.ref }}</span>
                 </div>
                 <div v-if="propertyItem?.compositionSource" class="meta-row">
-                  <span class="meta-label">Source</span>
+                  <span class="meta-label">{{ t('panel.source') }}</span>
                   <span class="badge badge-composition-detail">{{ propertyItem.compositionSource }}</span>
                 </div>
                 <div v-if="propertyItem?.default" class="meta-row">
-                  <span class="meta-label">Default</span>
+                  <span class="meta-label">{{ t('panel.default') }}</span>
                   <span class="font-mono">{{ propertyItem.default }}</span>
                 </div>
                 <div v-if="item.kind === 'schema' && schemaItemsLabel" class="meta-row">
-                  <span class="meta-label">Items</span>
+                  <span class="meta-label">{{ t('panel.items') }}</span>
                   <span class="font-mono text-secondary">{{ schemaItemsLabel }}</span>
                 </div>
                 <div v-if="item.kind === 'schema' && schema.required.length" class="meta-row">
-                  <span class="meta-label">Required</span>
+                  <span class="meta-label">{{ t('panel.required') }}</span>
                   <div class="meta-tags">
                     <span v-for="r in schema.required" :key="r" class="badge badge-required-sm">{{ r }}</span>
                   </div>
                 </div>
                 <div v-if="item.kind === 'schema'" class="meta-row">
-                  <span class="meta-label">Properties</span>
+                  <span class="meta-label">{{ t('panel.properties') }}</span>
                   <span class="text-secondary">{{ schema.properties.length }}</span>
                 </div>
                 <div v-if="item.kind === 'schema' && schema.definitions.length" class="meta-row">
-                  <span class="meta-label">Definitions</span>
+                  <span class="meta-label">{{ t('panel.definitions') }}</span>
                   <span class="text-secondary">{{ schema.definitions.length }}</span>
                 </div>
                 <div v-if="item.kind === 'schema' && schema.$schema" class="meta-row">
-                  <span class="meta-label">JSON Schema</span>
+                  <span class="meta-label">{{ t('panel.jsonSchema') }}</span>
                   <span class="font-mono text-secondary" style="font-size: var(--text-xs); word-break: break-all;">{{ schema.$schema }}</span>
                 </div>
                 <div v-if="item.kind === 'schema' && schema.$id" class="meta-row">
@@ -101,11 +101,11 @@
                   <span class="font-mono text-secondary" style="font-size: var(--text-xs); word-break: break-all;">{{ schema.$id }}</span>
                 </div>
                 <div v-if="item.kind === 'schema' && schema.externalDocs?.url" class="meta-row">
-                  <span class="meta-label">Docs</span>
+                  <span class="meta-label">{{ t('panel.docs') }}</span>
                   <a :href="schema.externalDocs.url" target="_blank" rel="noopener" class="font-mono text-secondary" style="font-size: var(--text-xs); word-break: break-all;">{{ schema.externalDocs.description || schema.externalDocs.url }}</a>
                 </div>
                 <div v-if="item.kind === 'schema' && (schema.hasAllOf || schema.hasAnyOf || schema.hasOneOf)" class="meta-row">
-                  <span class="meta-label">Composition</span>
+                  <span class="meta-label">{{ t('panel.composition') }}</span>
                   <div class="meta-tags">
                     <span v-if="schema.hasAllOf" class="badge badge-composition-detail">allOf</span>
                     <span v-if="schema.hasAnyOf" class="badge badge-composition-detail">anyOf</span>
@@ -113,7 +113,7 @@
                   </div>
                 </div>
                 <div v-if="item.kind === 'schema' && (schema.minProperties != null || schema.maxProperties != null)" class="meta-row">
-                  <span class="meta-label">Properties</span>
+                  <span class="meta-label">{{ t('panel.properties') }}</span>
                   <span class="text-secondary">
                     <template v-if="schema.minProperties != null && schema.maxProperties != null">{{ schema.minProperties }}..{{ schema.maxProperties }}</template>
                     <template v-else-if="schema.minProperties != null">&ge; {{ schema.minProperties }}</template>
@@ -121,8 +121,8 @@
                   </span>
                 </div>
                 <div v-if="item.kind === 'schema' && schema.additionalProperties === false" class="meta-row">
-                  <span class="meta-label">Additional</span>
-                  <span class="badge badge-locked-detail">Denied</span>
+                  <span class="meta-label">{{ t('panel.additional') }}</span>
+                  <span class="badge badge-locked-detail">{{ t('panel.additionalDenied') }}</span>
                 </div>
                 <div v-for="section in conditionalSections" :key="section.label" class="meta-row">
                   <span class="meta-label">{{ section.label }}</span>
@@ -134,7 +134,7 @@
                   </div>
                 </div>
                 <div v-if="discriminatorMeta" class="meta-row">
-                  <span class="meta-label">Discriminator</span>
+                  <span class="meta-label">{{ t('panel.discriminator') }}</span>
                   <div class="meta-tags">
                     <span v-if="discriminatorMeta.propertyName" class="badge badge-type">{{ discriminatorMeta.propertyName }}</span>
                     <span v-for="(ref, value) in discriminatorMeta.mapping" :key="value" class="enum-value-chip">{{ value }} → {{ refLabel(ref) }}</span>
@@ -142,7 +142,7 @@
                 </div>
                 <template v-if="variantOptions.length">
                   <div class="meta-row">
-                    <span class="meta-label">Variants</span>
+                    <span class="meta-label">{{ t('panel.variants') }}</span>
                     <div class="meta-tags variant-tabs">
                       <button v-for="(variant, index) in variantOptions" :key="variant.source + index" type="button" class="variant-tab" :class="{ active: activeVariant === index }" :aria-pressed="activeVariant === index" @click="activeVariant = index">{{ variant.label }}</button>
                     </div>
@@ -161,13 +161,13 @@
                   </div>
                 </template>
                 <div v-if="definitionItem && definitionItem.required?.length" class="meta-row">
-                  <span class="meta-label">Required</span>
+                  <span class="meta-label">{{ t('panel.required') }}</span>
                   <div class="meta-tags">
                     <span v-for="r in definitionItem.required" :key="r" class="badge badge-required-sm">{{ r }}</span>
                   </div>
                 </div>
                 <div v-if="definitionItem && (definitionItem.hasAllOf || definitionItem.hasAnyOf || definitionItem.hasOneOf)" class="meta-row">
-                  <span class="meta-label">Composition</span>
+                  <span class="meta-label">{{ t('panel.composition') }}</span>
                   <div class="meta-tags">
                     <span v-if="definitionItem.hasAllOf" class="badge badge-composition-detail">allOf</span>
                     <span v-if="definitionItem.hasAnyOf" class="badge badge-composition-detail">anyOf</span>
@@ -175,21 +175,21 @@
                   </div>
                 </div>
                 <div v-if="definitionItem?.compositionVariants?.length" class="meta-row">
-                  <span class="meta-label">Variants</span>
+                  <span class="meta-label">{{ t('panel.variants') }}</span>
                   <div class="meta-tags">
                     <span v-for="v in definitionItem.compositionVariants" :key="v" class="badge badge-composition-detail">{{ v }}</span>
                   </div>
                 </div>
                 <div v-if="definitionItem?.additionalPropertiesRef" class="meta-row">
-                  <span class="meta-label">Additional</span>
+                  <span class="meta-label">{{ t('panel.additional') }}</span>
                   <span class="ref-link font-mono" role="button" tabindex="0" @click="navigateToRef(definitionItem.additionalPropertiesRef)" @keydown.enter="navigateToRef(definitionItem.additionalPropertiesRef)">{{ refName(definitionItem.additionalPropertiesRef) }}</span>
                 </div>
                 <div v-else-if="definitionItem?.additionalPropertiesType" class="meta-row">
-                  <span class="meta-label">Additional</span>
+                  <span class="meta-label">{{ t('panel.additional') }}</span>
                   <span class="text-secondary">{{ definitionItem.additionalPropertiesType }}</span>
                 </div>
                 <div v-if="definitionItem && (definitionItem.minProperties != null || definitionItem.maxProperties != null)" class="meta-row">
-                  <span class="meta-label">Properties</span>
+                  <span class="meta-label">{{ t('panel.properties') }}</span>
                   <span class="text-secondary">
                     <template v-if="definitionItem.minProperties != null && definitionItem.maxProperties != null">{{ definitionItem.minProperties }}..{{ definitionItem.maxProperties }}</template>
                     <template v-else-if="definitionItem.minProperties != null">&ge; {{ definitionItem.minProperties }}</template>
@@ -197,11 +197,11 @@
                   </span>
                 </div>
                 <div v-if="definitionItem && definitionItem.additionalProperties === false" class="meta-row">
-                  <span class="meta-label">Additional</span>
-                  <span class="badge badge-locked-detail">Denied</span>
+                  <span class="meta-label">{{ t('panel.additional') }}</span>
+                  <span class="badge badge-locked-detail">{{ t('panel.additionalDenied') }}</span>
                 </div>
                 <div v-if="definitionItem?.format" class="meta-row">
-                  <span class="meta-label">Format</span>
+                  <span class="meta-label">{{ t('panel.format') }}</span>
                   <span class="badge badge-format">{{ definitionItem.format }}</span>
                 </div>
                 <div v-if="definitionItem?.pattern" class="meta-row">
@@ -209,15 +209,15 @@
                   <span class="font-mono constraint-pattern">{{ definitionItem.pattern }}</span>
                 </div>
                 <div v-if="definitionItem?.default" class="meta-row">
-                  <span class="meta-label">Default</span>
+                  <span class="meta-label">{{ t('panel.default') }}</span>
                   <span class="font-mono">{{ definitionItem.default }}</span>
                 </div>
                 <div v-if="definitionItem?.minLength != null || definitionItem?.maxLength != null" class="meta-row">
-                  <span class="meta-label">Length</span>
+                  <span class="meta-label">{{ t('panel.length') }}</span>
                   <span class="text-secondary">{{ defStringRange }}</span>
                 </div>
                 <div v-if="definitionItem?.minimum != null || definitionItem?.maximum != null || definitionItem?.exclusiveMinimum != null || definitionItem?.exclusiveMaximum != null" class="meta-row">
-                  <span class="meta-label">Range</span>
+                  <span class="meta-label">{{ t('panel.range') }}</span>
                   <span class="text-secondary">{{ defNumberRange }}</span>
                 </div>
                 <div v-if="definitionItem?.multipleOf != null" class="meta-row">
@@ -229,15 +229,15 @@
 
             <!-- Constraints for property -->
             <div v-if="propertyItem && hasConstraints" class="detail-section">
-              <h3 class="detail-heading">Constraints</h3>
+              <h3 class="detail-heading">{{ t('panel.constraints') }}</h3>
               <table class="table constraint-table">
                 <tbody>
                   <tr v-if="propertyItem.minimum != null || propertyItem.maximum != null || propertyItem.exclusiveMinimum != null || propertyItem.exclusiveMaximum != null">
-                    <td class="constraint-key">Range</td>
+                    <td class="constraint-key">{{ t('panel.range') }}</td>
                     <td class="constraint-value">{{ numberRangeLabel }}</td>
                   </tr>
                   <tr v-if="propertyItem.minLength != null || propertyItem.maxLength != null">
-                    <td class="constraint-key">Length</td>
+                    <td class="constraint-key">{{ t('panel.length') }}</td>
                     <td class="constraint-value">{{ stringRangeLabel }}</td>
                   </tr>
                   <tr v-if="propertyItem.minItems != null || propertyItem.maxItems != null">
@@ -245,15 +245,15 @@
                     <td class="constraint-value">{{ itemsRangeLabel }}</td>
                   </tr>
                   <tr v-if="propertyItem.pattern">
-                    <td class="constraint-key">Pattern</td>
+                    <td class="constraint-key">{{ t('panel.pattern') }}</td>
                     <td class="constraint-value font-mono constraint-pattern">{{ propertyItem.pattern }}</td>
                   </tr>
                   <tr v-if="propertyItem.enum?.length">
-                    <td class="constraint-key">Enum</td>
+                    <td class="constraint-key">{{ t('panel.enum') }}</td>
                     <td>
                       <table v-if="enumRowsFor(propertyItem).some(row => row.description)" class="table enum-table">
                         <thead>
-                          <tr><th>Value</th><th>Description</th></tr>
+                          <tr><th>{{ t('panel.value') }}</th><th>{{ t('panel.description') }}</th></tr>
                         </thead>
                         <tbody>
                           <tr v-for="row in enumRowsFor(propertyItem)" :key="row.value">
@@ -264,52 +264,52 @@
                       </table>
                       <div v-else class="enum-values-list">
                         <span v-for="e in visibleEnumValues(propertyItem.name, propertyItem.enum)" :key="e" class="enum-value-chip">{{ e }}</span>
-                        <button v-if="propertyItem.enum.length > 8 && !detailEnumExpanded.has(propertyItem.name)" class="enum-more-btn" @click="toggleDetailEnum(propertyItem.name)">+{{ propertyItem.enum.length - 8 }} more</button>
+                        <button v-if="propertyItem.enum.length > 8 && !detailEnumExpanded.has(propertyItem.name)" class="enum-more-btn" @click="toggleDetailEnum(propertyItem.name)">+{{ propertyItem.enum.length - 8 }} {{ t('panel.more') }}</button>
                       </div>
                     </td>
                   </tr>
                   <tr v-if="propertyItem.itemsType || propertyItem.itemsRef">
-                    <td class="constraint-key">Items Type</td>
+                    <td class="constraint-key">{{ t('panel.itemsTypeLabel') }}</td>
                     <td class="constraint-value">
                       {{ propertyItem.itemsType || 'object' }}
                       <span v-if="propertyItem.itemsRef" class="prop-ref-link" role="button" tabindex="0" @click.stop="navigateToRef(propertyItem.itemsRef)" @keydown.enter="navigateToRef(propertyItem.itemsRef)"> → {{ refName(propertyItem.itemsRef) }}</span>
                     </td>
                   </tr>
                   <tr v-if="propertyItem.itemsTuple?.length">
-                    <td class="constraint-key">Tuple Items</td>
+                    <td class="constraint-key">{{ t('panel.tupleItems') }}</td>
                     <td class="constraint-value">
                       <div class="enum-values-list">
                         <span v-for="(label, index) in propertyItem.itemsTuple" :key="index" class="enum-value-chip">{{ index }}: {{ label }}</span>
-                        <span v-if="propertyItem.itemsTail" class="enum-value-chip">rest: {{ propertyItem.itemsTail }}</span>
+                        <span v-if="propertyItem.itemsTail" class="enum-value-chip">{{ t('panel.rest') }} {{ propertyItem.itemsTail }}</span>
                       </div>
                     </td>
                   </tr>
                   <tr v-if="propertyItem.itemsClosed">
-                    <td class="constraint-key">Additional Items</td>
-                    <td class="constraint-value">not allowed</td>
+                    <td class="constraint-key">{{ t('panel.additionalItems') }}</td>
+                    <td class="constraint-value">{{ t('panel.additionalNotAllowed') }}</td>
                   </tr>
                   <tr v-if="propertyItem.uniqueItems">
-                    <td class="constraint-key">Unique Items</td>
-                    <td class="constraint-value"><span class="constraint-yes">Yes</span></td>
+                    <td class="constraint-key">{{ t('panel.uniqueItems') }}</td>
+                    <td class="constraint-value"><span class="constraint-yes">{{ t('panel.uniqueYes') }}</span></td>
                   </tr>
                   <tr v-if="propertyItem.multipleOf != null">
-                    <td class="constraint-key">Multiple Of</td>
+                    <td class="constraint-key">{{ t('panel.multipleOf') }}</td>
                     <td class="constraint-value">{{ propertyItem.multipleOf }}</td>
                   </tr>
                   <tr v-if="propertyItem.const != null">
-                    <td class="constraint-key">Const</td>
+                    <td class="constraint-key">{{ t('panel.const') }}</td>
                     <td class="constraint-value font-mono">{{ propertyItem.const }}</td>
                   </tr>
                   <tr v-if="propertyItem.contentMediaType">
-                    <td class="constraint-key">Content Type</td>
+                    <td class="constraint-key">{{ t('panel.contentType') }}</td>
                     <td class="constraint-value">{{ propertyItem.contentMediaType }}</td>
                   </tr>
                   <tr v-if="propertyItem.contentEncoding">
-                    <td class="constraint-key">Content Encoding</td>
+                    <td class="constraint-key">{{ t('panel.contentEncoding') }}</td>
                     <td class="constraint-value">{{ propertyItem.contentEncoding }}</td>
                   </tr>
                   <tr v-if="propertyItem.additionalProperties === false">
-                    <td class="constraint-key">Additional Props</td>
+                    <td class="constraint-key">{{ t('panel.additionalProps') }}</td>
                     <td class="constraint-value"><span class="constraint-denied">Denied</span></td>
                   </tr>
                 </tbody>
@@ -318,15 +318,15 @@
 
             <!-- Constraints for definition (enum, pattern, etc.) -->
             <div v-if="definitionItem && hasDefConstraints" class="detail-section">
-              <h3 class="detail-heading">Constraints</h3>
+              <h3 class="detail-heading">{{ t('panel.constraints') }}</h3>
               <table class="table constraint-table">
                 <tbody>
                   <tr v-if="definitionItem.enum?.length">
-                    <td class="constraint-key">Enum</td>
+                    <td class="constraint-key">{{ t('panel.enum') }}</td>
                     <td>
                       <table v-if="enumRowsFor(definitionItem).some(row => row.description)" class="table enum-table">
                         <thead>
-                          <tr><th>Value</th><th>Description</th></tr>
+                          <tr><th>{{ t('panel.value') }}</th><th>{{ t('panel.description') }}</th></tr>
                         </thead>
                         <tbody>
                           <tr v-for="row in enumRowsFor(definitionItem)" :key="row.value">
@@ -337,36 +337,36 @@
                       </table>
                       <div v-else class="enum-values-list">
                         <span v-for="e in visibleEnumValues(definitionItem.name, definitionItem.enum)" :key="e" class="enum-value-chip">{{ e }}</span>
-                        <button v-if="definitionItem.enum.length > 8 && !detailEnumExpanded.has(definitionItem.name)" class="enum-more-btn" @click="toggleDetailEnum(definitionItem.name)">+{{ definitionItem.enum.length - 8 }} more</button>
+                        <button v-if="definitionItem.enum.length > 8 && !detailEnumExpanded.has(definitionItem.name)" class="enum-more-btn" @click="toggleDetailEnum(definitionItem.name)">+{{ definitionItem.enum.length - 8 }} {{ t('panel.more') }}</button>
                       </div>
                     </td>
                   </tr>
                   <tr v-if="definitionItem.const">
-                    <td class="constraint-key">Const</td>
+                    <td class="constraint-key">{{ t('panel.const') }}</td>
                     <td class="constraint-value font-mono">{{ definitionItem.const }}</td>
                   </tr>
                   <tr v-if="definitionItem.pattern">
-                    <td class="constraint-key">Pattern</td>
+                    <td class="constraint-key">{{ t('panel.pattern') }}</td>
                     <td class="constraint-value font-mono constraint-pattern">{{ definitionItem.pattern }}</td>
                   </tr>
                   <tr v-if="definitionItem.minimum != null || definitionItem.maximum != null || definitionItem.exclusiveMinimum != null || definitionItem.exclusiveMaximum != null">
-                    <td class="constraint-key">Range</td>
+                    <td class="constraint-key">{{ t('panel.range') }}</td>
                     <td class="constraint-value">{{ defNumberRange }}</td>
                   </tr>
                   <tr v-if="definitionItem.minLength != null || definitionItem.maxLength != null">
-                    <td class="constraint-key">Length</td>
+                    <td class="constraint-key">{{ t('panel.length') }}</td>
                     <td class="constraint-value">{{ defStringRange }}</td>
                   </tr>
                   <tr v-if="definitionItem.multipleOf != null">
-                    <td class="constraint-key">Multiple Of</td>
+                    <td class="constraint-key">{{ t('panel.multipleOf') }}</td>
                     <td class="constraint-value">{{ definitionItem.multipleOf }}</td>
                   </tr>
                   <tr v-if="definitionItem.contentMediaType">
-                    <td class="constraint-key">Content Type</td>
+                    <td class="constraint-key">{{ t('panel.contentType') }}</td>
                     <td class="constraint-value">{{ definitionItem.contentMediaType }}</td>
                   </tr>
                   <tr v-if="definitionItem.contentEncoding">
-                    <td class="constraint-key">Content Encoding</td>
+                    <td class="constraint-key">{{ t('panel.contentEncoding') }}</td>
                     <td class="constraint-value">{{ definitionItem.contentEncoding }}</td>
                   </tr>
                 </tbody>
@@ -380,10 +380,10 @@
               <table v-if="properties.length || patternPropertyRows.length || additionalPropertyRow" class="table">
                 <thead>
                   <tr>
-                    <th>Name</th>
-                    <th>Type</th>
-                    <th>Required</th>
-                    <th>Description</th>
+                    <th>{{ t('panel.name') }}</th>
+                    <th>{{ t('panel.type') }}</th>
+                    <th>{{ t('panel.required') }}</th>
+                    <th>{{ t('panel.description') }}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -394,27 +394,27 @@
                       <span v-if="prop.deprecated" class="badge badge-deprecated-sm">deprecated</span>
                     </td>
                     <td>
-                      <span v-if="prop.ref" class="prop-ref-link" role="button" tabindex="0" @click.stop="navigateToRef(prop.ref)">{{ prop.type || 'object' }} → {{ refName(prop.ref) }}</span>
+                      <span v-if="prop.ref" class="prop-ref-link" role="button" tabindex="0" @click.stop="navigateToRef(prop.ref)">{{ prop.type || t('panel.object') }} → {{ refName(prop.ref) }}</span>
                       <template v-else>
-                        <span class="prop-type-badge" :class="propTypeClass(prop.type)">{{ prop.type || 'any' }}</span>
+                        <span class="prop-type-badge" :class="propTypeClass(prop.type)">{{ prop.type || t('panel.any') }}</span>
                         <span v-if="prop.format" class="prop-format">&lt;{{ prop.format }}&gt;</span>
                         <span v-if="prop.itemsType" class="prop-format">[{{ prop.itemsType }}]</span>
                         <span v-if="prop.itemsRef" class="prop-format">[<span class="prop-ref-link" role="button" tabindex="0" @click.stop="navigateToRef(prop.itemsRef)" @keydown.enter="navigateToRef(prop.itemsRef)">{{ refName(prop.itemsRef) }}</span>]</span>
                         <span v-if="prop.itemsTuple?.length" class="prop-format">[{{ prop.itemsTuple.join(', ') }}{{ prop.itemsTail ? `, *${prop.itemsTail}` : '' }}]</span>
-                        <span v-if="prop.itemsClosed" class="prop-format">closed</span>
+                        <span v-if="prop.itemsClosed" class="prop-format">{{ t('panel.itemsClosed') }}</span>
                       </template>
                       <span v-if="prop.default != null" class="prop-default">default: {{ prop.default }}</span>
                       <span v-if="prop.enum?.length" class="prop-enum">{{ prop.enum.length }} values</span>
                     </td>
                     <td>
-                      <span v-if="prop.required" class="badge badge-required-sm">yes</span>
-                      <span v-else class="text-muted">no</span>
+                      <span v-if="prop.required" class="badge badge-required-sm">{{ t('panel.requiredYesBadge') }}</span>
+                      <span v-else class="text-muted">{{ t('panel.requiredNoBadge') }}</span>
                     </td>
                     <td>
                       <span v-if="prop.description" class="text-secondary md-content" v-html="renderInlineMarkdown(prop.description)"></span>
                       <span v-else class="text-muted">—</span>
                       <div v-if="prop.examples?.length" class="prop-examples">
-                        <span class="prop-examples-label">Examples:</span>
+                        <span class="prop-examples-label">{{ t('panel.examplesLabel') }}</span>
                         <span v-for="(ex, i) in prop.examples.slice(0, 3)" :key="i" class="prop-example-chip">{{ typeof ex === 'object' ? JSON.stringify(ex) : ex }}</span>
                         <span v-if="prop.examples.length > 3" class="text-muted">+{{ prop.examples.length - 3 }} more</span>
                       </div>
@@ -423,26 +423,26 @@
                   <tr v-for="row in patternPropertyRows" :key="'pattern-' + row.pattern" class="prop-row">
                     <td>
                       <span class="font-mono">{{ row.pattern }}</span>
-                      <span class="text-muted"> (pattern)</span>
+                      <span class="text-muted"> {{ t('panel.patternSuffix') }}</span>
                     </td>
                     <td>
-                      <span class="prop-type-badge" :class="propTypeClass(row.type)">{{ row.type || 'any' }}</span>
+                      <span class="prop-type-badge" :class="propTypeClass(row.type)">{{ row.type || t('panel.any') }}</span>
                     </td>
                     <td class="text-muted">—</td>
-                    <td class="text-muted">Matches property names against this pattern.</td>
+                    <td class="text-muted">{{ t('panel.patternMatches') }}</td>
                   </tr>
                   <tr v-if="additionalPropertyRow" class="prop-row">
-                    <td><span class="font-mono">*</span> <span class="text-muted">(additional)</span></td>
+                    <td><span class="font-mono">*</span> <span class="text-muted">{{ t('panel.additionalSuffix') }}</span></td>
                     <td>
                       <span v-if="additionalPropertyRow.ref" class="prop-ref-link" role="button" tabindex="0" @click.stop="navigateToRef(additionalPropertyRow.ref)">{{ additionalPropertyRow.type || 'object' }} → {{ refName(additionalPropertyRow.ref) }}</span>
-                      <span v-else class="prop-type-badge" :class="propTypeClass(additionalPropertyRow.type)">{{ additionalPropertyRow.type || 'any' }}</span>
+                      <span v-else class="prop-type-badge" :class="propTypeClass(additionalPropertyRow.type)">{{ additionalPropertyRow.type || t('panel.any') }}</span>
                     </td>
                     <td class="text-muted">—</td>
-                    <td class="text-muted">Matches property names not listed above.</td>
+                    <td class="text-muted">{{ t('panel.additionalMatches') }}</td>
                   </tr>
                 </tbody>
               </table>
-              <p v-else class="text-muted">No properties defined.</p>
+              <p v-else class="text-muted">{{ t('panel.noProperties') }}</p>
             </div>
           </template>
 
@@ -450,7 +450,7 @@
           <template v-if="uiStore.activePanelTab === 'examples'">
             <div class="detail-section">
               <div v-if="examples.length" class="example-group">
-                <h4 class="example-label">Provided Examples</h4>
+                <h4 class="example-label">{{ t('panel.providedExamples') }}</h4>
                 <div v-for="(ex, idx) in examples" :key="idx" class="example-block">
                   <div v-if="isComplexExample(ex)" class="example-collapsible" @click="toggleExampleCollapse($event)" @keydown="handleExampleKey($event)">
                     <pre class="example-pre jv-viewer" v-html="renderExampleHtml(ex)"></pre>
@@ -459,10 +459,10 @@
                 </div>
               </div>
               <div v-if="generatedExample" class="example-group">
-                <h4 class="example-label">Generated Example</h4>
+                <h4 class="example-label">{{ t('panel.generatedExample') }}</h4>
                 <pre class="example-pre example-generated jv-viewer" v-html="renderExampleHtml(generatedExample)"></pre>
               </div>
-              <p v-if="!examples.length && !generatedExample" class="text-muted">No examples available.</p>
+              <p v-if="!examples.length && !generatedExample" class="text-muted">{{ t('panel.noExamples') }}</p>
             </div>
           </template>
 
@@ -474,8 +474,8 @@
                 <table class="table">
                   <thead>
                     <tr>
-                      <th>Location</th>
-                      <th>Change</th>
+                      <th>{{ t('panel.location') }}</th>
+                      <th>{{ t('panel.change') }}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -486,13 +486,13 @@
                   </tbody>
                 </table>
               </div>
-              <p v-if="!diffSectionsForItem.length" class="text-muted">No changes against the baseline.</p>
+              <p v-if="!diffSectionsForItem.length" class="text-muted">{{ t('panel.noChanges') }}</p>
             </div>
           </template>
         </template>
 
         <div v-else class="panel-empty">
-          <p>Select an item to view details</p>
+          <p>{{ t('panel.empty') }}</p>
         </div>
       </div>
     </aside>
@@ -506,6 +506,7 @@ import { useUiStore } from '../stores/uiStore'
 import { renderInlineMarkdown } from '../composables/useMarkdownLite'
 import { jsonToCollapsibleHtml } from '../composables/useJsonViewer'
 import { numberRange, stringRange, itemsRange, refLabel, patternPropertyRows as toPatternPropertyRows, conditionalSections as toConditionalSections, variantOptions as toVariantOptions, diffSections as toDiffSections, enumRows as toEnumRows } from '../composables/useSchemaTypes'
+import { t, tf } from '../i18n'
 import type { SpaProperty } from '../types'
 
 const schemaStore = useSchemaStore()
@@ -729,17 +730,17 @@ const generatedExample = computed(() => {
 
 const currentTabs = computed<{ id: TabId; label: string }[]>(() => {
   const tabs: { id: TabId; label: string }[] = [
-    { id: 'overview', label: 'Overview' },
+    { id: 'overview', label: t('panel.tabs.overview') },
   ]
   if (properties.value.length > 0) {
-    tabs.push({ id: 'properties', label: `Properties (${properties.value.length})` })
+    tabs.push({ id: 'properties', label: tf('panel.tabs.propertiesCount', { count: properties.value.length }) })
   }
   if (examples.value.length > 0 || generatedExample.value) {
     const count = examples.value.length || 1
-    tabs.push({ id: 'examples', label: `Examples (${count})` })
+    tabs.push({ id: 'examples', label: tf('panel.tabs.examplesCount', { count }) })
   }
   if (itemChanges.value.length > 0) {
-    tabs.push({ id: 'changes', label: `Changes (${itemChanges.value.length})` })
+    tabs.push({ id: 'changes', label: tf('panel.tabs.changesCount', { count: itemChanges.value.length }) })
   }
   return tabs
 })

@@ -1,5 +1,5 @@
 <template>
-  <aside class="sidebar" :class="{ collapsed: uiStore.sidebarCollapsed }" :aria-label="`${schemaStore.metadata?.title || 'JSON Schema Docs'} navigation`">
+  <aside class="sidebar" :class="{ collapsed: uiStore.sidebarCollapsed }" :aria-label="`${schemaStore.metadata?.title || t('header.docsTitle')} ${t('sidebar.navigation')}`">
     <div class="sidebar-content">
       <!-- Branding -->
       <div class="sidebar-branding">
@@ -39,7 +39,7 @@
       <!-- Schema Tree -->
       <div class="sidebar-section flex-1 overflow-auto">
         <div class="section-header">
-          <span class="section-title">Schemas</span>
+          <span class="section-title">{{ t('sidebar.schemas') }}</span>
         </div>
         <div class="search-box">
           <svg class="search-icon" width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -50,12 +50,12 @@
             v-model="searchQuery"
             type="text"
             class="search-input"
-            placeholder="Filter schemas..."
-            aria-label="Filter schemas and definitions"
+            :placeholder="t('sidebar.filterPlaceholder')"
+            :aria-label="t('sidebar.filterAria')"
             @keydown="handleSearchKey"
           />
           <kbd v-if="!searchQuery" class="search-kbd" aria-hidden="true">/</kbd>
-          <button v-if="searchQuery" class="search-clear" aria-label="Clear search" @click="searchQuery = ''">
+          <button v-if="searchQuery" class="search-clear" :aria-label="t('sidebar.clearSearch')" @click="searchQuery = ''">
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
               <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
             </svg>
@@ -80,7 +80,7 @@
         <div v-else-if="debouncedQuery && !searchResults.length && searchQuery" class="search-no-results text-muted">
           No results found
         </div>
-        <div v-else class="schema-tree" ref="sidebarTreeRef" role="tree" aria-label="Schemas">
+        <div v-else class="schema-tree" ref="sidebarTreeRef" role="tree" :aria-label="t('sidebar.schemas')">
           <div
             v-for="schema in schemaStore.schemas"
             :key="schema.name"
@@ -123,7 +123,7 @@
                 <span class="tree-item-type" :class="treeTypeClass(prop.type)">{{ prop.type || 'any' }}</span>
               </div>
               <div v-if="schema.properties.length > 10" class="tree-more text-muted">
-                +{{ schema.properties.length - 10 }} more
+                +{{ schema.properties.length - 10 }} {{ t('sidebar.more') }}
               </div>
               <div
                 v-for="def in schema.definitions"
@@ -151,15 +151,15 @@
         <div class="stats-grid">
           <div class="stat-item">
             <span class="stat-value">{{ schemaStore.schemaCounts.schemas }}</span>
-            <span class="stat-label">Schemas</span>
+            <span class="stat-label">{{ t('sidebar.statsSchemas') }}</span>
           </div>
           <div class="stat-item">
             <span class="stat-value">{{ schemaStore.schemaCounts.properties }}</span>
-            <span class="stat-label">Properties</span>
+            <span class="stat-label">{{ t('sidebar.statsProperties') }}</span>
           </div>
           <div class="stat-item">
             <span class="stat-value">{{ schemaStore.schemaCounts.definitions }}</span>
-            <span class="stat-label">Definitions</span>
+            <span class="stat-label">{{ t('sidebar.statsDefinitions') }}</span>
           </div>
         </div>
       </div>
@@ -190,6 +190,7 @@ import { ref, computed, watch, nextTick } from 'vue'
 import { useSchemaStore } from '../stores/schemaStore'
 import { useUiStore } from '../stores/uiStore'
 import type { SpaSearchEntry } from '../types'
+import { t } from '../i18n'
 
 const schemaStore = useSchemaStore()
 const uiStore = useUiStore()

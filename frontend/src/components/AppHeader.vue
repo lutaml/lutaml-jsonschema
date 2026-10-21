@@ -1,19 +1,19 @@
 <template>
   <header class="header">
     <div class="header-left">
-      <button class="btn btn-ghost sidebar-toggle" @click="uiStore.toggleSidebar" title="Toggle sidebar">
+      <button class="btn btn-ghost sidebar-toggle" @click="uiStore.toggleSidebar" :title="t('header.toggleSidebar')">
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
           <path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
         </svg>
       </button>
-      <button class="btn btn-ghost home-btn" @click="goHome" title="Overview">
+      <button class="btn btn-ghost home-btn" @click="goHome" :title="t('header.overview')">
         <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
           <path d="M3 8.5L9 3.5L15 8.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
           <path d="M4 8.5V14.5C4 14.5 4 15.5 5 15.5H13C13 15.5 14 15.5 14 14.5V8.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </button>
       <span v-if="schemaStore.metadata" class="header-breadcrumb">
-        <button class="breadcrumb-segment" @click="goHome">{{ schemaStore.metadata.title || 'JSON Schema Docs' }}</button>
+        <button class="breadcrumb-segment" @click="goHome">{{ schemaStore.metadata.title || t('header.docsTitle') }}</button>
         <template v-if="schemaStore.selectedSchema">
           <span class="breadcrumb-sep">/</span>
           <button class="breadcrumb-segment" @click="goSchema">{{ schemaStore.selectedSchema.title || schemaStore.selectedSchema.name }}</button>
@@ -31,13 +31,13 @@
           <circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.5"/>
           <path d="M11 11l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
         </svg>
-        <span class="search-placeholder">Search schemas, properties, definitions...</span>
+        <span class="search-placeholder">{{ t('header.searchPlaceholder') }}</span>
         <kbd class="search-kbd">/</kbd>
       </button>
     </div>
 
     <div class="header-right">
-      <button class="btn btn-ghost theme-btn" @click="uiStore.toggleTheme" :title="uiStore.isDark ? 'Light mode' : 'Dark mode'">
+      <button class="btn btn-ghost theme-btn" @click="uiStore.toggleTheme" :title="uiStore.isDark ? t('header.lightMode') : t('header.darkMode')">
         <svg v-if="uiStore.isDark" width="18" height="18" viewBox="0 0 18 18" fill="none">
           <path d="M9 3V2M9 16v-1M3 9H2M16 9h-1M4.22 4.22l-.7-.7M14.48 14.48l-.7-.7M4.22 13.78l-.7.7M14.48 3.52l-.7.7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
           <circle cx="9" cy="9" r="3.5" stroke="currentColor" stroke-width="1.3"/>
@@ -55,6 +55,7 @@
 import { computed } from 'vue'
 import { useSchemaStore } from '../stores/schemaStore'
 import { useUiStore } from '../stores/uiStore'
+import { t } from '../i18n'
 
 const schemaStore = useSchemaStore()
 const uiStore = useUiStore()
