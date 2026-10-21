@@ -9,13 +9,21 @@ module Lutaml
       # Approximation notes: descriptions and constraints are prose; boolean
       # schemas render as "any value" / "no value"; external $refs link by
       # their last path segment.
+      #
+      # With embeddable: true the document title (the level-0 `=` heading)
+      # is dropped and definition anchors are prefixed with the schema
+      # name, so the output can be `include::`-ed into a Metanorma
+      # document — or any AsciiDoc host — without heading-level or
+      # anchor collisions.
       class Adoc
-        def initialize(schema_set)
+        def initialize(schema_set, embeddable: false)
           @schema_set = schema_set
+          @embeddable = embeddable
         end
 
         def render
-          parts = [document_title]
+          parts = []
+          parts << document_title unless @embeddable
           @schema_set.schemas.each do |name, schema|
             parts << render_schema(name, schema)
           end
@@ -30,6 +38,7 @@ module Lutaml
         end
 
         def render_schema(name, schema)
+          @anchor_prefix = @embeddable ? "#{anchor_slug(name)}-" : ""
           lines = ["== #{schema.title || name}", ""] + body_lines(schema)
           schema.definition_entries.each do |entry|
             lines << render_definition(entry) << ""
@@ -55,7 +64,7 @@ module Lutaml
                  else
                    [value ? "Any value." : "No value allowed.", ""]
                  end
-          lines = ["[#def-#{anchor_id(entry.name)}]", "=== #{entry.name}",
+          lines = ["[##{anchor_id(entry.name)}]", "=== #{entry.name}",
                    ""] + body
           lines.join("\n").strip
         end
@@ -153,11 +162,19 @@ module Lutaml
 
         def ref_link(ref)
           name = ref.split("/").last
-          "<<def-#{anchor_id(name)},#{name}>>"
+          "<<#{anchor_id(name)},#{name}>>"
+        end
+
+        # definition anchors: `def-<name>` standalone, `def-<schema>-<name>`
+        # when embedded so a host document (and sibling includes) cannot
+        # collide
+        def anchor_slug(name)
+          name.to_s.gsub(/[^A-Za-z0-9_-]/, "-").downcase
         end
 
         def anchor_id(name)
-          name.to_s.gsub(/[^A-Za-z0-9_-]/, "-")
+          id = name.to_s.gsub(/[^A-Za-z0-9_-]/, "-")
+          "def-#{@anchor_prefix}#{id}"
         end
 
         def escape_cell(text)

@@ -5,6 +5,9 @@ source "https://rubygems.org"
 gemspec
 
 gem "canon", "~> 0.2"
+# the CDDL exporter's specs parse the generated rules back with the
+# RFC 8610 reference parser
+gem "cddl", "~> 0.12"
 gem "irb"
 # the LML exporter's specs parse the generated models back with the
 # org's LML toolchain
