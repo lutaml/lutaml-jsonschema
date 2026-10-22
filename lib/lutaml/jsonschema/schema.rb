@@ -502,6 +502,30 @@ module Lutaml
         Dialect.detect(dollar_schema)
       end
 
+      # A `$ref` with sibling keywords behaves differently by dialect
+      # (draft-04 ignores the siblings; 2019-09+ applies them) — the SPA
+      # annotates the property rather than silently picking one meaning.
+      def ref_with_siblings?
+        return false unless dollar_ref
+
+        siblings = [
+          type, format, enum, const, description, title, pattern,
+          min_length, max_length, minimum, maximum, items, items_tuple,
+          prefix_items, default, examples
+        ]
+        siblings.any? { |v| present_value?(v) } ||
+          property_entries.any? || required.any? ||
+          all_of.any? || any_of.any? || one_of.any?
+      end
+
+      def present_value?(value)
+        case value
+        when nil, false then false
+        when String, Array then !value.empty?
+        else true
+        end
+      end
+
       # draft-04 expresses exclusivity as a boolean modifier on
       # minimum/maximum; from draft-06 on the bound lives in the
       # exclusive* keyword itself. Return the effective numeric bound.

@@ -143,6 +143,10 @@ export const messages = {
     'panel.uniqueYes': 'Yes',
     'panel.examplesLabel': 'Examples:',
     'panel.emDash': '—',
+    'panel.refSiblingsIgnored': '$ref siblings ignored (draft-04)',
+    'panel.refSiblingsApply': '$ref siblings apply (2019-09+)',
+    'panel.formatAsserts': 'format asserts (draft-04/06/07)',
+    'panel.formatAnnotates': 'format annotates only (2019-09+)',
 
     'app.backToTop': 'Back to top',
     'app.backToTopAria': 'Scroll to top',
@@ -292,6 +296,10 @@ export const messages = {
     'panel.uniqueYes': 'نعم',
     'panel.examplesLabel': 'الأمثلة:',
     'panel.emDash': '—',
+    'panel.refSiblingsIgnored': 'تم تجاهل الكلمات المجاورة لـ $ref (مسودة 04)',
+    'panel.refSiblingsApply': 'تُطبَّق الكلمات المجاورة لـ $ref (2019-09 وما بعدها)',
+    'panel.formatAsserts': 'الصيغة مُتحقَّق منها (مسودة 04/06/07)',
+    'panel.formatAnnotates': 'الصيغة توضيحية فقط (2019-09 وما بعدها)',
 
     'app.backToTop': 'العودة إلى الأعلى',
     'app.backToTopAria': 'التمرير إلى الأعلى',

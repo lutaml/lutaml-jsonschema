@@ -21,8 +21,12 @@ module Lutaml
 
       URIS = {
         "https://json-schema.org/draft-04/schema" => DRAFT4,
+        # the draft-04/07 hyper-schema metaschemas declare the same core
+        # dialect; interagent-era API schemas reference them
+        "https://json-schema.org/draft-04/hyper-schema" => DRAFT4,
         "https://json-schema.org/draft-06/schema" => DRAFT6,
         "https://json-schema.org/draft-07/schema" => DRAFT7,
+        "https://json-schema.org/draft-07/hyper-schema" => DRAFT7,
         "https://json-schema.org/draft/2019-09/schema" => DRAFT2019_09,
         "https://json-schema.org/draft/2020-12/schema" => DRAFT2020_12,
       }.freeze
@@ -43,6 +47,18 @@ module Lutaml
       # from draft-06 on the keyword carries the bound itself.
       def numeric_exclusive_bounds?(dialect)
         dialect != DRAFT4
+      end
+
+      # draft-04 ignores keywords beside `$ref`; 2019-09 and later apply
+      # them. The renderer annotates the difference rather than lying.
+      def ignore_ref_siblings?(dialect)
+        dialect == DRAFT4
+      end
+
+      # draft-04/06/07 validate `format`; from 2019-09 on it is an
+      # annotation unless the vocabulary opts in.
+      def format_asserts?(dialect)
+        [DRAFT4, DRAFT6, DRAFT7].include?(dialect)
       end
     end
   end

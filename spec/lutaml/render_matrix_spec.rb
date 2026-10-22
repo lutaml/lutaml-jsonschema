@@ -292,3 +292,74 @@ RSpec.describe "Dialect-aware constraint rendering" do
       .to eq(["#/$defs/Cat", "#/$defs/Dog"])
   end
 end
+
+# TODO.sota/04 closing items: `$ref` sibling semantics (draft-04 ignores
+# siblings, 2019-09+ applies them) and the `format` assertion/annotation
+# split — the SPA annotates the property instead of silently picking one
+# meaning.
+RSpec.describe "Dialect-aware $ref-sibling and format display" do
+  def spa_property(root_annotations, property_schema)
+    root = {
+      "type" => "object",
+      "properties" => { "n" => property_schema },
+    }.merge(root_annotations)
+    set = Lutaml::Jsonschema::SchemaSet.new
+    set.add("demo",
+            Lutaml::Jsonschema::Schema.from_json(Yeptris::JSON.dump(root)))
+    document = Lutaml::Jsonschema::Spa::SpaBuilder.new(set).build
+    document.schemas.first.properties.first
+  end
+
+  it "flags draft-04 $ref siblings as ignored" do
+    property = spa_property(
+      { "$schema" => "http://json-schema.org/draft-04/schema#" },
+      { "$ref" => "#/definitions/tag", "description" => "Tag" },
+    )
+
+    expect(property.ref_siblings_ignored).to be(true)
+    expect(property.ref_siblings_apply).to be(false)
+  end
+
+  it "flags 2019-09+ $ref siblings as applied" do
+    property = spa_property(
+      { "$schema" => "https://json-schema.org/draft/2020-12/schema" },
+      { "$ref" => "#/definitions/tag", "description" => "Tag" },
+    )
+
+    expect(property.ref_siblings_apply).to be(true)
+    expect(property.ref_siblings_ignored).to be(false)
+  end
+
+  it "does not flag siblings when a $ref stands alone" do
+    property = spa_property(
+      { "$schema" => "http://json-schema.org/draft-04/schema#" },
+      { "$ref" => "#/definitions/tag" },
+    )
+
+    expect(property.ref_siblings_ignored).to be_falsey
+    expect(property.ref_siblings_apply).to be_falsey
+  end
+
+  it "marks format as asserting in draft-07 and annotating in 2020-12" do
+    asserting = spa_property(
+      { "$schema" => "http://json-schema.org/draft-07/schema#" },
+      { "type" => "string", "format" => "email" },
+    )
+    expect(asserting.format_assertion).to be(true)
+
+    annotating = spa_property(
+      { "$schema" => "https://json-schema.org/draft/2020-12/schema" },
+      { "type" => "string", "format" => "email" },
+    )
+    expect(annotating.format_assertion).to be(false)
+  end
+
+  it "reads the draft-04/07 hyper-schema metaschemas as their core dialect" do
+    property = spa_property(
+      { "$schema" => "http://json-schema.org/draft-04/hyper-schema#" },
+      { "type" => "string", "format" => "email" },
+    )
+
+    expect(property.format_assertion).to be(true)
+  end
+end

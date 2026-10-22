@@ -361,6 +361,29 @@ module Lutaml
 
         # Configuration-driven ordering (Redoc sort options): alphabetical
         # or required-first; anything else keeps source order.
+        # Nested detail only descends three levels deep; deeper nesting
+        # stays in the JSON viewer.
+        def build_children(resolved, root_schema, depth)
+          return [[], [], []] if depth >= 3
+
+          [
+            build_nested_properties(resolved, root_schema),
+            collect_all_required(resolved),
+            build_nested_definitions(resolved, root_schema),
+          ]
+        end
+
+        # Dialect-dependent display verdicts (TODO.sota/04): `$ref`
+        # siblings and the `format` assertion split.
+        def dialect_display_fields(source_schema, resolved, dialect)
+          siblings = source_schema.ref_with_siblings?
+          {
+            ref_siblings_ignored: siblings && Dialect.ignore_ref_siblings?(dialect),
+            ref_siblings_apply: siblings && !Dialect.ignore_ref_siblings?(dialect),
+            format_assertion: resolved.format && Dialect.format_asserts?(dialect),
+          }
+        end
+
         def order_properties(properties, required)
           case @metadata&.sort_properties
           when "alphabetical"
@@ -380,6 +403,9 @@ module Lutaml
                                   composition_source = nil, depth = 0)
           source_schema = as_schema(entry.schema_value)
           resolved = resolve_property(entry, root_schema)
+          # the dialect is a document-level fact: it rides the root
+          # schema, not the property (which carries no `$schema`)
+          dialect = root_schema.dialect
 
           resolved = resolve_ref_chain(resolved, root_schema)
 
@@ -405,19 +431,9 @@ module Lutaml
           prop_ref = resolve_prop_ref(source_schema)
           features = resolve_schema_features(resolved, root_schema, depth)
 
-          nested = if depth < 3
-                     build_nested_properties(resolved,
-                                             root_schema)
-                   else
-                     []
-                   end
-          nested_required = depth < 3 ? collect_all_required(resolved) : []
-          nested_defs = if depth < 3
-                          build_nested_definitions(resolved,
-                                                   root_schema)
-                        else
-                          []
-                        end
+          nested, nested_required, nested_defs = build_children(resolved,
+                                                                root_schema,
+                                                                depth)
 
           ap_info = resolve_additional_properties(resolved, root_schema)
           SpaProperty.new(
@@ -425,6 +441,7 @@ module Lutaml
             name: entry.name,
             required: all_required.include?(entry.name),
             ref: prop_ref,
+            **dialect_display_fields(source_schema, resolved, dialect),
             deprecated: resolved.deprecated,
             read_only: resolved.read_only,
             write_only: resolved.write_only,
