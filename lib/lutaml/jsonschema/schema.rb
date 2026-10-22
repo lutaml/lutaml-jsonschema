@@ -16,6 +16,12 @@ module Lutaml
       attribute :dollar_recursive_anchor, :boolean
       attribute :dollar_recursive_ref, :string
 
+      # Keywords the model does not name (vendor `x-*` extensions,
+      # dialect additions): collected verbatim and re-emitted on
+      # serialization, so the document round-trips losslessly
+      # (lutaml-model `map_unmapped`, TODO.sota/05).
+      attribute :extensions, :hash, default: -> { {} }
+
       # Metadata
       attribute :title, :string
       attribute :description, :string
@@ -215,6 +221,7 @@ module Lutaml
         map "definitions", to: :definition_entries,
                            with: { from: :parse_legacy_definitions, to: :suppress_output }
         map "links", to: :links
+        map_unmapped to: :extensions
       end
       # rubocop:enable Metrics/BlockLength
 

@@ -112,6 +112,48 @@ RSpec.describe Lutaml::Jsonschema::Schema do
 
       expect(schema.to_json).to be_json_equivalent_to(JSON.generate(expected))
     end
+
+    it "preserves unknown keywords and x- extensions verbatim" do
+      json = JSON.generate({
+                             "type" => "object",
+                             "x-vendor" => { "deep" => [1, 2] },
+                             "futureKeyword" => true,
+                             "properties" => {
+                               "a" => { "type" => "string", "x-inner" => "keep" },
+                             },
+                           })
+      schema = described_class.from_json(json)
+
+      expect(schema.extensions).to eq(
+        "x-vendor" => { "deep" => [1, 2] }, "futureKeyword" => true,
+      )
+      nested = schema.property_entries.first.schema
+      expect(nested.extensions).to eq("x-inner" => "keep")
+
+      round_tripped = JSON.parse(schema.to_json)
+      expect(round_tripped).to include(
+        "x-vendor" => { "deep" => [1, 2] }, "futureKeyword" => true,
+      )
+      expect(round_tripped["properties"]["a"]).to include("x-inner" => "keep")
+    end
+
+    it "preserves unmodeled keywords across the real-world fixtures" do
+      schema = described_class.from_json(
+        File.read(File.expand_path("../fixtures/heroku.json", __dir__)),
+      )
+      feature = schema.definition_entries.find { |e| e.name == "account-feature" }
+
+      # heroku's interagent keywords ("stability", "strictProperties")
+      # have no model attribute; they must survive the round trip
+      expect(feature.schema.extensions).to include(
+        "stability" => "production", "strictProperties" => true,
+      )
+      round_tripped = JSON.parse(schema.to_json)
+      emitted = round_tripped["$defs"]["account-feature"]
+      expect(emitted).to include(
+        "stability" => "production", "strictProperties" => true,
+      )
+    end
   end
 
   describe "simple scalar schema" do
