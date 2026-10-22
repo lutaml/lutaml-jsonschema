@@ -15,6 +15,14 @@ module Lutaml
         attribute :enum, :string, collection: true
         attribute :enum_descriptions, :hash
         attribute :ref, :string
+        # `$ref` sibling semantics differ by dialect (draft-04 ignores
+        # them, 2019-09+ applies them); exactly one is set when the
+        # source carries siblings beside the `$ref`.
+        attribute :ref_siblings_ignored, :boolean
+        attribute :ref_siblings_apply, :boolean
+        # whether `format` asserts in the schema's dialect (draft-04/06/07)
+        # or only annotates (2019-09+)
+        attribute :format_assertion, :boolean
         attribute :min_length, :integer
         attribute :max_length, :integer
         attribute :minimum, :float
@@ -95,6 +103,9 @@ module Lutaml
           map "enum", to: :enum
           map "enumDescriptions", to: :enum_descriptions
           map "$ref", to: :ref
+          map "refSiblingsIgnored", to: :ref_siblings_ignored
+          map "refSiblingsApply", to: :ref_siblings_apply
+          map "formatAssertion", to: :format_assertion
           map "minLength", to: :min_length
           map "maxLength", to: :max_length
           map "minimum", to: :minimum

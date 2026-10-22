@@ -405,6 +405,12 @@
                       </template>
                       <span v-if="prop.default != null" class="prop-default">default: {{ prop.default }}</span>
                       <span v-if="prop.enum?.length" class="prop-enum">{{ prop.enum.length }} values</span>
+                      <span v-if="prop.refSiblingsIgnored || prop.refSiblingsApply" class="prop-dialect-note">
+                        {{ prop.refSiblingsIgnored ? t('panel.refSiblingsIgnored') : t('panel.refSiblingsApply') }}
+                      </span>
+                      <span v-if="prop.format" class="prop-dialect-note">
+                        {{ prop.formatAssertion ? t('panel.formatAsserts') : t('panel.formatAnnotates') }}
+                      </span>
                     </td>
                     <td>
                       <span v-if="prop.required" class="badge badge-required-sm">{{ t('panel.requiredYesBadge') }}</span>
@@ -1090,6 +1096,11 @@ function handleExampleKey(event: KeyboardEvent) {
   font-size: var(--text-xs);
   color: var(--text-secondary);
   font-style: italic;
+}
+
+.prop-dialect-note {
+  font-size: 10px;
+  color: var(--text-accent);
 }
 
 .prop-default {
