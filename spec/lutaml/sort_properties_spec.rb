@@ -5,15 +5,15 @@ require "spec_helper"
 RSpec.describe "sort_properties configuration (Redoc sort options)" do
   def build_set
     schema = Lutaml::Jsonschema::Schema.from_json(
-      Yeptris::JSON.dump(
-        "type" => "object",
-        "required" => %w[beta],
-        "properties" => {
-          "zeta" => { "type" => "string" },
-          "alpha" => { "type" => "string" },
-          "beta" => { "type" => "string" },
-        },
-      ),
+      Yeptris::JSON.dump({
+                           "type" => "object",
+                           "required" => %w[beta],
+                           "properties" => {
+                             "zeta" => { "type" => "string" },
+                             "alpha" => { "type" => "string" },
+                             "beta" => { "type" => "string" },
+                           },
+                         }),
     )
     set = Lutaml::Jsonschema::SchemaSet.new
     set.add("demo", schema)
