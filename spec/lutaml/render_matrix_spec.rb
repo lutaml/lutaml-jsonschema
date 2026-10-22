@@ -156,12 +156,12 @@ RSpec.describe "Dialect-aware constraint rendering" do
   end
 
   it "exposes items on a top-level array schema" do
-    root = Lutaml::Jsonschema::Schema.from_json(Yeptris::JSON.dump(
-                                                  "$schema" => "https://json-schema.org/draft/2020-12/schema",
-                                                  "type" => "array",
-                                                  "prefixItems" => [{ "type" => "string" }],
-                                                  "items" => false,
-                                                ))
+    root = Lutaml::Jsonschema::Schema.from_json(Yeptris::JSON.dump({
+                                                                     "$schema" => "https://json-schema.org/draft/2020-12/schema",
+                                                                     "type" => "array",
+                                                                     "prefixItems" => [{ "type" => "string" }],
+                                                                     "items" => false,
+                                                                   }))
     set = Lutaml::Jsonschema::SchemaSet.new
     set.add("demo", root)
     document = Lutaml::Jsonschema::Spa::SpaBuilder.new(set).build
@@ -174,10 +174,10 @@ RSpec.describe "Dialect-aware constraint rendering" do
   end
 
   it "exposes a single-schema items type on a top-level array schema" do
-    root = Lutaml::Jsonschema::Schema.from_json(Yeptris::JSON.dump(
-                                                  "type" => "array",
-                                                  "items" => { "type" => "integer" },
-                                                ))
+    root = Lutaml::Jsonschema::Schema.from_json(Yeptris::JSON.dump({
+                                                                     "type" => "array",
+                                                                     "items" => { "type" => "integer" },
+                                                                   }))
     set = Lutaml::Jsonschema::SchemaSet.new
     set.add("demo", root)
     schema = Lutaml::Jsonschema::Spa::SpaBuilder.new(set).build.schemas.first
@@ -191,11 +191,11 @@ RSpec.describe "Dialect-aware constraint rendering" do
   end
 
   it "renders boolean definitions and pattern properties" do
-    root = Lutaml::Jsonschema::Schema.from_json(Yeptris::JSON.dump(
-                                                  "type" => "object",
-                                                  "$defs" => { "flag" => false },
-                                                  "patternProperties" => { "^x-" => true },
-                                                ))
+    root = Lutaml::Jsonschema::Schema.from_json(Yeptris::JSON.dump({
+                                                                     "type" => "object",
+                                                                     "$defs" => { "flag" => false },
+                                                                     "patternProperties" => { "^x-" => true },
+                                                                   }))
     set = Lutaml::Jsonschema::SchemaSet.new
     set.add("demo", root)
     schema = Lutaml::Jsonschema::Spa::SpaBuilder.new(set).build.schemas.first
@@ -214,11 +214,11 @@ RSpec.describe "Dialect-aware constraint rendering" do
   end
 
   it "renders boolean not and contains constraints" do
-    root = Lutaml::Jsonschema::Schema.from_json(Yeptris::JSON.dump(
-                                                  "type" => "array",
-                                                  "not" => false,
-                                                  "contains" => true,
-                                                ))
+    root = Lutaml::Jsonschema::Schema.from_json(Yeptris::JSON.dump({
+                                                                     "type" => "array",
+                                                                     "not" => false,
+                                                                     "contains" => true,
+                                                                   }))
     set = Lutaml::Jsonschema::SchemaSet.new
     set.add("demo", root)
     schema = Lutaml::Jsonschema::Spa::SpaBuilder.new(set).build.schemas.first
