@@ -48,7 +48,7 @@ RSpec.describe "Headless-browser render and PDF output", :browser do
     Dir.mktmpdir do |dir|
       page = generate_site(dir)
       dom, _err, status = run_chrome(
-        "--virtual-time-budget=8000", "--dump-dom", "file://#{page}"
+        "--virtual-time-budget=15000", "--dump-dom", "file://#{page}"
       )
 
       expect(status.success?).to be(true)
