@@ -29,6 +29,7 @@ module Lutaml
       autoload :Adoc, "lutaml/jsonschema/exports/adoc"
       autoload :Openapi, "lutaml/jsonschema/exports/openapi"
       autoload :Xsd, "lutaml/jsonschema/exports/xsd"
+      autoload :Lml, "lutaml/jsonschema/exports/lml"
     end
 
     module Spa
