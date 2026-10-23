@@ -72,25 +72,39 @@ page = File.join(dir, "index.html")
 File.write(File.join(dir, "audit.html"),
            File.read(page).sub("</body>", "#{INJECT}\n</body>"))
 
-dom, err, status = Open3.capture3(
-  chrome, "--headless=new", "--disable-gpu", "--virtual-time-budget=20000",
-  "--dump-dom", "file://#{File.join(dir, 'audit.html')}"
-)
-abort "axe audit: Chrome failed: #{err[0, 400]}" unless status.success?
+# both locales gate: the default LTR render and the Arabic RTL render
+# (the mirrored layout must stay accessible, TODO.sota/09)
+VARIANTS = [
+  { label: "en", query: "" },
+  { label: "ar (rtl)", query: "?locale=ar" },
+].freeze
 
-match = dom[/data-axe="([^"]*)"/, 1]
-abort "axe audit: no result captured" unless match
+failed = false
 
-result = JSON.parse(match.gsub("&quot;", '"'))
-abort "axe audit: axe failed: #{result['error']}" if result["error"]
+VARIANTS.each do |variant|
+  dom, err, status = Open3.capture3(
+    chrome, "--headless=new", "--disable-gpu", "--virtual-time-budget=20000",
+    "--dump-dom", "file://#{File.join(dir, 'audit.html')}#{variant[:query]}"
+  )
+  abort "axe audit: Chrome failed: #{err[0, 400]}" unless status.success?
 
-if result["violations"].empty?
-  puts "axe audit: PASS (#{result['passes']} rule groups, no violations)"
-else
-  puts "axe audit: #{result['violations'].sum { |v| v['nodes'] }} violations"
-  result["violations"].each do |violation|
-    puts "  [#{violation['impact']}] #{violation['id']} x#{violation['nodes']}"
-    violation["targets"].each { |target| puts "    #{target}" }
+  match = dom[/data-axe="([^"]*)"/, 1]
+  abort "axe audit (#{variant[:label]}): no result captured" unless match
+
+  result = JSON.parse(match.gsub("&quot;", '"'))
+  abort "axe audit: axe failed: #{result['error']}" if result["error"]
+
+  if result["violations"].empty?
+    puts "axe audit (#{variant[:label]}): PASS (#{result['passes']} rule groups)"
+  else
+    failed = true
+    puts "axe audit (#{variant[:label]}): " \
+         "#{result['violations'].sum { |v| v['nodes'] }} violations"
+    result["violations"].each do |violation|
+      puts "  [#{violation['impact']}] #{violation['id']} x#{violation['nodes']}"
+      violation["targets"].each { |target| puts "    #{target}" }
+    end
   end
-  exit 1
 end
+
+exit 1 if failed
