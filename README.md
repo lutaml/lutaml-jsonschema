@@ -1,39 +1,103 @@
 # Lutaml::Jsonschema
 
-TODO: Delete this and the text below, and describe your gem
+**JSON Schema, fully legible** — a lossless typed model for machines and
+Redoc-class, sovereign single-file documentation for humans, inside the
+LutaML/metanorma standards ecosystem.
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/lutaml/jsonschema`. To experiment with that code, run `bin/console` for an interactive prompt.
+Parses JSON Schema documents (draft-04 through 2020-12, plus the
+interagent-era hyper-schema corpus) into lutaml-model objects, resolves and
+bundles `$ref` graphs (local pointers, cross-file, and opt-in remote HTTP(S)
+with an offline SHA-256 cache), validates against fully vendored
+meta-schemas, diffs schema versions with breaking-change classification, and
+generates a self-contained documentation SPA — no runtime fetches, no
+network, one `index.html`.
+
+**The model is lossless**: every keyword the Ruby model does not name —
+vendor `x-*` extensions, dialect additions, hyper-schema keywords — is
+collected verbatim and re-emitted on serialization (`map_unmapped`).
 
 ## Installation
 
-TODO: Replace `UPDATE_WITH_YOUR_GEM_NAME_IMMEDIATELY_AFTER_RELEASE_TO_RUBYGEMS_ORG` with your gem name right after releasing it to RubyGems.org. Please do not do it earlier due to security reasons. Alternatively, replace this section with instructions to install your gem from git if you don't plan to release to RubyGems.org.
-
-Install the gem and add to the application's Gemfile by executing:
-
 ```bash
-bundle add UPDATE_WITH_YOUR_GEM_NAME_IMMEDIATELY_AFTER_RELEASE_TO_RUBYGEMS_ORG
+gem install lutaml-jsonschema
 ```
 
-If bundler is not being used to manage dependencies, install the gem by executing:
+or add to your Gemfile:
 
 ```bash
-gem install UPDATE_WITH_YOUR_GEM_NAME_IMMEDIATELY_AFTER_RELEASE_TO_RUBYGEMS_ORG
+bundle add lutaml-jsonschema
 ```
 
-## Usage
+## CLI
 
-TODO: Write usage instructions here
+```bash
+# generate the single-file documentation SPA
+lutaml-jsonschema spa SCHEMA_FILES... [--diff BASELINE...] [-c CONFIG.yml]
+
+# merge schema documents into one bundle
+lutaml-jsonschema combine SCHEMA_FILES...
+
+# export to other data-definition languages
+lutaml-jsonschema export SCHEMA_FILES... -f cddl|openapi|xsd|adoc|lml
+
+# semantic diff; exits non-zero when a breaking change is found
+lutaml-jsonschema diff OLD_SCHEMA NEW_SCHEMA [--format json]
+
+# validate against the dialect's meta-schema (offline; --format json)
+lutaml-jsonschema validate SCHEMA_FILE
+```
+
+The SPA supports light/dark themes, FlexSearch search, per-property and
+per-definition detail views, composition tabs, a JSON builder, a change view
+(`--diff`), RTL locales (`?locale=ar`), and prints to PDF.
+
+## Library
+
+```ruby
+require "lutaml/jsonschema"
+
+schema = Lutaml::Jsonschema::Schema.from_json(json_string)
+schema.extensions          # => unknown keywords, preserved verbatim
+schema.to_json             # lossless re-emission
+
+set = Lutaml::Jsonschema::SchemaSet.load_from_files(*paths)
+set.bundle                 # hoist definitions, rewrite refs
+set.dereference("demo")    # resolve the $ref graph
+
+Lutaml::Jsonschema::Exports::Cddl.new(set).render    # RFC 8610
+Lutaml::Jsonschema::Exports::Openapi.new(set).render # OAS 3.1 components
+Lutaml::Jsonschema::Exports::Xsd.new(set).render     # W3C XML Schema
+Lutaml::Jsonschema::Exports::Adoc.new(set).render    # AsciiDoc reference
+Lutaml::Jsonschema::Exports::Lml.new(set).render     # LutaML UML models
+
+Lutaml::Jsonschema::Diff.between(old_schema, new_schema) # classified changes
+```
+
+`SchemaStore` (a `SchemaSet` subclass) adds on-disk persistence through
+[lutaml-store](https://github.com/lutaml/lutaml-store).
+
+## JSON engine
+
+Parsing rides [yeptris](https://github.com/leptris/yeptris-ruby), the org's
+native YAML/JSON engine (FFI over libyeptris, strict RFC 8259 semantics with
+`JSON.parse` parity), auto-detected by lutaml-model for both JSON and YAML.
+JSON generation stays on the stdlib `json` gem.
 
 ## Development
 
-After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
+```bash
+bundle exec rake            # specs + rubocop + perf gate + axe AA audit
+bundle exec rspec           # full suite
+cd frontend && npm test     # SPA unit tests
+bundle exec rake frontend:build   # build frontend/dist (needed for spa)
+```
 
-To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and the created tag, and push the `.gem` file to [rubygems.org](https://rubygems.org).
+CI runs the full matrix (3 Ruby lines × ubuntu/macos/windows) on every push,
+including the browser gates (headless-Chrome boot, PDF, RTL render) and the
+WCAG AA audit. `spec/fixtures/` carries the real-world corpora (heroku,
+interagent) the specs round-trip.
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/lutaml-jsonschema. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [code of conduct](https://github.com/[USERNAME]/lutaml-jsonschema/blob/main/CODE_OF_CONDUCT.md).
-
-## Code of Conduct
-
-Everyone interacting in the Lutaml::Jsonschema project's codebases, issue trackers, chat rooms and mailing lists is expected to follow the [code of conduct](https://github.com/[USERNAME]/lutaml-jsonschema/blob/main/CODE_OF_CONDUCT.md).
+Bug reports and pull requests are welcome on GitHub at
+https://github.com/lutaml/lutaml-jsonschema.
