@@ -34,11 +34,10 @@ module Lutaml
       def self.load_from_files(*paths, base_dir: nil, **)
         store = new(**)
         paths.each do |path|
-          data = File.read(path, encoding: "utf-8")
-          schema = Schema.from_json(data)
+          schema, source = SourceFile.load(path)
           name = File.basename(path, ".*")
           schema.dollar_id ||= name
-          store.add(name, schema, path, data)
+          store.add(name, schema, path, source)
         end
         store.base_dir = base_dir if base_dir
         store

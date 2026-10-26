@@ -7,8 +7,8 @@ module Lutaml
       # Metanorma/standards-body pipelines.
       #
       # Approximation notes: descriptions and constraints are prose; boolean
-      # schemas render as "any value" / "no value"; external $refs link by
-      # their last path segment.
+      # schemas render as "any value" / "no value"; external HTTP(S) $refs
+      # retain their schema URI as a link.
       #
       # With embeddable: true the document title (the level-0 `=` heading)
       # is dropped and definition anchors are prefixed with the schema
@@ -39,6 +39,7 @@ module Lutaml
 
         def render_schema(name, schema)
           @anchor_prefix = @embeddable ? "#{anchor_slug(name)}-" : ""
+          @current_schema = schema
           lines = ["== #{schema.title || name}", ""] + body_lines(schema)
           schema.definition_entries.each do |entry|
             lines << render_definition(entry) << ""
@@ -161,8 +162,24 @@ module Lutaml
         end
 
         def ref_link(ref)
-          name = ref.split("/").last
+          if ref.start_with?("http://", "https://")
+            return "link:#{ref}[#{ref.split(%r{[/#]}).last}]"
+          end
+
+          name = if ref.start_with?("#") && !ref.start_with?("#/")
+                   named_anchor_definition(ref.delete_prefix("#"))
+                 else
+                   ref.split("/").last
+                 end
           "<<#{anchor_id(name)},#{name}>>"
+        end
+
+        def named_anchor_definition(anchor)
+          entry = @current_schema.definition_entries.find do |definition|
+            value = definition.schema_value
+            value.is_a?(Schema) && value.dollar_anchor == anchor
+          end
+          entry ? entry.name : anchor
         end
 
         # definition anchors: `def-<name>` standalone, `def-<schema>-<name>`

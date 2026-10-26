@@ -77,6 +77,31 @@ RSpec.describe Lutaml::Jsonschema::Exports::Adoc do
     expect(output).to include("<<def-Tag,Tag>>")
   end
 
+  it "links named anchors to their definition names when embedded" do
+    hash = {
+      "type" => "object",
+      "properties" => { "tag" => { "$ref" => "#tag-anchor" } },
+      "$defs" => {
+        "Tag" => { "$anchor" => "tag-anchor", "type" => "string" },
+      },
+    }
+    output = described_class.new(schema_set_from(hash), embeddable: true).render
+
+    expect(output).to include("[#def-demo-Tag]")
+    expect(output).to include("<<def-demo-Tag,Tag>>")
+  end
+
+  it "preserves external schema references as URI links" do
+    ref = "https://example.com/dqc.json#DataQuality"
+    output = render(
+      "type" => "object",
+      "properties" => { "quality" => { "$ref" => ref } },
+    )
+
+    expect(output).to include("link:#{ref}[DataQuality]")
+    expect(output).not_to include("<<def-dqc-json-DataQuality")
+  end
+
   it "renders tuple and closed-array types" do
     output = render(
       "title" => "Pair",

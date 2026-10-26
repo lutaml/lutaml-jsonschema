@@ -35,16 +35,15 @@ module Lutaml
                   remote_cache_dir: remote_cache_dir,
                   remote_loader: remote_loader)
         paths.each do |path|
-          data = File.read(path, encoding: "utf-8")
-          schema = Schema.from_json(data)
+          schema, source = SourceFile.load(path)
           name = File.basename(path, ".*")
-          set.add(name, schema, path, data)
+          set.add(name, schema, path, source)
         end
         set
       end
 
       def self.load_from_directory(dir, **)
-        paths = Dir.glob(File.join(dir, "*.json"))
+        paths = Dir.glob(File.join(dir, SourceFile::DIRECTORY_GLOB))
         load_from_files(*paths, base_dir: dir, **)
       end
 
@@ -257,7 +256,7 @@ module Lutaml
         if @base_dir
           path = File.join(@base_dir, target_file)
           if File.exist?(path)
-            loaded = Schema.from_json(File.read(path))
+            loaded, = SourceFile.load(path)
             add(File.basename(target_file, ".*"), loaded, path)
             return loaded
           end
