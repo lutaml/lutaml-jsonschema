@@ -16,6 +16,7 @@ module Lutaml
     autoload :TupleItem, "lutaml/jsonschema/tuple_item"
     autoload :Schema, "lutaml/jsonschema/schema"
     autoload :ReferenceResolver, "lutaml/jsonschema/reference_resolver"
+    autoload :SourceFile, "lutaml/jsonschema/source_file"
     autoload :SchemaSet, "lutaml/jsonschema/schema_set"
     autoload :SchemaStore, "lutaml/jsonschema/schema_store"
     autoload :Combiner, "lutaml/jsonschema/combiner"

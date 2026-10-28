@@ -7,8 +7,8 @@ module Lutaml
       # Metanorma/standards-body pipelines.
       #
       # Approximation notes: descriptions and constraints are prose; boolean
-      # schemas render as "any value" / "no value"; external $refs link by
-      # their last path segment.
+      # schemas render as "any value" / "no value"; external HTTP(S) $refs
+      # retain their schema URI as a link.
       #
       # With embeddable: true the document title (the level-0 `=` heading)
       # is dropped and definition anchors are prefixed with the schema
@@ -22,15 +22,25 @@ module Lutaml
         end
 
         def render
-          parts = []
-          parts << document_title unless @embeddable
-          @schema_set.schemas.each do |name, schema|
-            parts << render_schema(name, schema)
+          @linked_schemas = {}
+          parts = rendered_sections.map do |name, section|
+            @linked_schemas[name] ? "[##{schema_anchor_id(name)}]\n#{section}" : section
           end
+          parts.unshift(document_title) unless @embeddable
           "#{parts.join("\n\n").strip}\n"
         end
 
         private
+
+        def rendered_sections
+          sections = {}
+          until (pending = @schema_set.schemas.keys - sections.keys).empty?
+            pending.each do |name|
+              sections[name] = render_schema(name, @schema_set.schemas.fetch(name))
+            end
+          end
+          sections
+        end
 
         def document_title
           title = @schema_set.schemas.values.first&.title
@@ -38,7 +48,8 @@ module Lutaml
         end
 
         def render_schema(name, schema)
-          @anchor_prefix = @embeddable ? "#{anchor_slug(name)}-" : ""
+          @current_name = name
+          @current_schema = schema
           lines = ["== #{schema.title || name}", ""] + body_lines(schema)
           schema.definition_entries.each do |entry|
             lines << render_definition(entry) << ""
@@ -161,8 +172,50 @@ module Lutaml
         end
 
         def ref_link(ref)
-          name = ref.split("/").last
+          if ref.start_with?("http://", "https://")
+            return "link:#{ref}[#{ref.split(%r{[/#]}).last}]"
+          end
+
+          target = @schema_set.resolve_ref(ref, @current_schema)
+          resolved = resolved_ref_link(target) if target.is_a?(Schema)
+          return resolved if resolved
+
+          name = local_reference_name(ref)
           "<<#{anchor_id(name)},#{name}>>"
+        end
+
+        def local_reference_name(ref)
+          if ref.start_with?("#") && !ref.start_with?("#/")
+            named_anchor_definition(ref.delete_prefix("#"))
+          else
+            ref.split("/").last.to_s.gsub("~1", "/").gsub("~0", "~")
+          end
+        end
+
+        def resolved_ref_link(target)
+          @schema_set.schemas.each do |name, schema|
+            if schema.equal?(target)
+              @linked_schemas[name] = true
+              return "<<#{schema_anchor_id(name)},#{schema.title || name}>>"
+            end
+            entry = schema.definition_entries.find do |definition|
+              definition.schema_value.equal?(target)
+            end
+            return "<<#{anchor_id(entry.name, name)},#{entry.name}>>" if entry
+          end
+          nil
+        end
+
+        def schema_anchor_id(name)
+          "schema-#{anchor_slug(name)}"
+        end
+
+        def named_anchor_definition(anchor)
+          entry = @current_schema.definition_entries.find do |definition|
+            value = definition.schema_value
+            value.is_a?(Schema) && value.dollar_anchor == anchor
+          end
+          entry ? entry.name : anchor
         end
 
         # definition anchors: `def-<name>` standalone, `def-<schema>-<name>`
@@ -172,9 +225,10 @@ module Lutaml
           name.to_s.gsub(/[^A-Za-z0-9_-]/, "-").downcase
         end
 
-        def anchor_id(name)
+        def anchor_id(name, schema_name = @current_name)
+          prefix = @embeddable ? "#{anchor_slug(schema_name)}-" : ""
           id = name.to_s.gsub(/[^A-Za-z0-9_-]/, "-")
-          "def-#{@anchor_prefix}#{id}"
+          "def-#{prefix}#{id}"
         end
 
         def escape_cell(text)
