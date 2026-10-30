@@ -1,5 +1,69 @@
 ## [Unreleased]
 
+## [0.1.26] - 2026-10-28
+
+- Accept YAML schema inputs (`SourceFile` records) alongside JSON
+- Fix AsciiDoc links to resolved schema targets; reference-link audit
+- Audit the Arabic RTL render in the axe gate
+- Real README; CLAUDE.md refreshed for the SOTA state
+- Pin Parsanol for the LML round-trip test
+
+## [0.1.25] - 2026-10-22
+
+- Fully lossless model: unknown keywords and `x-*` extensions preserved via
+  `map_unmapped` (lutaml-model `~> 0.8.122`)
+- RTL-safe layout (CSS logical properties + document `dir` mirroring),
+  Arabic locale with live switch, RTL render proven in headless Chrome
+- axe-core AA audit in the default `rake` gate with vendored axe
+- LML exporter (`export --format lml` via lutaml-lml)
+- Metanorma-embeddable AsciiDoc (`--embeddable`) and CDDL round-trip through
+  the RFC 8610 reference parser (`pstore` declared for Ruby 4.0)
+- Dialect semantics annotations for `$ref` siblings and format assertions
+- Ruby 4.0: brace hash literals in specs passed to `dump`
+
+## [0.1.24] - 2026-10-21
+
+- Generated SPA passes an axe-core AA scan
+- Frontend built in rake CI; fixed the rake workflow startup failure
+- Perf caps calibrated per environment; `benchmark` gem declared for Ruby 4.0
+
+## [0.1.23] - 2026-10-20
+
+- yeptris as the JSON parse engine, floored at the fixed `~> 0.6.34` line
+  (fixes the native materializer SIGSEGV and the tape-engine perf gap)
+- CLAUDE.md with repo commands and architecture
+
+## [0.1.22] - 2026-10-19
+
+- Floor lutaml-model at `~> 0.8.114`
+
+## [0.1.21] - 2026-10-02
+
+- Maintenance release (release-train CI fixes ride along from 0.1.20)
+
+## [0.1.20] - 2026-10-01
+
+- Release `post_install` hardened: `npm ci` against the runner-synced lock
+  without touching tracked files
+
+## [0.1.19] - 2026-06-08
+
+- Fix all SPA data gaps for complex schemas (0.1.18 line)
+- Appearance config support for logos and subtitle
+- Comprehensive code-quality audit (311 specs, 0 failures)
+- Remove the local lutaml-store path override for CI
+
+## [0.1.17] - 2026-05-27
+
+- Resolve array items `$ref` and expose definition-level constraints
+- Render `itemsRef` and definition constraints
+
+## [0.1.16] - 2026-05-14
+
+- Frontend range tests (numberRange/stringRange/itemsRange) and
+  jsonToCollapsibleHtml edge cases
+- Hardcoded rgba replaced with CSS variables; rubocop baseline refresh
+
 ## [0.1.15] - 2026-05-10
 
 ### Redoc-style UX improvements (round 16)
