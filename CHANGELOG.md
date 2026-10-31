@@ -1,5 +1,14 @@
 ## [Unreleased]
 
+## [0.1.27] - 2026-10-31
+
+- Add the BSD-2-Clause license (LICENSE.md + `spec.license`) and backfill
+  the changelog for 0.1.16–0.1.26
+- Floor yeptris at the fixed `~> 0.6.51` line (marshal strict-dup
+  false-positive fixed, yeptris-ruby#333)
+- Frontend dev toolchain bumped past the vulnerable ranges
+- lychee-action bumped to v2
+
 ## [0.1.26] - 2026-10-28
 
 - Accept YAML schema inputs (`SourceFile` records) alongside JSON
