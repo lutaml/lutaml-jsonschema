@@ -15,6 +15,7 @@ module Lutaml
     autoload :PropertyEntry, "lutaml/jsonschema/property_entry"
     autoload :TupleItem, "lutaml/jsonschema/tuple_item"
     autoload :Schema, "lutaml/jsonschema/schema"
+    autoload :DimExporter, "lutaml/jsonschema/dim_exporter"
     autoload :ReferenceResolver, "lutaml/jsonschema/reference_resolver"
     autoload :SourceFile, "lutaml/jsonschema/source_file"
     autoload :SchemaSet, "lutaml/jsonschema/schema_set"
