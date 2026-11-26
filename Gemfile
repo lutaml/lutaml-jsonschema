@@ -12,6 +12,10 @@ gem "irb"
 # the LML exporter's specs parse the generated models back with the
 # org's LML toolchain
 gem "lutaml-lml", "~> 0.3"
+# floor the hub at 0.11.9: lutaml 0.11.4-7 depend on lutaml-lml while
+# lutaml-lml needs lutaml >= 0.11.8, so any resolution that slips below
+# 0.11.8 cycles; 0.11.8 is clean but 0.11.9 is the line we ship against
+gem "lutaml", "~> 0.11.9"
 # the lutaml line this bundle resolves (>= 0.11.8) requires the parsanol
 # 1.5 line; capping at ~> 1.3 pushes the resolver onto lutaml 0.11.4-7,
 # which cycle with lutaml-lml and fail resolution outright
