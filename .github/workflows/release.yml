@@ -6,6 +6,14 @@ permissions:
   contents: write
   packages: write
   id-token: write
+  # the reusable's release job creates and merges the release PR
+  # (pull-requests: write at its job level, metanorma/ci 36b806d9);
+  # a caller whose permissions block omits pull-requests cannot honor
+  # that ceiling and the call startup-fails at graph build — this stub
+  # has been failing since that redesign landed (last success 11-03,
+  # first failure 11-25) while stubs with no permissions block
+  # (repo-default write) kept working
+  pull-requests: write
 
 on:
   workflow_dispatch:
