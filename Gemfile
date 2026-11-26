@@ -12,9 +12,10 @@ gem "irb"
 # the LML exporter's specs parse the generated models back with the
 # org's LML toolchain
 gem "lutaml-lml", "~> 0.3"
-# lutaml-lml 0.3.4's frozen grammar uses capture emission 1.
-# Parsanol 1.3.111 emits incompatible trees in the round-trip parser test.
-gem "parsanol", "~> 1.3.109"
+# the lutaml line this bundle resolves (>= 0.11.8) requires the parsanol
+# 1.5 line; capping at ~> 1.3 pushes the resolver onto lutaml 0.11.4-7,
+# which cycle with lutaml-lml and fail resolution outright
+gem "parsanol", "~> 1.5"
 # Ruby 4.0 moved pstore out of the default gems; the cddl chain
 # (regexp-examples) loads it
 gem "pstore"
