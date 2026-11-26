@@ -32,6 +32,10 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency "json"
   spec.add_dependency "json_schemer", "~> 2.5"
+  # Floor the hub at 0.11.9: lutaml 0.11.4-7 depend on lutaml-lml while
+  # lutaml-lml needs lutaml >= 0.11.8, so any resolution slipping below
+  # 0.11.8 cycles; 0.11.8 is clean but 0.11.9 is the line shipped against
+  spec.add_dependency "lutaml", "~> 0.11.9"
   spec.add_dependency "lutaml-model", "~> 0.8.185"
   spec.add_dependency "lutaml-store", "~> 0.3"
   spec.add_dependency "rexml", "~> 3.3"
