@@ -30,5 +30,10 @@ jobs:
       # build on both dispatch types (metanorma/ci#531 lineage).
       pre_build_command: 'cd frontend && npm install --package-lock-only && npm ci && npm run build && git checkout -- package-lock.json'
     secrets:
-      rubygems-api-key: ${{ secrets.LUTAML_CI_RUBYGEMS_API_KEY }}
+      # rubygems-api-key is deliberately NOT passed: the
+      # LUTAML_CI_RUBYGEMS_API_KEY secret does not exist on this
+      # repository (publication rides Trusted Publishing via the
+      # reusable's OIDC path), and binding an empty secret value
+      # startup-fails the reusable's graph build — the same
+      # empty-string class as ci#531's input fix
       pat_token: ${{ secrets.GITHUB_TOKEN }}
