@@ -32,9 +32,9 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency "json"
   spec.add_dependency "json_schemer", "~> 2.5"
-  spec.add_dependency "lutaml-model", "~> 0.8.159"
+  spec.add_dependency "lutaml-model", "~> 0.8.185"
   spec.add_dependency "lutaml-store", "~> 0.3"
   spec.add_dependency "rexml", "~> 3.3"
   spec.add_dependency "thor", "~> 1.3"
-  spec.add_dependency "yeptris", "~> 0.6.51"
+  spec.add_dependency "yeptris", "~> 0.6.86"
 end
