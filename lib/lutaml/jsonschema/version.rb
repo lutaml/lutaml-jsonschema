@@ -2,6 +2,6 @@
 
 module Lutaml
   module Jsonschema
-    VERSION = "0.1.30"
+    VERSION = "0.1.31"
   end
 end
