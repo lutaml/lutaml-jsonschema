@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require "spec_helper"
-require "rexml/document"
+require "moxml"
 
 RSpec.describe Lutaml::Jsonschema::Exports::Xsd do
   def schema_set_from(hash, name: "demo")
@@ -15,7 +15,15 @@ RSpec.describe Lutaml::Jsonschema::Exports::Xsd do
   end
 
   def parse_xml(xml)
-    REXML::Document.new(xml)
+    Moxml.parse(xml)
+  end
+
+  def find_element(scope, expression)
+    scope.xpath(expression, "xs" => described_class::XS_NS).first
+  end
+
+  def attr(element, name)
+    element.attribute(name)&.value
   end
 
   it "emits an xs:schema with the target namespace" do
@@ -23,8 +31,9 @@ RSpec.describe Lutaml::Jsonschema::Exports::Xsd do
     root = doc.root
 
     expect(root.name).to eq("schema")
-    expect(root.attributes["targetNamespace"]).to eq("urn:lutaml:jsonschema")
-    expect(root.namespaces["xs"]).to eq("http://www.w3.org/2001/XMLSchema")
+    expect(attr(root, "targetNamespace")).to eq("urn:lutaml:jsonschema")
+    expect(root.namespace_prefix).to eq("xs")
+    expect(root.namespace_uri).to eq("http://www.w3.org/2001/XMLSchema")
   end
 
   it "renders object properties with scalar types and optionality" do
@@ -38,12 +47,12 @@ RSpec.describe Lutaml::Jsonschema::Exports::Xsd do
                     ))
     root = doc.root
 
-    name = REXML::XPath.first(root, "//xs:element[@name='name']")
-    age = REXML::XPath.first(root, "//xs:element[@name='age']")
+    name = find_element(root, "//xs:element[@name='name']")
+    age = find_element(root, "//xs:element[@name='age']")
 
-    expect(name.attributes["type"]).to eq("xs:string")
-    expect(name.attributes["minOccurs"]).to be_nil
-    expect(age.attributes["minOccurs"]).to eq("0")
+    expect(attr(name, "type")).to eq("xs:string")
+    expect(attr(name, "minOccurs")).to be_nil
+    expect(attr(age, "minOccurs")).to eq("0")
   end
 
   it "renders boolean items without supplying a bogus element type" do
@@ -53,11 +62,10 @@ RSpec.describe Lutaml::Jsonschema::Exports::Xsd do
                         "tags" => { "type" => "array", "items" => false },
                       },
                     ))
-    element = doc.root.get_elements("//xs:element").find do |e|
-      e.attributes["name"] == "tags"
-    end
+    element = doc.root.xpath("//xs:element", "xs" => described_class::XS_NS)
+                     .find { |e| attr(e, "name") == "tags" }
 
-    expect(element.attributes["type"]).to be_nil
+    expect(attr(element, "type")).to be_nil
   end
 
   it "leaves boolean property schemas untyped" do
@@ -65,11 +73,10 @@ RSpec.describe Lutaml::Jsonschema::Exports::Xsd do
                       "type" => "object",
                       "properties" => { "flag" => true },
                     ))
-    element = doc.root.get_elements("//xs:element").find do |e|
-      e.attributes["name"] == "flag"
-    end
+    element = doc.root.xpath("//xs:element", "xs" => described_class::XS_NS)
+                     .find { |e| attr(e, "name") == "flag" }
 
-    expect(element.attributes["type"]).to be_nil
+    expect(attr(element, "type")).to be_nil
   end
 
   it "renders arrays as unbounded repeated items" do
@@ -79,9 +86,9 @@ RSpec.describe Lutaml::Jsonschema::Exports::Xsd do
                                                     "items" => { "type" => "string" } } },
                     ))
 
-    tags = REXML::XPath.first(doc.root, "//xs:element[@name='tags']")
-    expect(tags.attributes["maxOccurs"]).to eq("unbounded")
-    expect(tags.attributes["type"]).to eq("xs:string")
+    tags = find_element(doc.root, "//xs:element[@name='tags']")
+    expect(attr(tags, "maxOccurs")).to eq("unbounded")
+    expect(attr(tags, "type")).to eq("xs:string")
   end
 
   it "renders definitions as named types and refs as tns references" do
@@ -95,13 +102,10 @@ RSpec.describe Lutaml::Jsonschema::Exports::Xsd do
     )
     doc = parse_xml(output)
 
-    type = REXML::XPath.first(doc.root,
-                              "//xs:complexType[@name='address']")
-    member = REXML::XPath.first(
-      doc.root, "//xs:element[@name='address']"
-    )
+    type = find_element(doc.root, "//xs:complexType[@name='address']")
+    member = find_element(doc.root, "//xs:element[@name='address']")
     expect(type).not_to be_nil
-    expect(member.attributes["type"]).to eq("tns:address")
+    expect(attr(member, "type")).to eq("tns:address")
   end
 
   it "renders enums as simpleType restrictions" do
@@ -110,8 +114,8 @@ RSpec.describe Lutaml::Jsonschema::Exports::Xsd do
                       "properties" => { "status" => { "enum" => %w[a b] } },
                     ))
 
-    values = REXML::XPath.match(doc.root, "//xs:enumeration")
-      .map { |node| node.attributes["value"] }
+    values = doc.root.xpath("//xs:enumeration", "xs" => described_class::XS_NS)
+                   .map { |node| attr(node, "value") }
     expect(values).to contain_exactly("a", "b")
   end
 

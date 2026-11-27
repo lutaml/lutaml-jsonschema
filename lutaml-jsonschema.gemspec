@@ -38,7 +38,10 @@ Gem::Specification.new do |spec|
   spec.add_dependency "lutaml", "~> 0.11.9"
   spec.add_dependency "lutaml-model", "~> 0.8.185"
   spec.add_dependency "lutaml-store", "~> 0.3"
-  spec.add_dependency "rexml", "~> 3.3"
+  # the XSD export builds through moxml (the org XML abstraction;
+  # prefers the leptris engine at runtime) — rexml is retired from the
+  # metanorma stack and this was its only in-stack dependent
+  spec.add_dependency "moxml", "~> 0.6.20"
   spec.add_dependency "thor", "~> 1.3"
   spec.add_dependency "yeptris", "~> 0.6.86"
 end
