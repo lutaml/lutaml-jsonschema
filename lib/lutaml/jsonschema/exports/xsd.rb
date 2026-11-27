@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
-require "rexml/document"
-require "rexml/formatters/pretty"
+require "moxml"
 
 module Lutaml
   module Jsonschema
@@ -28,7 +27,7 @@ module Lutaml
         end
 
         def render
-          doc = REXML::Document.new
+          doc = Moxml.new.create_document
           root = doc.add_element(
             "xs:schema",
             "xmlns:xs" => XS_NS,
@@ -41,9 +40,7 @@ module Lutaml
             add_root_element(root, name, schema)
           end
 
-          output = +""
-          REXML::Formatters::Pretty.new(2).write(doc, output)
-          "#{output}\n"
+          "#{doc.to_xml(indent: 2)}\n"
         end
 
         private
@@ -85,7 +82,7 @@ module Lutaml
             type = element.add_element("xs:complexType")
             add_complex_body(type, schema)
           else
-            element.add_attribute("type", scalar_type(schema))
+            element["type"] = scalar_type(schema)
           end
         end
 
@@ -99,7 +96,7 @@ module Lutaml
         def add_member(sequence, entry, parent)
           schema = entry.schema_value
           element = sequence.add_element("xs:element", "name" => entry.name)
-          element.add_attribute("minOccurs", "0") unless
+          element["minOccurs"] = "0" unless
             parent.required.include?(entry.name)
           fill_element_type(element, schema)
         end
@@ -109,7 +106,7 @@ module Lutaml
 
           type = declared_type(schema)
           if type
-            element.add_attribute("type", type)
+            element["type"] = type
           else
             add_structured_content(element, schema)
           end
@@ -130,7 +127,7 @@ module Lutaml
 
         def add_structured_content(element, schema)
           if array?(schema)
-            element.add_attribute("maxOccurs", "unbounded")
+            element["maxOccurs"] = "unbounded"
             add_item_content(element, schema.items)
           elsif schema.enum&.any?
             add_inline_enum(element, schema)
@@ -141,10 +138,10 @@ module Lutaml
 
         def add_item_content(element, item)
           return if item.nil? || item == true || item == false
-          return element.add_attribute("type", "tns:#{type_name(ref_name(item.dollar_ref))}") if item.dollar_ref
+          return element["type"] = "tns:#{type_name(ref_name(item.dollar_ref))}" if item.dollar_ref
           return add_complex_body(element.add_element("xs:complexType"), item) if object_shaped?(item)
 
-          element.add_attribute("type", scalar_type(item))
+          element["type"] = scalar_type(item)
         end
 
         def add_inline_enum(element, schema)
