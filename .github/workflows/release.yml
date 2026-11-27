@@ -33,10 +33,13 @@ jobs:
       next_version: ${{ github.event.inputs.next_version }}
       # The SPA dist must exist in the working tree when the gem is
       # built; pre_build_command runs in the OIDC publish step right
-      # before gem build. post_install cannot carry this: a stub that
-      # binds a post_install string startup-fails the reusable's graph
-      # build on both dispatch types (metanorma/ci#531 lineage).
-      pre_build_command: 'cd frontend && npm install --package-lock-only && npm ci && npm run build && git checkout -- package-lock.json'
+      # before gem build. The subshell keeps the step's cwd at the repo
+      # root — a bare `cd frontend` persists into the gem-build step,
+      # which then finds no *.gemspec (0.1.30's first publish attempt
+      # died there). post_install cannot carry this: a stub that binds
+      # a post_install string startup-fails the reusable's graph build
+      # (metanorma/ci#531 lineage).
+      pre_build_command: '(cd frontend && npm install --package-lock-only && npm ci && npm run build && git checkout -- package-lock.json)'
     secrets:
       # rubygems-api-key is deliberately NOT passed: the
       # LUTAML_CI_RUBYGEMS_API_KEY secret does not exist on this
